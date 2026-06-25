@@ -1,0 +1,241 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useHighestRole } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, FolderKanban, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/_authenticated/projects")({
+  head: () => ({ meta: [{ title: "Projects — Habico Portal" }] }),
+  component: ProjectsPage,
+});
+
+const statusColor: Record<string, string> = {
+  planning: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  in_progress: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  on_hold: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  completed: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
+  cancelled: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+};
+
+const statusOptions = ["planning", "in_progress", "on_hold", "completed", "cancelled"];
+
+function ProjectsPage() {
+  const role = useHighestRole();
+  const isStaff = role === "admin" || role === "manager";
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: "", description: "", location: "", status: "planning",
+    start_date: "", target_end_date: "", budget: "0",
+    client_name: "", client_phone: "", client_email: "", notes: "",
+  });
+
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("projects").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const resetForm = () => setForm({
+    name: "", description: "", location: "", status: "planning",
+    start_date: "", target_end_date: "", budget: "0",
+    client_name: "", client_phone: "", client_email: "", notes: "",
+  });
+
+  const openEdit = (p: any) => {
+    setEditing(p);
+    setForm({
+      name: p.name ?? "", description: p.description ?? "", location: p.location ?? "",
+      status: p.status ?? "planning", start_date: p.start_date ?? "", target_end_date: p.target_end_date ?? "",
+      budget: String(p.budget ?? "0"), client_name: p.client_name ?? "", client_phone: p.client_phone ?? "",
+      client_email: p.client_email ?? "", notes: p.notes ?? "",
+    });
+    setOpen(true);
+  };
+
+  const create = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("projects").insert({
+        name: form.name, description: form.description || null, location: form.location || null,
+        status: form.status, start_date: form.start_date || null, target_end_date: form.target_end_date || null,
+        budget: Number(form.budget), client_name: form.client_name || null, client_phone: form.client_phone || null,
+        client_email: form.client_email || null, notes: form.notes || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Project created"); setOpen(false); resetForm(); qc.invalidateQueries({ queryKey: ["projects"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const update = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("projects").update({
+        name: form.name, description: form.description || null, location: form.location || null,
+        status: form.status, start_date: form.start_date || null, target_end_date: form.target_end_date || null,
+        budget: Number(form.budget), client_name: form.client_name || null, client_phone: form.client_phone || null,
+        client_email: form.client_email || null, notes: form.notes || null,
+      }).eq("id", editing.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Project updated"); setOpen(false); setEditing(null); resetForm(); qc.invalidateQueries({ queryKey: ["projects"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const deleteProject = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Project deleted"); setDeleteId(null); qc.invalidateQueries({ queryKey: ["projects"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const totalBudget = projects.reduce((s: number, p: any) => s + Number(p.budget || 0), 0);
+  const totalSpent = projects.reduce((s: number, p: any) => s + Number(p.spent || 0), 0);
+  const activeProjects = projects.filter((p: any) => p.status === "in_progress" || p.status === "planning").length;
+  const completedProjects = projects.filter((p: any) => p.status === "completed").length;
+  const completionRate = projects.length > 0 ? Math.round((completedProjects / projects.length) * 100) : 0;
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div className="text-xs font-bold uppercase tracking-widest text-accent">Operations</div>
+          <h1 className="display text-3xl font-bold">Projects</h1>
+        </div>
+        {isStaff && (
+          <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditing(null); resetForm(); } setOpen(v); }}>
+            <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />{editing ? "Edit project" : "New project"}</Button></DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+              <DialogHeader><DialogTitle>{editing ? "Edit project" : "Create a project"}</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+                <div><Label>Description</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+                <div><Label>Location</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+                <div><Label>Status</Label>
+                  <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                    {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Start date</Label><Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} /></div>
+                  <div><Label>Target end date</Label><Input type="date" value={form.target_end_date} onChange={(e) => setForm({ ...form, target_end_date: e.target.value })} /></div>
+                </div>
+                <div><Label>Budget (UGX)</Label><Input type="number" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Client name</Label><Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} /></div>
+                  <div><Label>Client phone</Label><Input value={form.client_phone} onChange={(e) => setForm({ ...form, client_phone: e.target.value })} /></div>
+                </div>
+                <div><Label>Client email</Label><Input type="email" value={form.client_email} onChange={(e) => setForm({ ...form, client_email: e.target.value })} /></div>
+                <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+              </div>
+              <DialogFooter className="gap-2">
+                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                <Button onClick={() => (editing ? update : create).mutate()} disabled={!form.name || create.isPending || update.isPending}>
+                  {(create.isPending || update.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editing ? "Save" : "Create"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Active Projects</CardTitle><FolderKanban className="h-4 w-4 text-muted-foreground" /></CardHeader>
+          <CardContent><div className="text-2xl font-bold">{activeProjects}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Total Budget</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader>
+          <CardContent><div className="text-2xl font-bold">UGX {totalBudget.toLocaleString()}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Total Spent</CardTitle><TrendingDown className="h-4 w-4 text-muted-foreground" /></CardHeader>
+          <CardContent><div className="text-2xl font-bold">UGX {totalSpent.toLocaleString()}</div></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-medium">Completion Rate</CardTitle><TrendingUp className="h-4 w-4 text-muted-foreground" /></CardHeader>
+          <CardContent><div className="text-2xl font-bold">{completionRate}%</div></CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="display">All projects</CardTitle></CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          ) : projects.length === 0 ? (
+            <div className="py-10 text-center text-sm text-muted-foreground">No projects yet. {isStaff ? "Create your first project." : ""}</div>
+          ) : (
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>Name</TableHead><TableHead>Location</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Budget</TableHead><TableHead className="text-right">Spent</TableHead><TableHead>Progress</TableHead><TableHead>Dates</TableHead>
+                {isStaff && <TableHead className="text-right">Actions</TableHead>}
+              </TableRow></TableHeader>
+              <TableBody>
+                {projects.map((p: any) => {
+                  const progress = Number(p.budget) > 0 ? Math.min(Math.round((Number(p.spent || 0) / Number(p.budget)) * 100), 100) : 0;
+                  return (
+                    <TableRow key={p.id} className={isStaff ? "cursor-pointer" : ""} onClick={() => isStaff && openEdit(p)}>
+                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{p.location ?? "—"}</TableCell>
+                      <TableCell><Badge className={cn("border-0", statusColor[p.status])} variant="outline">{p.status.replace("_", " ")}</Badge></TableCell>
+                      <TableCell className="text-right">UGX {Number(p.budget || 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">UGX {Number(p.spent || 0).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress value={progress} className="h-2 w-20" />
+                          <span className="text-xs text-muted-foreground">{progress}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {p.start_date && <div>Start: {p.start_date}</div>}
+                        {p.target_end_date && <div>End: {p.target_end_date}</div>}
+                      </TableCell>
+                      {isStaff && (
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <AlertDialog open={deleteId === p.id} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+                            <AlertDialogTrigger asChild><Button variant="destructive" size="sm" onClick={() => setDeleteId(p.id)}>Delete</Button></AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader><AlertDialogTitle>Delete project?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{p.name}". This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteProject.mutate(p.id)} disabled={deleteProject.isPending}>
+                                  {deleteProject.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
