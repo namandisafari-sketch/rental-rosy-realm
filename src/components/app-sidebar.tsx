@@ -2,7 +2,8 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Building2, Home, Users, FileText, Receipt, Wrench, BarChart3,
   Settings, LogOut, Package, Toolbox, ShoppingCart, Briefcase,
-  HardHat, DollarSign, ClipboardList, Truck, Repeat, ShieldCheck
+  HardHat, DollarSign, ClipboardList, Truck, Repeat, ShieldCheck,
+  MessageSquare, FileSignature, CreditCard, QrCode, CalendarCheck, Calculator
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -22,6 +23,12 @@ const staffItems = [
   { title: "Maintenance", url: "/maintenance", icon: Wrench },
   { title: "Recurring Billing", url: "/recurring-billing", icon: Repeat },
   { title: "Payment Proofs", url: "/payment-proofs", icon: ShieldCheck },
+  { title: "Messages", url: "/rental-messages", icon: MessageSquare },
+  { title: "E-Leasing", url: "/e-leasing", icon: FileSignature },
+  { title: "ID Cards", url: "/rental-id-cards", icon: CreditCard },
+  { title: "Listing Banners", url: "/listing-banners", icon: QrCode },
+  { title: "Preventative Maintenance", url: "/preventative-maintenance", icon: CalendarCheck },
+  { title: "Tax Dashboard", url: "/rental-tax-dashboard", icon: Calculator },
   // Construction Management
   { title: "Projects", url: "/projects", icon: HardHat },
   { title: "Employees", url: "/employees", icon: Briefcase },
