@@ -3,7 +3,11 @@ import {
   Building2, Home, Users, FileText, Receipt, Wrench, BarChart3,
   Settings, LogOut, Package, Toolbox, ShoppingCart, Briefcase,
   HardHat, DollarSign, ClipboardList, Truck, Repeat, ShieldCheck,
-  MessageSquare, FileSignature, CreditCard, QrCode, CalendarCheck, Calculator
+  MessageSquare, FileSignature, CreditCard, QrCode, CalendarCheck, Calculator,
+  PhoneCall, FileBadge, FolderOpen, ListChecks, ClipboardPen,
+  MessageSquareQuote, FileUp, Handshake, GitCompareArrows, Clock,
+  PiggyBank, Landmark, FileCheck, ClipboardCheck, Hash, Waypoints,
+  ReceiptText, ArrowRightLeft, ScrollText
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -29,15 +33,40 @@ const staffItems = [
   { title: "Listing Banners", url: "/listing-banners", icon: QrCode },
   { title: "Preventative Maintenance", url: "/preventative-maintenance", icon: CalendarCheck },
   { title: "Tax Dashboard", url: "/rental-tax-dashboard", icon: Calculator },
+  // Preconstruction
+  { title: "Leads", url: "/leads", icon: PhoneCall },
+  { title: "Estimates", url: "/estimates", icon: Calculator },
+  { title: "Proposals", url: "/proposals", icon: FileBadge },
+  { title: "Bid Packages", url: "/bid-packages", icon: FolderOpen },
   // Construction Management
   { title: "Projects", url: "/projects", icon: HardHat },
+  { title: "Project Tasks", url: "/project-tasks", icon: ListChecks },
+  { title: "Daily Logs", url: "/daily-logs", icon: ClipboardPen },
+  { title: "RFIs", url: "/rfis", icon: MessageSquareQuote },
+  { title: "Submittals", url: "/submittals", icon: FileUp },
   { title: "Employees", url: "/employees", icon: Briefcase },
+  { title: "Timesheets", url: "/timesheets", icon: Clock },
   { title: "Expenses", url: "/expenses", icon: DollarSign },
+  { title: "Receipts", url: "/receipts", icon: ReceiptText },
   { title: "Suppliers", url: "/suppliers", icon: Truck },
   { title: "Purchase Orders", url: "/purchase-orders", icon: ShoppingCart },
   { title: "Inventory", url: "/inventory", icon: Package },
   { title: "Assets", url: "/assets", icon: Toolbox },
   { title: "Equipment Rentals", url: "/equipment-rentals", icon: ClipboardList },
+  // Financial Management
+  { title: "Construction Invoices", url: "/construction-invoices", icon: FileText },
+  { title: "Subcontracts", url: "/subcontracts", icon: Handshake },
+  { title: "Change Orders", url: "/change-orders", icon: GitCompareArrows },
+  { title: "Allowances", url: "/allowances", icon: PiggyBank },
+  { title: "Project Budget", url: "/project-budget", icon: Landmark },
+  { title: "Bills", url: "/bills", icon: ScrollText },
+  { title: "Lien Waivers", url: "/lien-waivers", icon: FileCheck },
+  // SOP
+  { title: "SOP Dashboard", url: "/sop", icon: ClipboardCheck },
+  { title: "SOP Checklists", url: "/sop-checklists", icon: ListChecks },
+  { title: "SOP Forms", url: "/sop-forms", icon: FileSignature },
+  // General
+  { title: "Cost Codes", url: "/cost-codes", icon: Hash },
   // Reports
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Financial Reports", url: "/financial-reports", icon: DollarSign },
