@@ -20,13 +20,16 @@ import { Route as AuthenticatedTenantsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedRecurringBillingRouteImport } from './routes/_authenticated/recurring-billing'
 import { Route as AuthenticatedPurchaseOrdersRouteImport } from './routes/_authenticated/purchase-orders'
 import { Route as AuthenticatedPropertiesRouteImport } from './routes/_authenticated/properties'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
+import { Route as AuthenticatedPaymentProofsRouteImport } from './routes/_authenticated/payment-proofs'
 import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
 import { Route as AuthenticatedLeasesRouteImport } from './routes/_authenticated/leases'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
+import { Route as AuthenticatedFinancialReportsRouteImport } from './routes/_authenticated/financial-reports'
 import { Route as AuthenticatedExpensesRouteImport } from './routes/_authenticated/expenses'
 import { Route as AuthenticatedEquipmentRentalsRouteImport } from './routes/_authenticated/equipment-rentals'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
@@ -88,6 +91,12 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedRecurringBillingRoute =
+  AuthenticatedRecurringBillingRouteImport.update({
+    id: '/recurring-billing',
+    path: '/recurring-billing',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPurchaseOrdersRoute =
   AuthenticatedPurchaseOrdersRouteImport.update({
     id: '/purchase-orders',
@@ -109,6 +118,12 @@ const AuthenticatedPaymentsRoute = AuthenticatedPaymentsRouteImport.update({
   path: '/payments',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPaymentProofsRoute =
+  AuthenticatedPaymentProofsRouteImport.update({
+    id: '/payment-proofs',
+    path: '/payment-proofs',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMaintenanceRoute =
   AuthenticatedMaintenanceRouteImport.update({
     id: '/maintenance',
@@ -125,6 +140,12 @@ const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFinancialReportsRoute =
+  AuthenticatedFinancialReportsRouteImport.update({
+    id: '/financial-reports',
+    path: '/financial-reports',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedExpensesRoute = AuthenticatedExpensesRouteImport.update({
   id: '/expenses',
   path: '/expenses',
@@ -170,13 +191,16 @@ export interface FileRoutesByFullPath {
   '/employees': typeof AuthenticatedEmployeesRoute
   '/equipment-rentals': typeof AuthenticatedEquipmentRentalsRoute
   '/expenses': typeof AuthenticatedExpensesRoute
+  '/financial-reports': typeof AuthenticatedFinancialReportsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/leases': typeof AuthenticatedLeasesRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/purchase-orders': typeof AuthenticatedPurchaseOrdersRoute
+  '/recurring-billing': typeof AuthenticatedRecurringBillingRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
@@ -195,13 +219,16 @@ export interface FileRoutesByTo {
   '/employees': typeof AuthenticatedEmployeesRoute
   '/equipment-rentals': typeof AuthenticatedEquipmentRentalsRoute
   '/expenses': typeof AuthenticatedExpensesRoute
+  '/financial-reports': typeof AuthenticatedFinancialReportsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/leases': typeof AuthenticatedLeasesRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/purchase-orders': typeof AuthenticatedPurchaseOrdersRoute
+  '/recurring-billing': typeof AuthenticatedRecurringBillingRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
@@ -222,13 +249,16 @@ export interface FileRoutesById {
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/equipment-rentals': typeof AuthenticatedEquipmentRentalsRoute
   '/_authenticated/expenses': typeof AuthenticatedExpensesRoute
+  '/_authenticated/financial-reports': typeof AuthenticatedFinancialReportsRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/leases': typeof AuthenticatedLeasesRoute
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
+  '/_authenticated/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/properties': typeof AuthenticatedPropertiesRouteWithChildren
   '/_authenticated/purchase-orders': typeof AuthenticatedPurchaseOrdersRoute
+  '/_authenticated/recurring-billing': typeof AuthenticatedRecurringBillingRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
@@ -249,13 +279,16 @@ export interface FileRouteTypes {
     | '/employees'
     | '/equipment-rentals'
     | '/expenses'
+    | '/financial-reports'
     | '/inventory'
     | '/leases'
     | '/maintenance'
+    | '/payment-proofs'
     | '/payments'
     | '/projects'
     | '/properties'
     | '/purchase-orders'
+    | '/recurring-billing'
     | '/reports'
     | '/settings'
     | '/suppliers'
@@ -274,13 +307,16 @@ export interface FileRouteTypes {
     | '/employees'
     | '/equipment-rentals'
     | '/expenses'
+    | '/financial-reports'
     | '/inventory'
     | '/leases'
     | '/maintenance'
+    | '/payment-proofs'
     | '/payments'
     | '/projects'
     | '/properties'
     | '/purchase-orders'
+    | '/recurring-billing'
     | '/reports'
     | '/settings'
     | '/suppliers'
@@ -300,13 +336,16 @@ export interface FileRouteTypes {
     | '/_authenticated/employees'
     | '/_authenticated/equipment-rentals'
     | '/_authenticated/expenses'
+    | '/_authenticated/financial-reports'
     | '/_authenticated/inventory'
     | '/_authenticated/leases'
     | '/_authenticated/maintenance'
+    | '/_authenticated/payment-proofs'
     | '/_authenticated/payments'
     | '/_authenticated/projects'
     | '/_authenticated/properties'
     | '/_authenticated/purchase-orders'
+    | '/_authenticated/recurring-billing'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
     | '/_authenticated/suppliers'
@@ -403,6 +442,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/recurring-billing': {
+      id: '/_authenticated/recurring-billing'
+      path: '/recurring-billing'
+      fullPath: '/recurring-billing'
+      preLoaderRoute: typeof AuthenticatedRecurringBillingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/purchase-orders': {
       id: '/_authenticated/purchase-orders'
       path: '/purchase-orders'
@@ -431,6 +477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPaymentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/payment-proofs': {
+      id: '/_authenticated/payment-proofs'
+      path: '/payment-proofs'
+      fullPath: '/payment-proofs'
+      preLoaderRoute: typeof AuthenticatedPaymentProofsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/maintenance': {
       id: '/_authenticated/maintenance'
       path: '/maintenance'
@@ -450,6 +503,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/inventory'
       preLoaderRoute: typeof AuthenticatedInventoryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/financial-reports': {
+      id: '/_authenticated/financial-reports'
+      path: '/financial-reports'
+      fullPath: '/financial-reports'
+      preLoaderRoute: typeof AuthenticatedFinancialReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/expenses': {
@@ -517,13 +577,16 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedEquipmentRentalsRoute: typeof AuthenticatedEquipmentRentalsRoute
   AuthenticatedExpensesRoute: typeof AuthenticatedExpensesRoute
+  AuthenticatedFinancialReportsRoute: typeof AuthenticatedFinancialReportsRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLeasesRoute: typeof AuthenticatedLeasesRoute
   AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
+  AuthenticatedPaymentProofsRoute: typeof AuthenticatedPaymentProofsRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedPropertiesRoute: typeof AuthenticatedPropertiesRouteWithChildren
   AuthenticatedPurchaseOrdersRoute: typeof AuthenticatedPurchaseOrdersRoute
+  AuthenticatedRecurringBillingRoute: typeof AuthenticatedRecurringBillingRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
@@ -536,13 +599,16 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedEquipmentRentalsRoute: AuthenticatedEquipmentRentalsRoute,
   AuthenticatedExpensesRoute: AuthenticatedExpensesRoute,
+  AuthenticatedFinancialReportsRoute: AuthenticatedFinancialReportsRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLeasesRoute: AuthenticatedLeasesRoute,
   AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
+  AuthenticatedPaymentProofsRoute: AuthenticatedPaymentProofsRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedPropertiesRoute: AuthenticatedPropertiesRouteWithChildren,
   AuthenticatedPurchaseOrdersRoute: AuthenticatedPurchaseOrdersRoute,
+  AuthenticatedRecurringBillingRoute: AuthenticatedRecurringBillingRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,

@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Building2, Home, Users, FileText, Receipt, Wrench, BarChart3,
   Settings, LogOut, Package, Toolbox, ShoppingCart, Briefcase,
-  HardHat, DollarSign, ClipboardList, Truck
+  HardHat, DollarSign, ClipboardList, Truck, Repeat, ShieldCheck
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -20,6 +20,8 @@ const staffItems = [
   { title: "Tenants", url: "/tenants", icon: Users },
   { title: "Payments", url: "/payments", icon: Receipt },
   { title: "Maintenance", url: "/maintenance", icon: Wrench },
+  { title: "Recurring Billing", url: "/recurring-billing", icon: Repeat },
+  { title: "Payment Proofs", url: "/payment-proofs", icon: ShieldCheck },
   // Construction Management
   { title: "Projects", url: "/projects", icon: HardHat },
   { title: "Employees", url: "/employees", icon: Briefcase },
@@ -31,6 +33,7 @@ const staffItems = [
   { title: "Equipment Rentals", url: "/equipment-rentals", icon: ClipboardList },
   // Reports
   { title: "Reports", url: "/reports", icon: BarChart3 },
+  { title: "Financial Reports", url: "/financial-reports", icon: DollarSign },
 ];
 
 const ownerItems = [

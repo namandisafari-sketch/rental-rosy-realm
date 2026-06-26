@@ -8,129 +8,627 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Wrench } from "lucide-react";
+import { Plus, Wrench, Image, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/maintenance")({
-  head: () => ({ meta: [{ title: "Maintenance — Habico Portal" }] }),
   component: MaintenancePage,
 });
 
-const priorityColor: Record<string,string> = { low:"bg-secondary text-muted-foreground", normal:"bg-secondary text-foreground", high:"bg-warning/30 text-warning-foreground", urgent:"bg-destructive/15 text-destructive" };
-const statusColor: Record<string,string> = { open:"bg-warning/20 text-warning-foreground", in_progress:"bg-primary/15 text-primary", resolved:"bg-success/15 text-success", cancelled:"bg-secondary text-muted-foreground" };
+const statusColors: Record<string, string> = {
+  open: "bg-amber-100 text-amber-800",
+  in_progress: "bg-blue-100 text-blue-800",
+  resolved: "bg-green-100 text-green-800",
+  cancelled: "bg-gray-100 text-gray-800",
+};
+
+const priorityColors: Record<string, string> = {
+  low: "bg-gray-100 text-gray-600",
+  normal: "bg-gray-100 text-gray-800",
+  high: "bg-amber-100 text-amber-800",
+  urgent: "bg-red-100 text-red-800",
+};
+
+const categoryLabels: Record<string, string> = {
+  plumbing: "Plumbing",
+  electrical: "Electrical",
+  hvac: "HVAC",
+  appliance: "Appliance",
+  structural: "Structural",
+  pest_control: "Pest Control",
+  cleaning: "Cleaning",
+  landscaping: "Landscaping",
+  general: "General",
+  other: "Other",
+};
 
 function MaintenancePage() {
   const { user } = useAuth();
   const role = useHighestRole();
-  const isStaff = role === "admin" || role === "manager";
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ unit_id: "", title: "", description: "", priority: "normal" });
+  const isStaff = role === "staff" || role === "admin";
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<any>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
-  const { data: requests = [] } = useQuery({
-    queryKey: ["maintenance"],
+  const [unitId, setUnitId] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("normal");
+  const [category, setCategory] = useState("general");
+  const [estimatedCost, setEstimatedCost] = useState("");
+  const [reportedBy, setReportedBy] = useState("");
+
+  const [editStatus, setEditStatus] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editScheduledDate, setEditScheduledDate] = useState("");
+  const [editEstimatedCost, setEditEstimatedCost] = useState("");
+  const [editActualCost, setEditActualCost] = useState("");
+  const [editContractorName, setEditContractorName] = useState("");
+  const [editContractorPhone, setEditContractorPhone] = useState("");
+  const [editResolutionNotes, setEditResolutionNotes] = useState("");
+
+  const { data: leases } = useQuery({
+    queryKey: ["leases", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("maintenance_requests").select("*, units(unit_number, properties(name))").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      if (!user || isStaff) return [];
+      const { data } = await supabase
+        .from("leases")
+        .select("id, unit_id, units!inner(id, name, property_id, properties!inner(id, name))")
+        .eq("tenant_id", user.id)
+        .eq("status", "active");
+      return (data as any) || [];
+    },
+    enabled: !!user && !isStaff,
+  });
+
+  const { data: allUnits } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("units")
+        .select("id, name, property_id, properties(name)");
+      return (data as any) || [];
+    },
+    enabled: isStaff,
+  });
+
+  const { data: requests, isLoading } = useQuery({
+    queryKey: ["maintenance_requests"],
+    queryFn: async () => {
+      let query = supabase
+        .from("maintenance_requests")
+        .select("*, units!inner(id, name, property_id, properties!inner(id, name))")
+        .order("created_at", { ascending: false });
+
+      if (!isStaff && user) {
+        const { data: userLeases } = await supabase
+          .from("leases")
+          .select("unit_id")
+          .eq("tenant_id", user.id)
+          .eq("status", "active");
+        const unitIds = (userLeases as any)?.map((l: any) => l.unit_id) || [];
+        if (unitIds.length > 0) {
+          query = query.in("unit_id", unitIds);
+        } else {
+          query = query.eq("unit_id", -1);
+        }
+      }
+
+      const { data } = await query;
+      return (data as any) || [];
     },
   });
 
-  // tenants pick their unit from their active leases
-  const { data: myUnits = [] } = useQuery({
-    queryKey: ["my-units", user?.id], enabled: !!user,
+  const { data: imagesMap } = useQuery({
+    queryKey: ["maintenance_images"],
     queryFn: async () => {
-      const { data } = await supabase.from("leases").select("unit_id, units(unit_number, properties(name))").eq("tenant_id", user!.id).eq("status", "active");
-      return data ?? [];
+      const { data } = await supabase
+        .from("maintenance_images")
+        .select("*")
+        .order("created_at", { ascending: true });
+      const rows = (data as any) || [];
+      const map: Record<string, any[]> = {};
+      for (const row of rows) {
+        if (!map[row.request_id]) map[row.request_id] = [];
+        map[row.request_id].push(row);
+      }
+      return map;
     },
   });
 
-  const create = useMutation({
+  const openCount = requests?.filter((r: any) => r.status === "open").length || 0;
+  const inProgressCount = requests?.filter((r: any) => r.status === "in_progress").length || 0;
+  const now = new Date();
+  const completedThisMonth =
+    requests?.filter((r: any) => {
+      if (r.status !== "resolved") return false;
+      const d = new Date(r.resolved_at || r.updated_at);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length || 0;
+
+  const createMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("maintenance_requests").insert({
-        unit_id: form.unit_id, tenant_id: user!.id, title: form.title, description: form.description, priority: form.priority,
+      const payload: any = {
+        unit_id: unitId,
+        title,
+        description,
+        priority,
+        category,
+        status: "open",
+        created_by: user?.id,
+      };
+      if (isStaff && estimatedCost) payload.estimated_cost = parseFloat(estimatedCost);
+      if (isStaff && reportedBy) payload.reported_by = reportedBy;
+      const { error } = await supabase.from("maintenance_requests").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["maintenance_requests"] });
+      setDialogOpen(false);
+      setUnitId("");
+      setTitle("");
+      setDescription("");
+      setPriority("normal");
+      setCategory("general");
+      setEstimatedCost("");
+      setReportedBy("");
+      toast.success("Maintenance request created");
+    },
+    onError: (e: any) => {
+      toast.error(e.message || "Failed to create request");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingRequest) return;
+      const payload: any = {};
+      if (editStatus) payload.status = editStatus;
+      if (editCategory) payload.category = editCategory;
+      if (editScheduledDate) payload.scheduled_date = editScheduledDate;
+      if (editEstimatedCost) payload.estimated_cost = parseFloat(editEstimatedCost);
+      if (editActualCost) payload.actual_cost = parseFloat(editActualCost);
+      if (editContractorName) payload.contractor_name = editContractorName;
+      if (editContractorPhone) payload.contractor_phone = editContractorPhone;
+      if (editResolutionNotes) payload.resolution_notes = editResolutionNotes;
+      if (editStatus === "resolved") payload.resolved_at = new Date().toISOString();
+      const { error } = await supabase
+        .from("maintenance_requests")
+        .update(payload)
+        .eq("id", editingRequest.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["maintenance_requests"] });
+      setEditOpen(false);
+      setEditingRequest(null);
+      toast.success("Request updated");
+    },
+    onError: (e: any) => {
+      toast.error(e.message || "Failed to update request");
+    },
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async ({ requestId, url }: { requestId: string; url: string }) => {
+      const { error } = await supabase.from("maintenance_images").insert({
+        request_id: requestId,
+        url,
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Request submitted"); setOpen(false); setForm({ unit_id:"",title:"",description:"",priority:"normal" }); qc.invalidateQueries({ queryKey:["maintenance"] }); },
-    onError: (e) => toast.error((e as Error).message),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["maintenance_images"] });
+      toast.success("Image added");
+    },
+    onError: (e: any) => {
+      toast.error(e.message || "Failed to add image");
+    },
   });
 
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("maintenance_requests").update({ status, resolved_at: status === "resolved" ? new Date().toISOString() : null }).eq("id", id);
+  const deleteImageMutation = useMutation({
+    mutationFn: async (imageId: string) => {
+      const { error } = await supabase.from("maintenance_images").delete().eq("id", imageId);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["maintenance"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["maintenance_images"] });
+      toast.success("Image removed");
+    },
+    onError: (e: any) => {
+      toast.error(e.message || "Failed to remove image");
+    },
   });
 
+  function openEdit(request: any) {
+    setEditingRequest(request);
+    setEditStatus(request.status);
+    setEditCategory(request.category || "");
+    setEditScheduledDate(request.scheduled_date?.split("T")[0] || "");
+    setEditEstimatedCost(request.estimated_cost?.toString() || "");
+    setEditActualCost(request.actual_cost?.toString() || "");
+    setEditContractorName(request.contractor_name || "");
+    setEditContractorPhone(request.contractor_phone || "");
+    setEditResolutionNotes(request.resolution_notes || "");
+    setEditOpen(true);
+  }
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-accent">Operations</div>
-          <h1 className="display text-3xl font-bold">Maintenance</h1>
-        </div>
-        {(role === "tenant" || isStaff) && (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4"/>New request</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Submit a request</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div>
-                  <Label>Unit</Label>
-                  <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.unit_id} onChange={(e)=>setForm({...form, unit_id:e.target.value})}>
-                    <option value="">Select unit…</option>
-                    {myUnits.map((u:any) => <option key={u.unit_id} value={u.unit_id}>{u.units?.properties?.name} · Unit {u.units?.unit_number}</option>)}
-                  </select>
-                </div>
-                <div><Label>Title</Label><Input value={form.title} onChange={(e)=>setForm({...form, title:e.target.value})} maxLength={100}/></div>
-                <div><Label>Description</Label><Textarea rows={4} value={form.description} onChange={(e)=>setForm({...form, description:e.target.value})} maxLength={1000}/></div>
-                <div><Label>Priority</Label>
-                  <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.priority} onChange={(e)=>setForm({...form, priority:e.target.value})}>
-                    <option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option>
-                  </select>
-                </div>
-              </div>
-              <DialogFooter><Button onClick={()=>create.mutate()} disabled={!form.unit_id || !form.title || create.isPending}>Submit</Button></DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Maintenance</h1>
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Request
+        </Button>
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="display">All requests</CardTitle></CardHeader>
-        <CardContent>
-          {requests.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground"><Wrench className="h-8 w-8"/><div className="text-sm">No maintenance requests yet.</div></div>
-          ) : (
-            <div className="space-y-3">
-              {requests.map((r:any) => (
-                <div key={r.id} className="rounded-xl border border-border bg-card p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{r.title}</h3>
-                        <span className={`rounded-full px-2 py-0.5 text-xs ${priorityColor[r.priority]}`}>{r.priority}</span>
-                        <span className={`rounded-full px-2 py-0.5 text-xs ${statusColor[r.status]}`}>{r.status.replace("_"," ")}</span>
-                      </div>
-                      <div className="mt-1 text-xs text-muted-foreground">{r.units?.properties?.name} · Unit {r.units?.unit_number} · {new Date(r.created_at).toLocaleDateString()}</div>
-                      {r.description && <p className="mt-2 text-sm text-foreground/80">{r.description}</p>}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Open</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-amber-600">{openCount}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-blue-600">{inProgressCount}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Completed This Month</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-green-600">{completedThisMonth}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-4">
+        {isLoading && <p className="text-muted-foreground">Loading...</p>}
+        {!isLoading && requests?.length === 0 && (
+          <p className="text-muted-foreground">No maintenance requests found.</p>
+        )}
+        {requests?.map((req: any) => {
+          const images = imagesMap?.[req.id] || [];
+          return (
+            <Card key={req.id} className="relative">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold truncate">{req.title}</h3>
+                      {req.category && (
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                          {categoryLabels[req.category] || req.category}
+                        </span>
+                      )}
+                      <span className={`text-xs px-2 py-0.5 rounded ${statusColors[req.status] || ""}`}>
+                        {req.status.replace("_", " ")}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded ${priorityColors[req.priority] || ""}`}>
+                        {req.priority}
+                      </span>
                     </div>
-                    {isStaff && r.status !== "resolved" && (
-                      <div className="flex gap-2">
-                        {r.status === "open" && <Button size="sm" variant="outline" onClick={()=>updateStatus.mutate({ id:r.id, status:"in_progress" })}>Start work</Button>}
-                        <Button size="sm" onClick={()=>updateStatus.mutate({ id:r.id, status:"resolved" })}>Mark resolved</Button>
+                    {req.description && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{req.description}</p>
+                    )}
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      <span>{req.units?.name} - {req.units?.properties?.name}</span>
+                      {req.estimated_cost && (
+                        <span>Est: UGX {Number(req.estimated_cost).toLocaleString()}</span>
+                      )}
+                      {req.actual_cost && (
+                        <span>Actual: UGX {Number(req.actual_cost).toLocaleString()}</span>
+                      )}
+                      {req.scheduled_date && (
+                        <span>Scheduled: {new Date(req.scheduled_date).toLocaleDateString()}</span>
+                      )}
+                      {req.contractor_name && (
+                        <span>Contractor: {req.contractor_name}</span>
+                      )}
+                    </div>
+                    {images.length > 0 && (
+                      <div className="flex items-center gap-1 mt-2">
+                        {images.slice(0, 4).map((img: any) => (
+                          <button
+                            key={img.id}
+                            className="w-8 h-8 rounded-full overflow-hidden border border-border shrink-0 hover:ring-2 hover:ring-ring transition-all"
+                            onClick={() => setLightboxUrl(img.url)}
+                          >
+                            <img src={img.url} alt="" className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                        {images.length > 4 && (
+                          <span className="text-xs text-muted-foreground ml-1">+{images.length - 4}</span>
+                        )}
                       </div>
                     )}
                   </div>
+                  {isStaff && (
+                    <Button variant="outline" size="sm" onClick={() => openEdit(req)}>
+                      Edit
+                    </Button>
+                  )}
                 </div>
-              ))}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>New Maintenance Request</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Unit</Label>
+              <Select value={unitId} onValueChange={setUnitId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isStaff
+                    ? allUnits?.map((u: any) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name} - {u.properties?.name}
+                        </SelectItem>
+                      ))
+                    : leases?.map((l: any) => (
+                        <SelectItem key={l.unit_id} value={l.unit_id}>
+                          {l.units?.name} - {l.units?.properties?.name}
+                        </SelectItem>
+                      ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(categoryLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {isStaff && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Estimated Cost (UGX)</Label>
+                  <Input
+                    type="number"
+                    value={estimatedCost}
+                    onChange={(e) => setEstimatedCost(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Reported By</Label>
+                  <Input
+                    value={reportedBy}
+                    onChange={(e) => setReportedBy(e.target.value)}
+                    placeholder="Name of reporter"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createMutation.mutate()}
+              disabled={!unitId || !title || createMutation.isPending}
+            >
+              {createMutation.isPending ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Request</DialogTitle>
+          </DialogHeader>
+          {editingRequest && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={editStatus} onValueChange={setEditStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={editCategory} onValueChange={setEditCategory}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(categoryLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Scheduled Date</Label>
+                <Input
+                  type="date"
+                  value={editScheduledDate}
+                  onChange={(e) => setEditScheduledDate(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Estimated Cost (UGX)</Label>
+                  <Input
+                    type="number"
+                    value={editEstimatedCost}
+                    onChange={(e) => setEditEstimatedCost(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Actual Cost (UGX)</Label>
+                  <Input
+                    type="number"
+                    value={editActualCost}
+                    onChange={(e) => setEditActualCost(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Contractor Name</Label>
+                <Input
+                  value={editContractorName}
+                  onChange={(e) => setEditContractorName(e.target.value)}
+                  placeholder="Contractor name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Contractor Phone</Label>
+                <Input
+                  value={editContractorPhone}
+                  onChange={(e) => setEditContractorPhone(e.target.value)}
+                  placeholder="Contact number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Resolution Notes</Label>
+                <Textarea
+                  value={editResolutionNotes}
+                  onChange={(e) => setEditResolutionNotes(e.target.value)}
+                  placeholder="Notes on resolution"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Image className="h-4 w-4" />
+                  Photos
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {(imagesMap?.[editingRequest.id] || []).map((img: any) => (
+                    <div key={img.id} className="relative group">
+                      <button
+                        className="w-20 h-20 rounded-md overflow-hidden border border-border hover:ring-2 hover:ring-ring transition-all"
+                        onClick={() => setLightboxUrl(img.url)}
+                      >
+                        <img src={img.url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                      <button
+                        className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => deleteImageMutation.mutate(img.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input type="text" placeholder="Paste image URL..." id="new-image-url" />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const input = document.getElementById("new-image-url") as HTMLInputElement;
+                      if (input?.value) {
+                        uploadImageMutation.mutate({ requestId: editingRequest.id, url: input.value });
+                        input.value = "";
+                      }
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending}>
+              {updateMutation.isPending ? "Updating..." : "Update"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white hover:text-gray-300"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <X className="h-8 w-8" />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt=""
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
