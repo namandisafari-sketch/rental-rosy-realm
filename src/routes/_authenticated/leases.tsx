@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/leases")({
 const PAYMENT_DUE_DAYS = [1, 5, 10, 15, 20, 25, 28];
 const BILLING_PERIODS = ["monthly", "quarterly", "bi_annual", "annual"];
 const TERMINATION_REASONS = ["Left without paying", "Absconded", "Evicted", "Dispute", "Other"];
+const LATE_PENALTY_RATE = 0.05; // 5% per clause 3
 
 const statusColors: Record<string, string> = {
   active: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
@@ -44,7 +45,7 @@ function LeasesPage() {
   const blankForm = {
     unit_id: "", tenant_email: "", monthly_rent: "0", deposit: "0",
     deposit_months: "1", start_date: new Date().toISOString().slice(0, 10), end_date: "",
-    payment_due_day: "1", billing_period: "monthly",
+    payment_due_day: "25", billing_period: "monthly",
     late_fee_amount: "0", late_fee_grace_days: "0", special_conditions: "",
   };
   const [form, setForm] = useState({ ...blankForm });
@@ -95,15 +96,18 @@ function LeasesPage() {
       const { data: prof, error: pe } = await supabase.from("profiles").select("id").eq("email", form.tenant_email).maybeSingle();
       if (pe) throw pe;
       if (!prof) throw new Error("No tenant account found for that email. Ask them to sign up first.");
+      const monthlyRent = Number(form.monthly_rent);
+      const lateFee = Number(form.late_fee_amount) || Math.round(monthlyRent * LATE_PENALTY_RATE);
       const { error } = await supabase.from("leases").insert({
         unit_id: form.unit_id, tenant_id: prof.id,
-        monthly_rent: Number(form.monthly_rent), deposit: Number(form.deposit),
+        monthly_rent: monthlyRent, deposit: Number(form.deposit),
         deposit_months: Number(form.deposit_months),
         start_date: form.start_date, end_date: form.end_date || null,
         payment_due_day: Number(form.payment_due_day), billing_period: form.billing_period,
-        late_fee_amount: Number(form.late_fee_amount),
+        late_fee_amount: lateFee,
         late_fee_grace_days: Number(form.late_fee_grace_days),
         special_conditions: form.special_conditions || null,
+        notice_period_days: 30,
       });
       if (error) throw error;
       await supabase.from("units").update({ status: "occupied" }).eq("id", form.unit_id);
@@ -119,14 +123,17 @@ function LeasesPage() {
         await supabase.from("units").update({ status: "vacant" }).eq("id", editingLease.unit_id);
         await supabase.from("units").update({ status: "occupied" }).eq("id", form.unit_id);
       }
+      const monthlyRent = Number(form.monthly_rent);
+      const lateFee = Number(form.late_fee_amount) || Math.round(monthlyRent * LATE_PENALTY_RATE);
       const { error } = await supabase.from("leases").update({
-        unit_id: form.unit_id, monthly_rent: Number(form.monthly_rent),
+        unit_id: form.unit_id, monthly_rent: monthlyRent,
         deposit: Number(form.deposit), deposit_months: Number(form.deposit_months),
         start_date: form.start_date, end_date: form.end_date || null,
         payment_due_day: Number(form.payment_due_day), billing_period: form.billing_period,
-        late_fee_amount: Number(form.late_fee_amount),
+        late_fee_amount: lateFee,
         late_fee_grace_days: Number(form.late_fee_grace_days),
         special_conditions: form.special_conditions || null,
+        notice_period_days: 30,
       }).eq("id", editingLease.id);
       if (error) throw error;
     },
@@ -355,16 +362,20 @@ function LeasesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tenant</TableHead><TableHead>Property · Unit</TableHead><TableHead>Monthly Rent</TableHead><TableHead>Days Remaining</TableHead><TableHead>Deposit</TableHead><TableHead>Status</TableHead>
+                  <TableHead>Tenant</TableHead><TableHead>Property · Unit</TableHead><TableHead>Monthly Rent</TableHead><TableHead>Arrears</TableHead><TableHead>Late Fee (5%)</TableHead><TableHead>Days Remaining</TableHead><TableHead>Deposit</TableHead><TableHead>Status</TableHead>
                   {isStaff && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leases.map((l: any) => (
+                {leases.map((l: any) => {
+                  const lateFee = l.late_fee_amount ?? Math.round(Number(l.monthly_rent) * LATE_PENALTY_RATE);
+                  return (
                   <TableRow key={l.id}>
                     <TableCell className="font-medium">{l.profile?.full_name ?? l.profile?.email ?? "—"}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{l.units?.properties?.name} · {l.units?.unit_number}</TableCell>
                     <TableCell className="font-semibold">UGX {Number(l.monthly_rent).toLocaleString()}</TableCell>
+                    <TableCell className="text-red-500 font-medium">UGX {Number(l.outstanding_balance ?? 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-sm">UGX {lateFee.toLocaleString()}</TableCell>
                     <DaysCell endDate={l.end_date} />
                     <TableCell>UGX {Number(l.deposit ?? 0).toLocaleString()}</TableCell>
                     <TableCell><StatusBadge status={l.status} /></TableCell>
@@ -379,7 +390,7 @@ function LeasesPage() {
                       </TableCell>
                     )}
                   </TableRow>
-                ))}
+                )})}
               </TableBody>
             </Table>
           )}
@@ -399,12 +410,12 @@ function LeasesPage() {
 
       <Dialog open={terminateOpen} onOpenChange={(v) => { setTerminateOpen(v); if (!v) { setTerminatingLease(null); setTerminateForm({ outstanding_balance: "0", termination_reason: "" }); } }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Mark as Loss</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Terminate Lease (30-day notice)</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <AlertDialogDescription className="text-sm">
               {terminatingLease && (
                 <span>
-                  Ending lease for <strong>{terminatingLease.profile?.full_name ?? terminatingLease.profile?.email}</strong> at {terminatingLease.units?.properties?.name} · {terminatingLease.units?.unit_number}. The unit will be marked as vacant.
+                  Ending lease for <strong>{terminatingLease.profile?.full_name ?? terminatingLease.profile?.email}</strong> at {terminatingLease.units?.properties?.name} · {terminatingLease.units?.unit_number}. Per clause 10(a), either party must give <strong>30 days' notice</strong>. Outstanding arrears will be tracked. The unit will be marked as vacant and deposit refund processed within 2 weeks per clause 4.
                 </span>
               )}
             </AlertDialogDescription>

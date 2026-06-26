@@ -266,6 +266,7 @@ function FinancialReportsPage() {
         <TabsList>
           <TabsTrigger value="pnl">P&amp;L Statement</TabsTrigger>
           <TabsTrigger value="collection">Collection Report</TabsTrigger>
+          <TabsTrigger value="commission">Commission Split (66/9)</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pnl" className="space-y-4">
@@ -423,6 +424,92 @@ function FinancialReportsPage() {
                   </TableBody>
                 </Table>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="commission" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="display">Commission Split</CardTitle>
+                <CardDescription>
+                  {new Date(0, selectedMonth - 1).toLocaleString("default", { month: "long" })} {selectedYear} — per Habico fee structure
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const collected = filteredPayments
+                  .filter((p: any) => p.payment_type === "Rent" || !p.payment_type)
+                  .reduce((s: number, p: any) => s + Number(p.amount), 0);
+                const landlordShare = Math.round(collected * 0.66);
+                const companyFee = Math.round(collected * 0.09);
+                const opsReserve = collected - landlordShare - companyFee;
+                return (
+                  <div className="space-y-6">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <Card>
+                        <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Collected</CardTitle></CardHeader>
+                        <CardContent><p className="text-2xl font-bold">{formatUGX(collected)}</p></CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Landlord Payout (66%)</CardTitle></CardHeader>
+                        <CardContent><p className="text-2xl font-bold text-green-500">{formatUGX(landlordShare)}</p></CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Company Fee (9%)</CardTitle></CardHeader>
+                        <CardContent><p className="text-2xl font-bold text-blue-500">{formatUGX(companyFee)}</p></CardContent>
+                      </Card>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Landlord (66%)</span>
+                        <span className="font-semibold">{formatUGX(landlordShare)}</span>
+                      </div>
+                      <Progress value={66} className="h-3 [&>div]:bg-green-500" />
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Habico Fee (9%)</span>
+                        <span className="font-semibold">{formatUGX(companyFee)}</span>
+                      </div>
+                      <Progress value={9} className="h-3 [&>div]:bg-blue-500" />
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Ops / Reserve (25%)</span>
+                        <span className="font-semibold">{formatUGX(opsReserve)}</span>
+                      </div>
+                      <Progress value={25} className="h-3 [&>div]:bg-amber-500" />
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Payment</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="text-right">Landlord (66%)</TableHead>
+                          <TableHead className="text-right">Habico Fee (9%)</TableHead>
+                          <TableHead className="text-right">Ops (25%)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredPayments.filter((p: any) => p.payment_type === "Rent" || !p.payment_type).map((p: any) => {
+                          const amt = Number(p.amount);
+                          return (
+                            <TableRow key={p.id}>
+                              <TableCell className="text-sm">{p.period_label ?? p.payment_date}</TableCell>
+                              <TableCell className="text-right">{formatUGX(amt)}</TableCell>
+                              <TableCell className="text-right text-green-600">{formatUGX(Math.round(amt * 0.66))}</TableCell>
+                              <TableCell className="text-right text-blue-600">{formatUGX(Math.round(amt * 0.09))}</TableCell>
+                              <TableCell className="text-right text-amber-600">{formatUGX(amt - Math.round(amt * 0.66) - Math.round(amt * 0.09))}</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {filteredPayments.filter((p: any) => p.payment_type === "Rent" || !p.payment_type).length === 0 && (
+                          <TableRow><TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">No rent payments for this period.</TableCell></TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>

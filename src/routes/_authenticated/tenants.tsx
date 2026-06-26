@@ -63,7 +63,15 @@ function TenantsPage() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as any;
+      const tenantList = (data ?? []) as any[];
+      if (tenantList.length === 0) return tenantList;
+      const { data: leases } = await supabase
+        .from("leases")
+        .select("tenant_id, monthly_rent, outstanding_balance, unit_id, units!inner(unit_number)")
+        .eq("status", "active")
+        .in("tenant_id", tenantList.map((t: any) => t.id));
+      const leaseMap = new Map((leases ?? []).map((l: any) => [l.tenant_id, l]));
+      return tenantList.map((t: any) => ({ ...t, lease: leaseMap.get(t.id) }));
     },
   });
 
@@ -428,19 +436,22 @@ function TenantsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>ID Type / Number</TableHead>
+                <TableHead>Unit / Rent</TableHead>
+                <TableHead>Arrears</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Emergency Contact</TableHead>
+                <TableHead>Remarks</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center">Loading...</TableCell>
+                  <TableCell colSpan={9} className="py-8 text-center">Loading...</TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No tenants found</TableCell>
+                  <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">No tenants found</TableCell>
                 </TableRow>
               ) : (
                 filtered.map((t: any) => (
@@ -453,12 +464,19 @@ function TenantsPage() {
                     <TableCell>
                       {t.id_type ? <><span className="text-xs text-muted-foreground">{formatIdType(t.id_type)}</span><br />{t.id_number || "—"}</> : "—"}
                     </TableCell>
+                    <TableCell className="text-sm">
+                      {t.lease ? <>Unit {t.lease.units?.unit_number ?? "—"}<br /><span className="text-xs">UGX {Number(t.lease.monthly_rent).toLocaleString()}/mo</span></> : "—"}
+                    </TableCell>
+                    <TableCell className="text-sm text-red-500 font-medium">
+                      {t.lease && Number(t.lease.outstanding_balance) > 0 ? `UGX ${Number(t.lease.outstanding_balance).toLocaleString()}` : "—"}
+                    </TableCell>
                     <TableCell>{statusBadge(t.status)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {t.emergency_contact_name ? (
                         <><div className="font-medium text-foreground">{t.emergency_contact_name}</div>{t.emergency_contact_phone || "—"}</>
                       ) : "—"}
                     </TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">{t.notes || "—"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(t)} title="Edit">

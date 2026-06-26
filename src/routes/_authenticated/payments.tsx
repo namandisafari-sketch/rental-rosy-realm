@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Receipt, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, Receipt, Printer, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/payments")({
@@ -98,16 +98,23 @@ function PaymentsPage() {
     },
   });
 
-  const { data: activeLeasesCount = 0 } = useQuery({
-    queryKey: ["leases-count-active"],
+  const { data: leaseStats } = useQuery({
+    queryKey: ["leases-stats"],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from("leases")
-        .select("*", { count: "exact", head: true })
+        .select("id, monthly_rent, outstanding_balance, payment_due_day")
         .eq("status", "active");
-      return count ?? 0;
+      const active = data ?? [];
+      const totalExpected = active.reduce((s: number, l: any) => s + Number(l.monthly_rent), 0);
+      const totalOutstanding = active.reduce((s: number, l: any) => s + Number(l.outstanding_balance ?? 0), 0);
+      return { count: active.length, totalExpected, totalOutstanding };
     },
   });
+
+  const collectionRate = leaseStats?.totalExpected
+    ? Math.min(100, Math.round(((leaseStats.totalExpected - leaseStats.totalOutstanding) / leaseStats.totalExpected) * 100))
+    : 0;
 
   const create = useMutation({
     mutationFn: async () => {
@@ -265,6 +272,10 @@ function PaymentsPage() {
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Record a payment</DialogTitle></DialogHeader>
+              <div className="rounded-md bg-amber-50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="mr-1 inline-block h-3 w-3" />
+                Rent due by the 25th per agreement. Late payments incur a <strong>5% penalty</strong> (clause 3).
+              </div>
               <div className="space-y-4">
                 <div>
                   <Label>Lease</Label>
@@ -403,7 +414,7 @@ function PaymentsPage() {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">This Month Total</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">UGX {thisMonthTotal.toLocaleString()}</p></CardContent>
@@ -411,13 +422,25 @@ function PaymentsPage() {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Rent Collected</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">UGX {rentCollected.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-green-600">UGX {rentCollected.toLocaleString()}</p>
             <p className="text-xs text-muted-foreground">{rentCount} payment{rentCount !== 1 ? "s" : ""}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Active Leases</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{activeLeasesCount}</p></CardContent>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Arrears</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-red-500">UGX {(leaseStats?.totalOutstanding ?? 0).toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">{leaseStats?.count ?? 0} active leases</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Collection Rate</CardTitle></CardHeader>
+          <CardContent>
+            <p className={`text-2xl font-bold ${collectionRate >= 80 ? "text-green-500" : collectionRate >= 50 ? "text-amber-500" : "text-red-500"}`}>
+              {collectionRate}%
+            </p>
+            <p className="text-xs text-muted-foreground">Due by 25th per agreement</p>
+          </CardContent>
         </Card>
       </div>
 
@@ -438,6 +461,7 @@ function PaymentsPage() {
                     <TableHead>Period</TableHead>
                     <TableHead>Method</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Arrears</TableHead>
                     {isStaff && <TableHead className="w-32">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -458,6 +482,9 @@ function PaymentsPage() {
                       </TableCell>
                       <TableCell className="text-right font-semibold whitespace-nowrap">
                         UGX {Number(p.amount).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right text-red-500 text-sm">
+                        {Number(p.leases?.outstanding_balance ?? 0) > 0 ? `UGX ${Number(p.leases?.outstanding_balance).toLocaleString()}` : "—"}
                       </TableCell>
                       {isStaff && (
                         <TableCell>
