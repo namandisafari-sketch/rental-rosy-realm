@@ -6,6 +6,7 @@ import { useHighestRole } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LocationSelector } from "@/components/location-selector";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -138,7 +139,7 @@ function ProjectsPage() {
                           {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
                         </select>
                       </div>
-                      <div><Label>Location</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Site address or region" /></div>
+                      <div className="col-span-2"><LocationSelector value={form.location} onChange={(v) => setForm({ ...form, location: v })} /></div>
                     </div>
                   </div>
                 </div>

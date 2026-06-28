@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, ClipboardList, CheckCircle2, Circle, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { LocationSelector } from "@/components/location-selector";
 
 export const Route = createFileRoute("/_authenticated/meeting-minutes")({
   head: () => ({ meta: [{ title: "Meeting Minutes — Habico Portal" }] }),
@@ -183,7 +184,7 @@ function MeetingMinutesPage() {
                     </div>
                     <div>
                       <Label>Location</Label>
-                      <Input placeholder="e.g. Site office, conference room" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+                      <LocationSelector value={form.location} onChange={(v) => setForm({ ...form, location: v })} />
                     </div>
                   </div>
                 </fieldset>

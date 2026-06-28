@@ -4,9 +4,10 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Building2 } from "lucide-react";
+import { Building2, HardHat, Users, UserCog, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).optional() });
@@ -16,6 +17,13 @@ export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — Habico Portal" }, { name: "description", content: "Access your Habico owner or tenant portal." }] }),
   component: AuthPage,
 });
+
+const roles = [
+  { icon: Users, title: "Renter / Tenant", desc: "Pay rent, submit maintenance requests, view lease documents." },
+  { icon: Building2, title: "Property Owner", desc: "Track income, occupancy, and property performance." },
+  { icon: HardHat, title: "Worker / Staff", desc: "Log timesheets, update project tasks, submit daily reports." },
+  { icon: ShieldCheck, title: "Admin / Manager", desc: "Full access to all modules, users, and system settings." },
+];
 
 function AuthPage() {
   const search = Route.useSearch();
@@ -63,6 +71,22 @@ function AuthPage() {
         <div>
           <h1 className="display text-4xl font-bold leading-tight">Your property,<br/>operating beautifully.</h1>
           <p className="mt-4 max-w-md text-primary-foreground/80">Owners track ROI in real time. Tenants pay and request repairs in seconds. Habico runs the rest.</p>
+          <div className="mt-10 space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-primary-foreground/70">Who uses Habico?</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {roles.map((r) => (
+                <Card key={r.title} className="border-primary-foreground/20 bg-primary-foreground/10">
+                  <CardContent className="flex items-start gap-3 p-4">
+                    <r.icon className="mt-0.5 h-5 w-5 shrink-0 text-primary-foreground/80" />
+                    <div>
+                      <div className="text-sm font-medium">{r.title}</div>
+                      <div className="mt-0.5 text-xs text-primary-foreground/70">{r.desc}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="text-xs uppercase tracking-widest text-primary-foreground/60">Habico Property Managers · Kampala</div>
       </div>

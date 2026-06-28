@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Building2, MapPin, Pencil, Archive, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
+import { LocationSelector } from "@/components/location-selector";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({ meta: [{ title: "Properties — Habico Portal" }] }),
@@ -120,8 +121,7 @@ function PropertiesPage() {
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Location &amp; Contact</h3></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="e.g. Plot 42, Kampala Road" /></div>
-                    <div><Label>City / Municipality</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="e.g. Kampala, Entebbe" /></div>
-                    <div><Label>Location / Area</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. Kololo, Bugolobi" /><p className="mt-1 text-xs text-muted-foreground">Neighborhood or district within the city.</p></div>
+                    <div className="col-span-2"><LocationSelector value={form.location} onChange={(v) => setForm({ ...form, location: v })} /></div>
                   </div>
                 </div>
                 <div>
@@ -178,8 +178,7 @@ function PropertiesPage() {
               <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Location &amp; Contact</h3></div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-                <div><Label>City / Municipality</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-                <div><Label>Location / Area</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+                <div className="col-span-2"><LocationSelector value={form.location} onChange={(v) => setForm({ ...form, location: v })} /></div>
               </div>
             </div>
             <div>

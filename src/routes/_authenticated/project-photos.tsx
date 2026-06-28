@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Image as ImageIcon, Camera, Layers, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { LocationSelector } from "@/components/location-selector";
 
 export const Route = createFileRoute("/_authenticated/project-photos")({
   head: () => ({ meta: [{ title: "Project Photos — Habico Portal" }] }),
@@ -123,7 +124,7 @@ function ProjectPhotosPage() {
                 <div>
                   <div className="mb-3 border-b pb-1"><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Photo Details</span></div>
                   <div><Label>Caption</Label><Textarea rows={2} value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })} placeholder="Brief description of what the photo shows..." /></div>
-                  <div className="mt-3"><Label>Location</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. Floor 2, North Wing" /></div>
+                  <div className="mt-3"><Label>Location</Label><LocationSelector value={form.location} onChange={(v) => setForm({ ...form, location: v })} /></div>
                   <div className="mt-3"><Label>Category</Label>
                     <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                       {categoryOptions.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}

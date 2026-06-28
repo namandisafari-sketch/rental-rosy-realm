@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, ShieldAlert, AlertCircle, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { LocationSelector } from "@/components/location-selector";
 
 export const Route = createFileRoute("/_authenticated/safety-incidents")({
   head: () => ({ meta: [{ title: "Safety Incidents — Habico Portal" }] }),
@@ -174,7 +175,7 @@ function SafetyIncidentsPage() {
                     </div>
                     <div>
                       <Label>Location <span className="text-destructive">*</span></Label>
-                      <Input placeholder="e.g. Third floor, east wing" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+                      <LocationSelector value={form.location} onChange={(v) => setForm({ ...form, location: v })} />
                     </div>
                     <div>
                       <Label>Description <span className="text-destructive">*</span></Label>
