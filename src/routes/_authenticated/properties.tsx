@@ -266,6 +266,7 @@ function PropertiesPage() {
                 </Link>
                 {isStaff && (
                   <div className="absolute right-2 top-2 hidden gap-1 group-hover:flex">
+                    <Button size="icon" variant="secondary" className="h-7 w-7" title="Add unit" onClick={(e) => { e.preventDefault(); openAddUnit(p.id); }}><Plus className="h-3.5 w-3.5" /></Button>
                     <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => { e.preventDefault(); openEdit(p); }}><Pencil className="h-3.5 w-3.5" /></Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild><Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => e.preventDefault()}><Archive className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
