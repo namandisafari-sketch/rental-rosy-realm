@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import districtsRaw from "@/data/uganda-districts.json";
 import subcountiesRaw from "@/data/uganda-subcounties.json";
+import parishesRaw from "@/data/uganda-parishes.json";
+import villagesRaw from "@/data/uganda-villages.json";
 
 export interface District {
   district_code: number;
@@ -30,6 +32,8 @@ const REGIONS = ["CENTRAL", "EASTERN", "NORTHERN", "WESTERN"];
 
 const districts = districtsRaw as District[];
 const subcounties = subcountiesRaw as Subcounty[];
+const parishesBySubcounty = parishesRaw as Record<string, Record<string, string[]>>;
+const villagesByParish = villagesRaw as Record<string, Record<string, Record<string, string[]>>>;
 
 export function useUgandaLocations() {
   const regionNames = useMemo(() => REGIONS, []);
@@ -61,5 +65,28 @@ export function useUgandaLocations() {
   const getDistricts = (region: string): District[] => districtsByRegion[region] ?? [];
   const getSubcounties = (districtCode: number): Subcounty[] => subcountiesByDistrict[districtCode] ?? [];
 
-  return { regions: regionNames, getDistricts, getSubcounties };
+  const getParishes = (districtName: string, subcountyName: string): string[] => {
+    const upperDist = districtName.toUpperCase();
+    const upperSub = subcountyName.toUpperCase();
+    const bySub = parishesBySubcounty[upperDist];
+    if (!bySub) return [];
+    const parishes = bySub[upperSub];
+    if (!parishes) return [];
+    return parishes.sort((a, b) => a.localeCompare(b));
+  };
+
+  const getVillages = (districtName: string, subcountyName: string, parishName: string): string[] => {
+    const upperDist = districtName.toUpperCase();
+    const upperSub = subcountyName.toUpperCase();
+    const upperPar = parishName.toUpperCase();
+    const bySub = villagesByParish[upperDist];
+    if (!bySub) return [];
+    const byPar = bySub[upperSub];
+    if (!byPar) return [];
+    const villages = byPar[upperPar];
+    if (!villages) return [];
+    return villages.sort((a, b) => a.localeCompare(b));
+  };
+
+  return { regions: regionNames, getDistricts, getSubcounties, getParishes, getVillages };
 }

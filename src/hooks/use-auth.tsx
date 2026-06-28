@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "manager" | "owner" | "tenant";
+export type AppRole = "admin" | "manager" | "staff" | "owner" | "tenant";
 
 interface AuthCtx {
   user: User | null;
@@ -64,7 +64,7 @@ export function useAuth() {
 
 export function useHighestRole(): AppRole | null {
   const { roles } = useAuth();
-  const order: AppRole[] = ["admin", "manager", "owner", "tenant"];
+  const order: AppRole[] = ["admin", "manager", "staff", "owner", "tenant"];
   for (const r of order) if (roles.includes(r)) return r;
   return null;
 }

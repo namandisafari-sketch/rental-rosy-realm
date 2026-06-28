@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUgandaLocations } from "@/hooks/use-uganda-locations";
 
@@ -22,7 +21,7 @@ function parseLocation(location: string): { region: string; district: string; su
 }
 
 export function LocationSelector({ value, onChange, label }: LocationSelectorProps) {
-  const { regions, getDistricts, getSubcounties } = useUgandaLocations();
+  const { regions, getDistricts, getSubcounties, getParishes, getVillages } = useUgandaLocations();
   const parsed = parseLocation(value);
 
   const [region, setRegion] = useState(parsed.region);
@@ -35,6 +34,8 @@ export function LocationSelector({ value, onChange, label }: LocationSelectorPro
   const subcounties = districtName
     ? getSubcounties(districts.find((d) => d.district_name === districtName)?.district_code ?? 0)
     : [];
+  const parishes = districtName && subcountyName ? getParishes(districtName, subcountyName) : [];
+  const villages = districtName && subcountyName && parish ? getVillages(districtName, subcountyName, parish) : [];
 
   const rebuild = useCallback(
     (reg: string, dist: string, sub: string, par: string, vil: string) => {
@@ -53,18 +54,26 @@ export function LocationSelector({ value, onChange, label }: LocationSelectorPro
     setRegion(v);
     setDistrictName("");
     setSubcountyName("");
-    rebuild(v, "", "", parish, village);
+    setParish("");
+    setVillage("");
   };
 
   const handleDistrictChange = (v: string) => {
     setDistrictName(v);
     setSubcountyName("");
-    rebuild(region, v, "", parish, village);
+    setParish("");
+    setVillage("");
   };
 
   const handleSubcountyChange = (v: string) => {
     setSubcountyName(v);
-    rebuild(region, districtName, v, parish, village);
+    setParish("");
+    setVillage("");
+  };
+
+  const handleParishChange = (v: string) => {
+    setParish(v);
+    setVillage("");
   };
 
   return (
@@ -109,20 +118,26 @@ export function LocationSelector({ value, onChange, label }: LocationSelectorPro
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Parish / Ward</label>
-            <Input
-              value={parish}
-              onChange={(e) => { setParish(e.target.value); rebuild(region, districtName, subcountyName, e.target.value, village); }}
-              placeholder="e.g. Nakasero"
-            />
+            <Select value={parish} onValueChange={handleParishChange} disabled={!subcountyName}>
+              <SelectTrigger><SelectValue placeholder={subcountyName ? "Select parish" : "Select subcounty first"} /></SelectTrigger>
+              <SelectContent>
+                {parishes.map((p) => (
+                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div>
           <label className="text-xs text-muted-foreground">Village / Street / Landmark</label>
-          <Input
-            value={village}
-            onChange={(e) => { setVillage(e.target.value); rebuild(region, districtName, subcountyName, parish, e.target.value); }}
-            placeholder="e.g. Plot 42, Kampala Road"
-          />
+          <Select value={village} onValueChange={setVillage} disabled={!parish}>
+            <SelectTrigger><SelectValue placeholder={parish ? "Select village" : "Select parish first"} /></SelectTrigger>
+            <SelectContent>
+              {villages.map((v) => (
+                <SelectItem key={v} value={v}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>

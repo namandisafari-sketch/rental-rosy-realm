@@ -9,6 +9,7 @@ export function SiteHeader() {
   const { user } = useAuth();
   const nav = [
     { label: "Home", to: "/" as const },
+    { label: "Rent", to: "/rent" as const },
     { label: "Services", to: "/services" as const },
     { label: "About", to: "/about" as const },
     { label: "Contact", to: "/contact" as const },

@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Building2, HardHat, Users, UserCog, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
-const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).optional() });
+const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).optional(), redirect: z.string().optional() });
 
 export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
@@ -36,8 +36,8 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) nav({ to: "/dashboard" });
-  }, [loading, user, nav]);
+    if (!loading && user) nav({ to: search.redirect ?? "/dashboard" });
+  }, [loading, user, nav, search.redirect]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

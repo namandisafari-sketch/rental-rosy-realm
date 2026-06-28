@@ -1,5 +1,5 @@
 import { Command } from "cmdk";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import {
   Building2, Home, Users, FileText, Receipt, Wrench, BarChart3,
@@ -10,8 +10,11 @@ import {
   MessageSquareQuote, FileUp, Handshake, GitCompareArrows, Clock,
   PiggyBank, Landmark, FileCheck, ClipboardCheck, Hash,
   ReceiptText, ScrollText, Gauge, CalendarRange, NotebookPen,
-  ListTodo, TriangleAlert, FolderKanban, Image, Banknote, Search
+  ListTodo, TriangleAlert, FolderKanban, Image, Banknote, Search,
+  Crown, UserCog, User, Settings
 } from "lucide-react";
+import { useHighestRole } from "@/hooks/use-auth";
+import { getWorkspace } from "@/lib/workspace-config";
 
 interface CmdItem {
   title: string;
@@ -75,15 +78,19 @@ const allRoutes: CmdItem[] = [
   { title: "Cost Codes", url: "/cost-codes", icon: Hash, group: "SOP & Quality" },
   { title: "Reports", url: "/reports", icon: BarChart3, group: "Reports" },
   { title: "Financial Reports", url: "/financial-reports", icon: DollarSign, group: "Reports" },
-  { title: "Settings", url: "/settings", icon: Home, group: "System" },
+  { title: "Settings", url: "/settings", icon: Settings, group: "System" },
+  { title: "My ID Card", url: "/my-id-card", icon: CreditCard, group: "My Home" },
 ];
-
-const groups = [...new Set(allRoutes.map((r) => r.group))];
 
 export function CommandMenu() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const role = useHighestRole();
+  const ws = getWorkspace(role);
+
+  const filteredRoutes = allRoutes.filter((r) => ws.allowedRoutes.includes(r.url));
+  const groups = [...new Set(filteredRoutes.map((r) => r.group))];
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -112,7 +119,7 @@ export function CommandMenu() {
         className="inline-flex h-8 w-full max-w-[240px] items-center gap-2 rounded-md border border-border bg-background px-3 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
       >
         <Search className="h-3.5 w-3.5 shrink-0" />
-        <span className="flex-1 text-left">Search pages...</span>
+        <span className="flex-1 text-left">Search {ws.name}...</span>
         <kbd className="pointer-events-none hidden h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
           <span className="text-xs">⌘</span>K
         </kbd>
@@ -133,7 +140,7 @@ export function CommandMenu() {
               <Command.Input
                 value={search}
                 onValueChange={setSearch}
-                placeholder="Search pages..."
+                placeholder={`Search ${ws.name}...`}
                 className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               />
               <kbd className="pointer-events-none hidden h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
@@ -145,7 +152,7 @@ export function CommandMenu() {
                 No pages found.
               </Command.Empty>
               {groups.map((group) => {
-                const items = allRoutes.filter(
+                const items = filteredRoutes.filter(
                   (r) =>
                     r.group === group &&
                     (r.title.toLowerCase().includes(search.toLowerCase()) ||
