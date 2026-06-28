@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, CreditCard, Printer, Download, RotateCcw, AlertTriangle } from "lucide-react";
+import { Plus, CreditCard, Download, RotateCcw, AlertTriangle, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { RentalCardFront, RentalCardBack, CARD_WIDTH_PX, CARD_HEIGHT_PX, type RentalCardData } from "@/components/rental-id-card";
+import { exportCardSides } from "@/lib/export-id-card";
 
 export const Route = createFileRoute("/_authenticated/rental-id-cards")({
   head: () => ({ meta: [{ title: "Rental ID Cards — Habico Portal" }] }),
@@ -22,8 +24,20 @@ export const Route = createFileRoute("/_authenticated/rental-id-cards")({
 function generateCardNumber() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
-  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-  return `ID-${code}`;
+  for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return `HBC-${code.slice(0, 4)}-${code.slice(4)}`;
+}
+
+function toCardData(c: any): RentalCardData {
+  return {
+    cardNumber: c.card_number,
+    propertyName: c.units?.properties?.name ?? "Habico Property",
+    unitNumber: c.units?.unit_number ?? "—",
+    tenantName: c.tenants?.full_name ?? null,
+    tenantPhone: c.tenants?.phone ?? null,
+    issuedAt: c.issued_at,
+    status: c.status,
+  };
 }
 
 function RentalIdCardsPage() {
@@ -33,11 +47,15 @@ function RentalIdCardsPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [selectedTenant, setSelectedTenant] = useState<string>("");
   const [cardNumber, setCardNumber] = useState(generateCardNumber());
   const [lostDialogOpen, setLostDialogOpen] = useState(false);
   const [lostReason, setLostReason] = useState("");
   const [selectedCard, setSelectedCard] = useState<any>(null);
-  const [printCard, setPrintCard] = useState<any>(null);
+  const [previewCard, setPreviewCard] = useState<any>(null);
+
+  const frontRef = useRef<HTMLDivElement>(null);
+  const backRef = useRef<HTMLDivElement>(null);
 
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ["rental_id_cards"],
@@ -71,6 +89,19 @@ function RentalIdCardsPage() {
     enabled: isStaff,
   });
 
+  const { data: tenants = [] } = useQuery({
+    queryKey: ["tenants-for-cards"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tenants")
+        .select("id, full_name, phone")
+        .order("full_name");
+      if (error) throw error;
+      return (data ?? []) as any;
+    },
+    enabled: isStaff,
+  });
+
   const total = cards.length;
   const activeCount = cards.filter((c: any) => c.status === "active").length;
   const lostCount = cards.filter((c: any) => c.status === "lost").length;
@@ -80,6 +111,7 @@ function RentalIdCardsPage() {
     mutationFn: async () => {
       const { error } = await supabase.from("rental_id_cards").insert({
         unit_id: selectedUnit,
+        tenant_id: selectedTenant || null,
         card_number: cardNumber,
         status: "active",
         issued_at: new Date().toISOString(),
@@ -88,9 +120,10 @@ function RentalIdCardsPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["rental_id_cards"] });
-      toast.success("ID card created");
+      toast.success("ID card issued");
       setCreateOpen(false);
       setSelectedUnit("");
+      setSelectedTenant("");
       setCardNumber(generateCardNumber());
     },
     onError: (e) => toast.error((e as Error).message),
@@ -115,10 +148,7 @@ function RentalIdCardsPage() {
   });
 
   function handleCreate() {
-    if (!selectedUnit) {
-      toast.error("Please select a unit");
-      return;
-    }
+    if (!selectedUnit) { toast.error("Please select a unit"); return; }
     createMutation.mutate();
   }
 
@@ -129,15 +159,8 @@ function RentalIdCardsPage() {
   }
 
   function confirmLost() {
-    if (!selectedCard || !lostReason.trim()) {
-      toast.error("Please provide a reason");
-      return;
-    }
+    if (!selectedCard || !lostReason.trim()) { toast.error("Please provide a reason"); return; }
     statusMutation.mutate({ id: selectedCard.id, status: "lost", reason: lostReason.trim() });
-  }
-
-  function getSelectedUnitData() {
-    return units.find((u: any) => u.id === selectedUnit) as any;
   }
 
   function statusBadge(status: string) {
@@ -154,21 +177,23 @@ function RentalIdCardsPage() {
     return new Date(d).toLocaleDateString("en-UG", { year: "numeric", month: "short", day: "numeric" });
   }
 
-  function handlePrint(card: any) {
-    setPrintCard(card);
-    setTimeout(() => {
-      window.print();
-    }, 200);
+  async function handleExport(card: any) {
+    setPreviewCard(card);
+    // Wait a tick for the hidden render to mount.
+    await new Promise((r) => setTimeout(r, 100));
+    try {
+      await exportCardSides({
+        frontNode: frontRef.current,
+        backNode: backRef.current,
+        cardNumber: card.card_number,
+        tenantName: card.tenants?.full_name,
+        unitNumber: card.units?.unit_number,
+      });
+      toast.success("Downloaded front + back PNGs");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   }
-
-  function handleDownloadPng(card: any) {
-    setPrintCard(card);
-    setTimeout(() => {
-      window.print();
-    }, 200);
-  }
-
-  const selectedUnitData = getSelectedUnitData();
 
   if (!isStaff) {
     return (
@@ -178,19 +203,17 @@ function RentalIdCardsPage() {
     );
   }
 
-  const previewSection = selectedUnitData ? (
-    <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-      <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">Card Preview</h4>
-      <div className="mx-auto max-w-xs rounded-lg border-2 border-dashed border-accent p-4 text-center">
-        <CreditCard className="mx-auto mb-2 h-8 w-8 text-accent" />
-        <p className="text-sm font-bold">{selectedUnitData.properties?.name || "Property"}</p>
-        <p className="text-xs text-muted-foreground">Unit {selectedUnitData.unit_number}</p>
-        <div className="my-3 border-t" />
-        <p className="font-mono text-lg font-bold tracking-wider">{cardNumber}</p>
-        <p className="mt-2 text-xs text-muted-foreground">Issued: {formatDate(new Date().toISOString())}</p>
-      </div>
-    </div>
-  ) : null;
+  const previewData: RentalCardData | null = selectedUnit
+    ? {
+        cardNumber,
+        propertyName: (units.find((u: any) => u.id === selectedUnit) as any)?.properties?.name ?? "Habico Property",
+        unitNumber: (units.find((u: any) => u.id === selectedUnit) as any)?.unit_number ?? "—",
+        tenantName: (tenants.find((t: any) => t.id === selectedTenant) as any)?.full_name ?? null,
+        tenantPhone: (tenants.find((t: any) => t.id === selectedTenant) as any)?.phone ?? null,
+        issuedAt: new Date().toISOString(),
+        status: "active",
+      }
+    : null;
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -198,52 +221,77 @@ function RentalIdCardsPage() {
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Management</div>
           <h1 className="display text-3xl font-bold">Rental ID Cards</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Premium scannable ID cards. The QR routes to a MoMo / Airtel payment session for the unit.
+          </p>
         </div>
-        <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setSelectedUnit(""); setCardNumber(generateCardNumber()); } }}>
+        <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setSelectedUnit(""); setSelectedTenant(""); setCardNumber(generateCardNumber()); } }}>
           <DialogTrigger asChild>
             <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
               <Plus className="mr-2 h-4 w-4" />Issue New Card
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle>Issue New ID Card</DialogTitle>
             </DialogHeader>
-            <div className="space-y-5">
-              <div>
-                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Tenant &amp; Unit</h3></div>
-                <div className="space-y-2">
-                  <Label>Unit *</Label>
-                  <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                    <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
-                    <SelectContent>
-                      {units.map((u: any) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.properties?.name} · Unit {u.unit_number} {u.hasActiveCard ? "(has active card)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="mt-1 text-xs text-muted-foreground">Units with an active card already are shown for reference. Only one active card per unit is allowed.</p>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-5">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Assignment</h3></div>
+                  <div className="space-y-2">
+                    <Label>Unit *</Label>
+                    <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                      <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
+                      <SelectContent>
+                        {units.map((u: any) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.properties?.name} · Unit {u.unit_number} {u.hasActiveCard ? "(has active card)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    <Label>Tenant (optional)</Label>
+                    <Select value={selectedTenant} onValueChange={setSelectedTenant}>
+                      <SelectTrigger><SelectValue placeholder="Assign to a tenant…" /></SelectTrigger>
+                      <SelectContent>
+                        {tenants.map((t: any) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.full_name}{t.phone ? ` · ${t.phone}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Assigning a tenant lets them see the card in their portal.</p>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Card Details</h3></div>
-                <div className="space-y-2">
-                  <Label>Card Number</Label>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Card Number</h3></div>
                   <div className="flex gap-2">
                     <Input value={cardNumber} readOnly className="font-mono" />
-                    <Button variant="outline" onClick={() => setCardNumber(generateCardNumber())}>
-                      Regenerate
-                    </Button>
+                    <Button variant="outline" onClick={() => setCardNumber(generateCardNumber())}>Regenerate</Button>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">Auto-generated unique card identifier. Click Regenerate for a new number.</p>
                 </div>
               </div>
-              {previewSection}
+
+              <div className="space-y-3">
+                <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Live preview</div>
+                {previewData ? (
+                  <div className="space-y-3">
+                    <ScaledCard><RentalCardFront data={previewData} /></ScaledCard>
+                    <ScaledCard><RentalCardBack data={previewData} /></ScaledCard>
+                  </div>
+                ) : (
+                  <div className="flex h-56 items-center justify-center rounded-xl border-2 border-dashed text-sm text-muted-foreground">
+                    Select a unit to see the card preview
+                  </div>
+                )}
+              </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setCreateOpen(false); setSelectedUnit(""); setCardNumber(generateCardNumber()); }}>Cancel</Button>
+              <Button variant="outline" onClick={() => { setCreateOpen(false); }}>Cancel</Button>
               <Button onClick={handleCreate} disabled={!selectedUnit || createMutation.isPending}>
                 {createMutation.isPending ? "Issuing…" : "Issue Card"}
               </Button>
@@ -253,42 +301,10 @@ function RentalIdCardsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Cards</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{total}</div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <div className="h-2 w-2 rounded-full bg-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{activeCount}</div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Lost</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{lostCount}</div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Returned</CardTitle>
-            <div className="h-2 w-2 rounded-full bg-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-muted-foreground">{returnedCount}</div>
-          </CardContent>
-        </Card>
+        <StatCard label="Total Cards" value={total} icon={<CreditCard className="h-4 w-4 text-muted-foreground" />} />
+        <StatCard label="Active" value={activeCount} icon={<div className="h-2 w-2 rounded-full bg-green-500" />} tone="text-green-600 dark:text-green-400" />
+        <StatCard label="Lost" value={lostCount} icon={<AlertTriangle className="h-4 w-4 text-destructive" />} tone="text-destructive" />
+        <StatCard label="Returned" value={returnedCount} icon={<div className="h-2 w-2 rounded-full bg-muted-foreground" />} tone="text-muted-foreground" />
       </div>
 
       <Card>
@@ -300,19 +316,15 @@ function RentalIdCardsPage() {
                 <TableHead>Property / Unit</TableHead>
                 <TableHead>Tenant</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Issue Date</TableHead>
+                <TableHead>Issued</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center">Loading...</TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={6} className="py-8 text-center">Loading…</TableCell></TableRow>
               ) : cards.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No ID cards found</TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No ID cards yet</TableCell></TableRow>
               ) : (
                 cards.map((c: any) => (
                   <TableRow key={c.id}>
@@ -325,21 +337,21 @@ function RentalIdCardsPage() {
                     <TableCell className="text-sm text-muted-foreground">{formatDate(c.issued_at)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint(c)} title="Print card">
-                          <Printer className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => setPreviewCard(c)} title="Preview">
+                          <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDownloadPng(c)} title="Download / Print">
+                        <Button variant="ghost" size="icon" onClick={() => handleExport(c)} title="Export PNG (front + back)">
                           <Download className="h-4 w-4" />
                         </Button>
                         {c.status === "active" && (
-                          <Button variant="ghost" size="icon" onClick={() => openLostDialog(c)} title="Mark as lost" className="text-destructive hover:text-destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {c.status === "active" && (
-                          <Button variant="ghost" size="icon" onClick={() => statusMutation.mutate({ id: c.id, status: "returned" })} title="Mark as returned">
-                            <RotateCcw className="h-4 w-4" />
-                          </Button>
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => openLostDialog(c)} title="Mark as lost" className="text-destructive hover:text-destructive">
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => statusMutation.mutate({ id: c.id, status: "returned" })} title="Mark as returned">
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                         {(c.status === "lost" || c.status === "returned") && (
                           <Button variant="ghost" size="icon" onClick={() => statusMutation.mutate({ id: c.id, status: "active" })} title="Reactivate">
@@ -356,34 +368,23 @@ function RentalIdCardsPage() {
         </CardContent>
       </Card>
 
+      {/* Lost dialog */}
       <Dialog open={lostDialogOpen} onOpenChange={(o) => { setLostDialogOpen(o); if (!o) { setSelectedCard(null); setLostReason(""); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Mark Card as Lost</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Lost Card Report</h3></div>
-              <AlertDialogDescription className="text-sm mb-4">
-                {selectedCard && (
-                  <span>
-                    Marking card <strong>{selectedCard.card_number}</strong> as lost. This will deactivate it and record the reason.
-                  </span>
-                )}
-              </AlertDialogDescription>
-              <div className="space-y-2">
-                <Label>Reason for Loss *</Label>
-                <Input
-                  value={lostReason}
-                  onChange={(e: any) => setLostReason(e.target.value)}
-                  placeholder="e.g. Tenant reported lost, stolen, misplaced, damaged…"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">Provide details about how the card was lost for record-keeping.</p>
-              </div>
+            <AlertDialogDescription className="text-sm">
+              {selectedCard && <>Marking card <strong>{selectedCard.card_number}</strong> as lost. This deactivates it for payments.</>}
+            </AlertDialogDescription>
+            <div className="space-y-2">
+              <Label>Reason for Loss *</Label>
+              <Input value={lostReason} onChange={(e: any) => setLostReason(e.target.value)} placeholder="e.g. Tenant reported lost, stolen…" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setLostDialogOpen(false); setSelectedCard(null); setLostReason(""); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setLostDialogOpen(false); }}>Cancel</Button>
             <Button variant="destructive" onClick={confirmLost} disabled={!lostReason.trim() || statusMutation.isPending}>
               {statusMutation.isPending ? "Updating…" : "Mark as Lost"}
             </Button>
@@ -391,33 +392,71 @@ function RentalIdCardsPage() {
         </DialogContent>
       </Dialog>
 
-      {printCard && (
-        <div className="print-only" id="print-area">
-          <style>{`
-            @media print {
-              body * { visibility: hidden; }
-              #print-area, #print-area * { visibility: visible; }
-              #print-area { position: absolute; left: 0; top: 0; width: 100%; }
-            }
-            .card-print { max-width: 350px; margin: 40px auto; padding: 24px; border: 2px solid #000; border-radius: 12px; text-align: center; font-family: monospace; }
-            .card-print h2 { font-size: 18px; margin-bottom: 4px; }
-            .card-print .sub { color: #666; font-size: 12px; margin-bottom: 16px; }
-            .card-print .divider { border-top: 1px solid #ccc; margin: 12px 0; }
-            .card-print .number { font-size: 22px; letter-spacing: 3px; font-weight: bold; }
-            .card-print .footer { font-size: 10px; color: #999; margin-top: 16px; }
-          `}</style>
-          <div className="card-print">
-            <h2>{printCard.units?.properties?.name || "Property"}</h2>
-            <p className="sub">Unit {printCard.units?.unit_number}</p>
-            {printCard.tenants?.full_name && <p className="sub">{printCard.tenants.full_name}</p>}
-            <div className="divider" />
-            <p className="number">{printCard.card_number}</p>
-            <p className="sub">Issued: {formatDate(printCard.issued_at)}</p>
-            <div className="divider" />
-            <p className="footer">Habico Portal · Rental ID Card</p>
-          </div>
+      {/* Preview dialog */}
+      <Dialog open={!!previewCard} onOpenChange={(o) => { if (!o) setPreviewCard(null); }}>
+        <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>ID Card · {previewCard?.card_number}</DialogTitle>
+          </DialogHeader>
+          {previewCard && (
+            <div className="space-y-4">
+              <ScaledCard><RentalCardFront data={toCardData(previewCard)} /></ScaledCard>
+              <ScaledCard><RentalCardBack data={toCardData(previewCard)} /></ScaledCard>
+              <div className="flex justify-end">
+                <Button onClick={() => handleExport(previewCard)}>
+                  <Download className="mr-2 h-4 w-4" />Download front + back PNG
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Offscreen full-resolution render used for export */}
+      {previewCard && (
+        <div style={{ position: "fixed", top: 0, left: -9999, opacity: 0, pointerEvents: "none" }} aria-hidden>
+          <RentalCardFront ref={frontRef} data={toCardData(previewCard)} />
+          <div style={{ height: 20 }} />
+          <RentalCardBack ref={backRef} data={toCardData(previewCard)} />
         </div>
       )}
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon, tone }: { label: string; value: number; icon: React.ReactNode; tone?: string }) {
+  return (
+    <Card className="shadow-card">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{label}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className={`text-2xl font-bold ${tone ?? ""}`}>{value}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function ScaledCard({ children, scale = 0.45 }: { children: React.ReactNode; scale?: number }) {
+  return (
+    <div
+      style={{
+        width: CARD_WIDTH_PX * scale,
+        height: CARD_HEIGHT_PX * scale,
+        position: "relative",
+      }}
+    >
+      <div
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+          width: CARD_WIDTH_PX,
+          height: CARD_HEIGHT_PX,
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
