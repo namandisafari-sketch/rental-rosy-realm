@@ -234,6 +234,51 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={unitOpen} onOpenChange={(v) => { setUnitOpen(v); if (!v) setUnitForm(EMPTY_UNIT); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>New unit</DialogTitle><DialogDescription>Add a unit directly into one of your properties.</DialogDescription></DialogHeader>
+          <div className="grid gap-3">
+            <div>
+              <Label>Property *</Label>
+              <Select value={unitPropertyId} onValueChange={setUnitPropertyId}>
+                <SelectTrigger><SelectValue placeholder="Select a property" /></SelectTrigger>
+                <SelectContent>
+                  {(properties as any[]).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Unit number *</Label><Input value={unitForm.unit_number} onChange={(e) => setUnitForm({ ...unitForm, unit_number: e.target.value })} placeholder="e.g. A1, 101" /></div>
+              <div><Label>Type</Label>
+                <Select value={unitForm.unit_type} onValueChange={(v) => setUnitForm({ ...unitForm, unit_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{UNIT_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Floor</Label><Input type="number" value={unitForm.floor_number} onChange={(e) => setUnitForm({ ...unitForm, floor_number: e.target.value })} /></div>
+              <div><Label>Size (sqm)</Label><Input type="number" value={unitForm.size_sqm} onChange={(e) => setUnitForm({ ...unitForm, size_sqm: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Bedrooms</Label><Input type="number" value={unitForm.bedrooms} onChange={(e) => setUnitForm({ ...unitForm, bedrooms: e.target.value })} /></div>
+              <div><Label>Bathrooms</Label><Input type="number" value={unitForm.bathrooms} onChange={(e) => setUnitForm({ ...unitForm, bathrooms: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Monthly rent (UGX)</Label><Input type="number" value={unitForm.monthly_rent} onChange={(e) => setUnitForm({ ...unitForm, monthly_rent: e.target.value })} /></div>
+              <div><Label>Deposit (UGX)</Label><Input type="number" value={unitForm.deposit_amount} onChange={(e) => setUnitForm({ ...unitForm, deposit_amount: e.target.value })} /></div>
+            </div>
+            <div><Label>Status</Label>
+              <Select value={unitForm.status} onValueChange={(v) => setUnitForm({ ...unitForm, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="vacant">Vacant</SelectItem><SelectItem value="occupied">Occupied</SelectItem><SelectItem value="maintenance">Maintenance</SelectItem></SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter><Button onClick={() => createUnit.mutate()} disabled={!unitForm.unit_number || !unitPropertyId || createUnit.isPending}>Create Unit</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <div className="text-sm text-muted-foreground">Loading…</div> : filtered.length === 0 ? (
         <Card><CardContent className="flex flex-col items-center gap-2 py-16 text-center">
           <Building2 className="h-10 w-10 text-muted-foreground" />
