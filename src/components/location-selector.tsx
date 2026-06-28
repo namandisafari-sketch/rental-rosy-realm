@@ -46,7 +46,8 @@ export function LocationSelector({ value, onChange, label }: LocationSelectorPro
 
   useEffect(() => {
     rebuild(region, districtName, subcountyName, parish, village);
-  }, [region, districtName, subcountyName, parish, village, rebuild]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [region, districtName, subcountyName, parish, village]);
 
   const handleRegionChange = (v: string) => {
     setRegion(v);
