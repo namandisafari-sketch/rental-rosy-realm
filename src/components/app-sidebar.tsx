@@ -99,6 +99,7 @@ const ownerItems: NavItem[] = [
 
 const tenantItems: NavItem[] = [
   { title: "Overview", url: "/dashboard", icon: Home },
+  { title: "My ID card", url: "/my-id-card", icon: CreditCard },
   { title: "My lease", url: "/leases", icon: FileText },
   { title: "My payments", url: "/payments", icon: Receipt },
   { title: "Maintenance", url: "/maintenance", icon: Wrench },
