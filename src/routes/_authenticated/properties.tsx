@@ -33,6 +33,9 @@ function PropertiesPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [form, setForm] = useState({ name: "", address: "", location: "", city: "", property_type: "residential", description: "", image_url: "" });
+  const [unitOpen, setUnitOpen] = useState(false);
+  const [unitPropertyId, setUnitPropertyId] = useState<string>("");
+  const [unitForm, setUnitForm] = useState(EMPTY_UNIT);
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["properties"],
