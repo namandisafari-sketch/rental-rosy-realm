@@ -202,61 +202,70 @@ function AssetsPage() {
               </SheetHeader>
               <div className="mt-6 space-y-4">
                 <div>
-                  <Label>Name</Label>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Asset Info</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Asset name" /></div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Category *</Label>
+                        <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                          {categories.map((c) => <option key={c} value={c}>{categoryLabels[c]}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <Label>Serial / ID #</Label>
+                        <Input value={form.serial_number} onChange={(e) => setForm({ ...form, serial_number: e.target.value })} placeholder="Serial number or asset ID" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Category</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                      {categories.map((c) => <option key={c} value={c}>{categoryLabels[c]}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <Label>Condition</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })}>
-                      {conditions.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-                    </select>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Acquisition</h3></div>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Purchase date *</Label>
+                        <Input type="date" value={form.purchase_date} onChange={(e) => setForm({ ...form, purchase_date: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label>Purchase value (UGX) *</Label>
+                        <Input type="number" value={form.purchase_value} onChange={(e) => setForm({ ...form, purchase_value: e.target.value })} placeholder="0" />
+                      </div>
+                    </div>
+                    <div><Label>Supplier / Vendor</Label><Input placeholder="Supplier or vendor name" /></div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Status</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                      {statuses.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                    </select>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Status & Location</h3></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Status</Label>
+                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                        {statuses.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <Label>Condition</Label>
+                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })}>
+                        {conditions.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                      </select>
+                    </div>
                   </div>
-                  <div>
+                  <div className="mt-3">
                     <Label>Assigned to</Label>
                     <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.assigned_to} onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}>
                       <option value="">Unassigned</option>
                       {employees.map((e: any) => <option key={e.id} value={e.id}>{e.full_name ?? e.email}</option>)}
                     </select>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Purchase value (UGX)</Label>
-                    <Input type="number" value={form.purchase_value} onChange={(e) => setForm({ ...form, purchase_value: e.target.value })} />
-                  </div>
-                  <div>
+                  <div className="mt-3">
                     <Label>Current value (UGX)</Label>
-                    <Input type="number" value={form.current_value} onChange={(e) => setForm({ ...form, current_value: e.target.value })} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Purchase date</Label>
-                    <Input type="date" value={form.purchase_date} onChange={(e) => setForm({ ...form, purchase_date: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label>Serial / ID #</Label>
-                    <Input value={form.serial_number} onChange={(e) => setForm({ ...form, serial_number: e.target.value })} />
+                    <Input type="number" value={form.current_value} onChange={(e) => setForm({ ...form, current_value: e.target.value })} placeholder="Depreciated value" />
                   </div>
                 </div>
                 <div>
-                  <Label>Notes</Label>
-                  <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
+                  <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes or maintenance history" />
                 </div>
               </div>
               <SheetFooter className="mt-6">

@@ -120,23 +120,39 @@ function TimesheetsPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />{editing ? "Edit entry" : "New entry"}</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editing ? "Edit timesheet entry" : "Create a timesheet entry"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Employee ID</Label><Input value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })} /></div>
-                <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} /></div>
-                <div><Label>Date</Label><Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Start time</Label><Input type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} /></div>
-                  <div><Label>End time</Label><Input type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} /></div>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Employee & Project</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Employee ID</Label><Input value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })} placeholder="Select or enter employee" /></div>
+                    <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} placeholder="Select or enter project" /></div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Hours</Label><Input type="number" value={form.hours} onChange={(e) => setForm({ ...form, hours: e.target.value })} /></div>
-                  <div><Label>Overtime hours</Label><Input type="number" value={form.overtime_hours} onChange={(e) => setForm({ ...form, overtime_hours: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Date & Time</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Date</Label><Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Start time</Label><Input type="time" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} /></div>
+                      <div><Label>End time</Label><Input type="time" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Hours *</Label><Input type="number" value={form.hours} onChange={(e) => setForm({ ...form, hours: e.target.value })} placeholder="Total hours worked" /></div>
+                      <div><Label>Overtime hours</Label><Input type="number" value={form.overtime_hours} onChange={(e) => setForm({ ...form, overtime_hours: e.target.value })} placeholder="0" /></div>
+                    </div>
+                  </div>
                 </div>
-                <div><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-                <div><Label>Status</Label>
-                  <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                    {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                  </select>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Description</h3></div>
+                  <div><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Work performed during this period" /></div>
+                </div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Approval</h3></div>
+                  <div><Label>Status</Label>
+                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                      {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
               <DialogFooter className="gap-2">

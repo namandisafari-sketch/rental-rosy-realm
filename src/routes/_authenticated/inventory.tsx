@@ -348,173 +348,172 @@ function InventoryPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Item Details</h3></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name *</Label>
+                    <Input
+                      id="name"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="Item name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sku">SKU</Label>
+                    <Input
+                      id="sku"
+                      value={form.sku}
+                      onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                      placeholder="Stock keeping unit"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2 mt-3">
+                  <Label htmlFor="description">Description</Label>
                   <Input
-                    id="name"
-                    value={form.name}
-                    onChange={(e) =>
-                      setForm({ ...form, name: e.target.value })
-                    }
+                    id="description"
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="Brief description of the item"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category *</Label>
+                    <Select
+                      value={form.category}
+                      onValueChange={(v) => setForm({ ...form, category: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">Unit of Measure</Label>
+                    <Select
+                      value={form.unit}
+                      onValueChange={(v) => setForm({ ...form, unit: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {UNITS.map((u) => (
+                          <SelectItem key={u} value={u}>
+                            {u.charAt(0).toUpperCase() + u.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Pricing</h3></div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity">Quantity *</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min={0}
+                      value={form.quantity}
+                      onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unit_cost">Unit Cost (UGX)</Label>
+                    <Input
+                      id="unit_cost"
+                      type="number"
+                      min={0}
+                      value={form.unit_cost}
+                      onChange={(e) => setForm({ ...form, unit_cost: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="selling_price">Selling Price (UGX)</Label>
+                    <Input
+                      id="selling_price"
+                      type="number"
+                      min={0}
+                      value={form.selling_price}
+                      onChange={(e) => setForm({ ...form, selling_price: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Total value: <strong>{formatUGX(form.quantity * form.unit_cost)}</strong>
+                </div>
+              </div>
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Supplier & Location</h3></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="supplier_id">Supplier</Label>
+                    <Select
+                      value={form.supplier_id}
+                      onValueChange={(v) => setForm({ ...form, supplier_id: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select supplier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers?.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Storage Location</Label>
+                    <Input
+                      id="location"
+                      value={form.location}
+                      onChange={(e) => setForm({ ...form, location: e.target.value })}
+                      placeholder="e.g. Warehouse A, Shelf 3"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="min_stock_level">Min Stock Level</Label>
+                    <Input
+                      id="min_stock_level"
+                      type="number"
+                      min={0}
+                      value={form.min_stock_level}
+                      onChange={(e) => setForm({ ...form, min_stock_level: Number(e.target.value) })}
+                      placeholder="Alert threshold"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
                 <div className="space-y-2">
-                  <Label htmlFor="sku">SKU</Label>
                   <Input
-                    id="sku"
-                    value={form.sku}
-                    onChange={(e) =>
-                      setForm({ ...form, sku: e.target.value })
-                    }
+                    id="notes"
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    placeholder="Additional notes about this item"
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={form.category}
-                    onValueChange={(v) => setForm({ ...form, category: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="unit">Unit</Label>
-                  <Select
-                    value={form.unit}
-                    onValueChange={(v) => setForm({ ...form, unit: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {UNITS.map((u) => (
-                        <SelectItem key={u} value={u}>
-                          {u.charAt(0).toUpperCase() + u.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min={0}
-                    value={form.quantity}
-                    onChange={(e) =>
-                      setForm({ ...form, quantity: Number(e.target.value) })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="min_stock_level">Min Stock Level</Label>
-                  <Input
-                    id="min_stock_level"
-                    type="number"
-                    min={0}
-                    value={form.min_stock_level}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        min_stock_level: Number(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="unit_cost">Unit Cost (UGX)</Label>
-                  <Input
-                    id="unit_cost"
-                    type="number"
-                    min={0}
-                    value={form.unit_cost}
-                    onChange={(e) =>
-                      setForm({ ...form, unit_cost: Number(e.target.value) })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="selling_price">Selling Price (UGX)</Label>
-                  <Input
-                    id="selling_price"
-                    type="number"
-                    min={0}
-                    value={form.selling_price}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        selling_price: Number(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="supplier_id">Supplier</Label>
-                  <Select
-                    value={form.supplier_id}
-                    onValueChange={(v) =>
-                      setForm({ ...form, supplier_id: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select supplier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {suppliers?.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  value={form.location}
-                  onChange={(e) =>
-                    setForm({ ...form, location: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Input
-                  id="notes"
-                  value={form.notes}
-                  onChange={(e) =>
-                    setForm({ ...form, notes: e.target.value })
-                  }
-                />
               </div>
             </div>
             <DialogFooter>
@@ -759,162 +758,172 @@ function InventoryPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Name *</Label>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Item Details</h3></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Name *</Label>
+                  <Input
+                    id="edit-name"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder="Item name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-sku">SKU</Label>
+                  <Input
+                    id="edit-sku"
+                    value={form.sku}
+                    onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                    placeholder="Stock keeping unit"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2 mt-3">
+                <Label htmlFor="edit-description">Description</Label>
                 <Input
-                  id="edit-name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  id="edit-description"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Brief description of the item"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">Category *</Label>
+                  <Select
+                    value={form.category}
+                    onValueChange={(v) => setForm({ ...form, category: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-unit">Unit of Measure</Label>
+                  <Select
+                    value={form.unit}
+                    onValueChange={(v) => setForm({ ...form, unit: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNITS.map((u) => (
+                        <SelectItem key={u} value={u}>
+                          {u.charAt(0).toUpperCase() + u.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Pricing</h3></div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-quantity">Quantity *</Label>
+                  <Input
+                    id="edit-quantity"
+                    type="number"
+                    min={0}
+                    value={form.quantity}
+                    onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-unit_cost">Unit Cost (UGX) *</Label>
+                  <Input
+                    id="edit-unit_cost"
+                    type="number"
+                    min={0}
+                    value={form.unit_cost}
+                    onChange={(e) => setForm({ ...form, unit_cost: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-selling_price">Selling Price (UGX)</Label>
+                  <Input
+                    id="edit-selling_price"
+                    type="number"
+                    min={0}
+                    value={form.selling_price}
+                    onChange={(e) => setForm({ ...form, selling_price: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                Total value: <strong>{formatUGX(form.quantity * form.unit_cost)}</strong>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Supplier & Location</h3></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-supplier_id">Supplier</Label>
+                  <Select
+                    value={form.supplier_id}
+                    onValueChange={(v) => setForm({ ...form, supplier_id: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select supplier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {suppliers?.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-location">Storage Location</Label>
+                  <Input
+                    id="edit-location"
+                    value={form.location}
+                    onChange={(e) => setForm({ ...form, location: e.target.value })}
+                    placeholder="e.g. Warehouse A, Shelf 3"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-min_stock_level">Min Stock Level</Label>
+                  <Input
+                    id="edit-min_stock_level"
+                    type="number"
+                    min={0}
+                    value={form.min_stock_level}
+                    onChange={(e) => setForm({ ...form, min_stock_level: Number(e.target.value) })}
+                    placeholder="Alert threshold"
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
               <div className="space-y-2">
-                <Label htmlFor="edit-sku">SKU</Label>
                 <Input
-                  id="edit-sku"
-                  value={form.sku}
-                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
+                  id="edit-notes"
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  placeholder="Additional notes about this item"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
-              <Input
-                id="edit-description"
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-category">Category</Label>
-                <Select
-                  value={form.category}
-                  onValueChange={(v) => setForm({ ...form, category: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-unit">Unit</Label>
-                <Select
-                  value={form.unit}
-                  onValueChange={(v) => setForm({ ...form, unit: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UNITS.map((u) => (
-                      <SelectItem key={u} value={u}>
-                        {u.charAt(0).toUpperCase() + u.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-quantity">Quantity</Label>
-                <Input
-                  id="edit-quantity"
-                  type="number"
-                  min={0}
-                  value={form.quantity}
-                  onChange={(e) =>
-                    setForm({ ...form, quantity: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-min_stock_level">Min Stock Level</Label>
-                <Input
-                  id="edit-min_stock_level"
-                  type="number"
-                  min={0}
-                  value={form.min_stock_level}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      min_stock_level: Number(e.target.value),
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-unit_cost">Unit Cost (UGX)</Label>
-                <Input
-                  id="edit-unit_cost"
-                  type="number"
-                  min={0}
-                  value={form.unit_cost}
-                  onChange={(e) =>
-                    setForm({ ...form, unit_cost: Number(e.target.value) })
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-selling_price">Selling Price (UGX)</Label>
-                <Input
-                  id="edit-selling_price"
-                  type="number"
-                  min={0}
-                  value={form.selling_price}
-                  onChange={(e) =>
-                    setForm({ ...form, selling_price: Number(e.target.value) })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-supplier_id">Supplier</Label>
-                <Select
-                  value={form.supplier_id}
-                  onValueChange={(v) => setForm({ ...form, supplier_id: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select supplier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers?.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-location">Location</Label>
-              <Input
-                id="edit-location"
-                value={form.location}
-                onChange={(e) =>
-                  setForm({ ...form, location: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-notes">Notes</Label>
-              <Input
-                id="edit-notes"
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              />
             </div>
           </div>
           <DialogFooter>

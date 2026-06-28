@@ -129,29 +129,40 @@ function ConstructionInvoicesPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />{editing ? "Edit invoice" : "New invoice"}</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editing ? "Edit invoice" : "Create an invoice"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} /></div>
-                <div><Label>Client name</Label><Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} /></div>
-                <div><Label>Invoice number</Label><Input value={form.invoice_number} onChange={(e) => setForm({ ...form, invoice_number: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Issue date</Label><Input type="date" value={form.issue_date} onChange={(e) => setForm({ ...form, issue_date: e.target.value })} /></div>
-                  <div><Label>Due date</Label><Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></div>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Invoice Information</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Invoice number <span className="text-destructive">*</span></Label><Input value={form.invoice_number} onChange={(e) => setForm({ ...form, invoice_number: e.target.value })} placeholder="e.g. INV-001" /></div>
+                    <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} placeholder="Reference project ID" /></div>
+                  </div>
+                  <div className="mt-3"><Label>Client name <span className="text-destructive">*</span></Label><Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} placeholder="Client or company being invoiced" /></div>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div><Label>Issue date <span className="text-destructive">*</span></Label><Input type="date" value={form.issue_date} onChange={(e) => setForm({ ...form, issue_date: e.target.value })} /></div>
+                    <div><Label>Due date <span className="text-destructive">*</span></Label><Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></div>
+                  </div>
                 </div>
-                <div><Label>Status</Label>
-                  <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                    {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                  </select>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Financial Details</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Subtotal (UGX)</Label><Input type="number" value={form.subtotal} onChange={(e) => setForm({ ...form, subtotal: e.target.value })} placeholder="Amount before tax" /></div>
+                    <div><Label>Tax rate (%)</Label><Input type="number" value={form.tax_rate} onChange={(e) => setForm({ ...form, tax_rate: e.target.value })} placeholder="e.g. 18" /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div><Label>Tax amount (UGX)</Label><Input type="number" value={form.tax_amount} onChange={(e) => setForm({ ...form, tax_amount: e.target.value })} placeholder="Calculated tax" /></div>
+                    <div><Label>Total amount (UGX)</Label><Input type="number" value={form.total_amount} onChange={(e) => setForm({ ...form, total_amount: e.target.value })} placeholder="Grand total" /></div>
+                  </div>
+                  <div className="mt-3"><Label>Amount paid (UGX)</Label><Input type="number" value={form.amount_paid} onChange={(e) => setForm({ ...form, amount_paid: e.target.value })} placeholder="Amount received from client" /></div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Subtotal</Label><Input type="number" value={form.subtotal} onChange={(e) => setForm({ ...form, subtotal: e.target.value })} /></div>
-                  <div><Label>Tax rate (%)</Label><Input type="number" value={form.tax_rate} onChange={(e) => setForm({ ...form, tax_rate: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Status &amp; Notes</h3></div>
+                  <div><Label>Status</Label>
+                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                      {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+                    </select>
+                  </div>
+                  <div className="mt-3"><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Payment terms, remittance details, or notes" /></div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Tax amount</Label><Input type="number" value={form.tax_amount} onChange={(e) => setForm({ ...form, tax_amount: e.target.value })} /></div>
-                  <div><Label>Total amount</Label><Input type="number" value={form.total_amount} onChange={(e) => setForm({ ...form, total_amount: e.target.value })} /></div>
-                </div>
-                <div><Label>Amount paid</Label><Input type="number" value={form.amount_paid} onChange={(e) => setForm({ ...form, amount_paid: e.target.value })} /></div>
-                <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
               </div>
               <DialogFooter className="gap-2">
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>

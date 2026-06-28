@@ -144,10 +144,13 @@ function SopChecklistsPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />New checklist</Button></DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader><DialogTitle>{editing ? "Edit checklist" : "Create a checklist"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-                <div><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-                <div><Label>Category</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Checklist Information</h3></div>
+                  <div><Label>Title <span className="text-destructive">*</span></Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Checklist title" /></div>
+                  <div className="mt-3"><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Purpose and scope of this checklist" /></div>
+                  <div className="mt-3"><Label>Category</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Safety, Quality, Inspection" /></div>
+                </div>
               </div>
               <DialogFooter className="gap-2">
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>

@@ -119,40 +119,51 @@ function SuppliersPage() {
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
               <DialogHeader><DialogTitle>{editing ? "Edit supplier" : "New supplier"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                  <div><Label>Contact person</Label><Input value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-                  <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                </div>
-                <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Category</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                      <option value="materials">Materials</option>
-                      <option value="equipment">Equipment</option>
-                      <option value="services">Services</option>
-                      <option value="transport">Transport</option>
-                    </select>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Company Info</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Company or supplier name" /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Contact person</Label><Input value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} placeholder="Primary contact name" /></div>
+                      <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="e.g. +256 700 000 000" /></div>
+                    </div>
+                    <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="supplier@example.com" /></div>
                   </div>
-                  <div><Label>Payment terms</Label><Input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} /></div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Tax ID</Label><Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} /></div>
-                  <div className="flex items-end gap-3 pb-1.5">
-                    <div className="flex-1"><Label>Status</Label></div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Inactive</span>
-                      <Switch checked={form.status === "active"} onCheckedChange={(v) => setForm({ ...form, status: v ? "active" : "inactive" })} />
-                      <span className="text-sm text-muted-foreground">Active</span>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Address & Details</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Physical or postal address" /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Category</Label>
+                        <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                          <option value="materials">Materials</option>
+                          <option value="equipment">Equipment</option>
+                          <option value="services">Services</option>
+                          <option value="transport">Transport</option>
+                        </select>
+                      </div>
+                      <div><Label>Payment terms</Label><Input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} placeholder="e.g. Net 30" /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Tax ID</Label><Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} placeholder="Tax registration number" /></div>
+                      <div className="flex items-end gap-3 pb-1.5">
+                        <div className="flex-1"><Label>Status</Label></div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">Inactive</span>
+                          <Switch checked={form.status === "active"} onCheckedChange={(v) => setForm({ ...form, status: v ? "active" : "inactive" })} />
+                          <span className="text-sm text-muted-foreground">Active</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div><Label>Notes</Label><Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
+                  <div><Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes about the supplier" /></div>
+                </div>
               </div>
               <DialogFooter>
                 <Button onClick={() => upsert.mutate()} disabled={!form.name || upsert.isPending}>

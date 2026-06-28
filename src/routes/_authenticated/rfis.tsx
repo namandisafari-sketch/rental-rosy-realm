@@ -125,26 +125,39 @@ function RfisPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />{editing ? "Edit RFI" : "New RFI"}</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editing ? "Edit RFI" : "Create an RFI"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>RFI number</Label><Input value={form.rfi_number} onChange={(e) => setForm({ ...form, rfi_number: e.target.value })} /></div>
-                  <div><Label>Due date</Label><Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Status</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                      {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                    </select>
-                  </div>
-                  <div><Label>Priority</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
-                      {priorityOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">RFI Info</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Brief subject of the RFI" /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>RFI number</Label><Input value={form.rfi_number} onChange={(e) => setForm({ ...form, rfi_number: e.target.value })} placeholder="e.g. RFI-001" /></div>
+                      <div><Label>Due date</Label><Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></div>
+                    </div>
                   </div>
                 </div>
-                <div><Label>Question</Label><Textarea rows={3} value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} /></div>
-                <div><Label>Response</Label><Textarea rows={3} value={form.response} onChange={(e) => setForm({ ...form, response: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Question & Response</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Question *</Label><Textarea rows={3} value={form.question} onChange={(e) => setForm({ ...form, question: e.target.value })} placeholder="Describe the information or clarification needed" /></div>
+                    <div><Label>Response</Label><Textarea rows={3} value={form.response} onChange={(e) => setForm({ ...form, response: e.target.value })} placeholder="Official response from the responsible party" /></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Assignment</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Priority</Label>
+                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+                        {priorityOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div><Label>Status</Label>
+                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                        {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </div>
               <DialogFooter className="gap-2">
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>

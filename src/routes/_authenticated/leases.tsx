@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/leases")({
 const PAYMENT_DUE_DAYS = [1, 5, 10, 15, 20, 25, 28];
 const BILLING_PERIODS = ["monthly", "quarterly", "bi_annual", "annual"];
 const TERMINATION_REASONS = ["Left without paying", "Absconded", "Evicted", "Dispute", "Other"];
-const LATE_PENALTY_RATE = 0.05; // 5% per clause 3
+const LATE_PENALTY_RATE = 0.05;
 
 const statusColors: Record<string, string> = {
   active: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
@@ -218,96 +218,117 @@ function LeasesPage() {
 
   function renderFormFields(isEdit = false) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-5">
         <div>
-          <Label>Unit</Label>
-          <Select value={form.unit_id} onValueChange={unitChange}>
-            <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
-            <SelectContent>
-              {units.map((u: any) => {
-                const isOccupied = u.status === "occupied";
-                const isCurrent = isEdit && u.id === editingLease?.unit_id;
-                return (
-                  <SelectItem key={u.id} value={u.id} disabled={!isEdit && isOccupied}>
-                    {u.properties?.name} · Unit {u.unit_number} — UGX {Number(u.monthly_rent).toLocaleString()}/mo
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>Tenant email {isEdit ? "(cannot change)" : "(must have signed up)"}</Label>
-          <Input value={form.tenant_email} onChange={(e: any) => setForm({ ...form, tenant_email: e.target.value })} disabled={isEdit} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Monthly rent (UGX)</Label>
-            <Input type="number" value={form.monthly_rent} onChange={(e: any) => monthlyRentChange(e.target.value)} />
-          </div>
-          <div>
-            <Label>Deposit months</Label>
-            <Select value={form.deposit_months} onValueChange={depositMonthsChange}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
-                  <SelectItem key={n} value={String(n)}>{n} month{n > 1 ? "s" : ""}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Deposit amount (UGX)</Label>
-            <Input type="number" value={form.deposit} onChange={(e: any) => setForm({ ...form, deposit: e.target.value })} />
-          </div>
-          <div>
-            <Label>Payment due day</Label>
-            <Select value={form.payment_due_day} onValueChange={(v) => setForm({ ...form, payment_due_day: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PAYMENT_DUE_DAYS.map((d) => (
-                  <SelectItem key={d} value={String(d)}>{d > 28 ? "End of month" : `Day ${d}`}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Billing period</Label>
-            <Select value={form.billing_period} onValueChange={(v) => setForm({ ...form, billing_period: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {BILLING_PERIODS.map((p) => (
-                  <SelectItem key={p} value={p}>{p.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Late fee (UGX)</Label>
-            <Input type="number" value={form.late_fee_amount} onChange={(e: any) => setForm({ ...form, late_fee_amount: e.target.value })} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Late fee grace days</Label>
-            <Input type="number" value={form.late_fee_grace_days} onChange={(e: any) => setForm({ ...form, late_fee_grace_days: e.target.value })} />
-          </div>
-          <div>
-            <Label>Start date</Label>
-            <Input type="date" value={form.start_date} onChange={(e: any) => setForm({ ...form, start_date: e.target.value })} />
+          <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Unit &amp; Tenant</h3></div>
+          <div className="space-y-3">
+            <div>
+              <Label>Unit *</Label>
+              <Select value={form.unit_id} onValueChange={unitChange}>
+                <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
+                <SelectContent>
+                  {units.map((u: any) => {
+                    const isOccupied = u.status === "occupied";
+                    const isCurrent = isEdit && u.id === editingLease?.unit_id;
+                    return (
+                      <SelectItem key={u.id} value={u.id} disabled={!isEdit && isOccupied}>
+                        {u.properties?.name} · Unit {u.unit_number} — UGX {Number(u.monthly_rent).toLocaleString()}/mo
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">Only vacant units are available for new leases.</p>
+            </div>
+            <div>
+              <Label>Tenant Email * {isEdit ? "(cannot be changed)" : ""}</Label>
+              <Input value={form.tenant_email} onChange={(e: any) => setForm({ ...form, tenant_email: e.target.value })} disabled={isEdit} placeholder="tenant@example.com" />
+              {!isEdit && <p className="mt-1 text-xs text-muted-foreground">Tenant must have an existing account. They will be linked by email.</p>}
+            </div>
           </div>
         </div>
         <div>
-          <Label>End date (optional)</Label>
-          <Input type="date" value={form.end_date} onChange={(e: any) => setForm({ ...form, end_date: e.target.value })} />
+          <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Rent &amp; Deposit</h3></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Monthly Rent (UGX) *</Label>
+              <Input type="number" value={form.monthly_rent} onChange={(e: any) => monthlyRentChange(e.target.value)} placeholder="e.g. 1500000" />
+            </div>
+            <div>
+              <Label>Deposit (Months) *</Label>
+              <Select value={form.deposit_months} onValueChange={depositMonthsChange}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                    <SelectItem key={n} value={String(n)}>{n} month{n > 1 ? "s" : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">Security deposit equivalent to this many months' rent.</p>
+            </div>
+            <div>
+              <Label>Deposit Amount (UGX)</Label>
+              <Input type="number" value={form.deposit} onChange={(e: any) => setForm({ ...form, deposit: e.target.value })} />
+              <p className="mt-1 text-xs text-muted-foreground">Auto-calculated as months × monthly rent. Adjust if needed.</p>
+            </div>
+          </div>
         </div>
         <div>
-          <Label>Special conditions</Label>
-          <Textarea value={form.special_conditions} onChange={(e: any) => setForm({ ...form, special_conditions: e.target.value })} placeholder="Any special terms or conditions…" />
+          <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Payment Terms</h3></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Payment Due Day *</Label>
+              <Select value={form.payment_due_day} onValueChange={(v) => setForm({ ...form, payment_due_day: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_DUE_DAYS.map((d) => (
+                    <SelectItem key={d} value={String(d)}>{d > 28 ? "End of month" : `Day ${d}`}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">Default: 25th per standard agreement terms.</p>
+            </div>
+            <div>
+              <Label>Billing Period</Label>
+              <Select value={form.billing_period} onValueChange={(v) => setForm({ ...form, billing_period: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {BILLING_PERIODS.map((p) => (
+                    <SelectItem key={p} value={p}>{p.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Late Fee (UGX)</Label>
+              <Input type="number" value={form.late_fee_amount} onChange={(e: any) => setForm({ ...form, late_fee_amount: e.target.value })} placeholder="Auto-calculated (5% of rent)" />
+              <p className="mt-1 text-xs text-muted-foreground">5% late penalty per clause 3. Auto-calculated if left as 0.</p>
+            </div>
+            <div>
+              <Label>Grace Period (Days)</Label>
+              <Input type="number" value={form.late_fee_grace_days} onChange={(e: any) => setForm({ ...form, late_fee_grace_days: e.target.value })} placeholder="e.g. 3" />
+              <p className="mt-1 text-xs text-muted-foreground">Number of days after due date before late fee applies.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Dates &amp; Conditions</h3></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Start Date *</Label>
+              <Input type="date" value={form.start_date} onChange={(e: any) => setForm({ ...form, start_date: e.target.value })} />
+            </div>
+            <div>
+              <Label>End Date</Label>
+              <Input type="date" value={form.end_date} onChange={(e: any) => setForm({ ...form, end_date: e.target.value })} />
+              <p className="mt-1 text-xs text-muted-foreground">Leave blank for periodic (month-to-month) tenancy.</p>
+            </div>
+          </div>
+          <div className="mt-3">
+            <Label>Special Conditions</Label>
+            <Textarea value={form.special_conditions} onChange={(e: any) => setForm({ ...form, special_conditions: e.target.value })} placeholder="e.g. Pet allowed with additional deposit, no subletting, landlord provides water &amp; garbage…" rows={3} />
+            <p className="mt-1 text-xs text-muted-foreground">Any custom terms, conditions, or clauses specific to this lease agreement.</p>
+          </div>
         </div>
       </div>
     );
@@ -420,11 +441,12 @@ function LeasesPage() {
               )}
             </AlertDialogDescription>
             <div>
-              <Label>Outstanding balance (UGX)</Label>
-              <Input type="number" value={terminateForm.outstanding_balance} onChange={(e: any) => setTerminateForm({ ...terminateForm, outstanding_balance: e.target.value })} />
+              <Label>Outstanding Balance (UGX) *</Label>
+              <Input type="number" value={terminateForm.outstanding_balance} onChange={(e: any) => setTerminateForm({ ...terminateForm, outstanding_balance: e.target.value })} placeholder="0" />
+              <p className="mt-1 text-xs text-muted-foreground">Any unpaid rent or fees still owed by the tenant.</p>
             </div>
             <div>
-              <Label>Termination reason *</Label>
+              <Label>Termination Reason *</Label>
               <Select value={terminateForm.termination_reason} onValueChange={(v) => setTerminateForm({ ...terminateForm, termination_reason: v })}>
                 <SelectTrigger><SelectValue placeholder="Select reason…" /></SelectTrigger>
                 <SelectContent>

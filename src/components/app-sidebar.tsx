@@ -7,7 +7,8 @@ import {
   PhoneCall, FileBadge, FolderOpen, ListChecks, ClipboardPen,
   MessageSquareQuote, FileUp, Handshake, GitCompareArrows, Clock,
   PiggyBank, Landmark, FileCheck, ClipboardCheck, Hash,
-  ReceiptText, ScrollText
+  ReceiptText, ScrollText, Gauge, CalendarRange, NotebookPen,
+  ListTodo, TriangleAlert, FolderKanban, Image, Banknote
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -37,10 +38,17 @@ const rentalItems: NavItem[] = [
 
 const constructionItems: NavItem[] = [
   { title: "Projects", url: "/projects", icon: HardHat },
+  { title: "Project Dashboard", url: "/project-dashboard", icon: Gauge },
+  { title: "Project Schedule", url: "/project-schedules", icon: CalendarRange },
   { title: "Project Tasks", url: "/project-tasks", icon: ListChecks },
   { title: "Daily Logs", url: "/daily-logs", icon: ClipboardPen },
   { title: "RFIs", url: "/rfis", icon: MessageSquareQuote },
   { title: "Submittals", url: "/submittals", icon: FileUp },
+  { title: "Meeting Minutes", url: "/meeting-minutes", icon: NotebookPen },
+  { title: "Punch List", url: "/punch-list", icon: ListTodo },
+  { title: "Safety Incidents", url: "/safety-incidents", icon: TriangleAlert },
+  { title: "Project Documents", url: "/project-documents", icon: FolderKanban },
+  { title: "Project Photos", url: "/project-photos", icon: Image },
   { title: "Leads", url: "/leads", icon: PhoneCall },
   { title: "Estimates", url: "/estimates", icon: Calculator },
   { title: "Proposals", url: "/proposals", icon: FileBadge },
@@ -64,6 +72,8 @@ const constructionFinancialItems: NavItem[] = [
   { title: "Project Budget", url: "/project-budget", icon: Landmark },
   { title: "Bills", url: "/bills", icon: ScrollText },
   { title: "Lien Waivers", url: "/lien-waivers", icon: FileCheck },
+  { title: "Commitment Log", url: "/commitment-log", icon: ReceiptText },
+  { title: "Progress Payments", url: "/progress-payments", icon: Banknote },
 ];
 
 const sopItems: NavItem[] = [

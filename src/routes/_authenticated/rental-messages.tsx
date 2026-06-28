@@ -215,25 +215,37 @@ function RentalMessagesPage() {
             <DialogHeader>
               <DialogTitle>New Message</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Tenant</Label>
-                <Select value={newTenantId} onValueChange={setNewTenantId}>
-                  <SelectTrigger><SelectValue placeholder="Select tenant" /></SelectTrigger>
-                  <SelectContent>
-                    {tenants.map((t: any) => (
-                      <SelectItem key={t.id} value={t.id}>{t.full_name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="space-y-5">
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Recipient</h3></div>
+                <div className="space-y-2">
+                  <Label>Tenant *</Label>
+                  <Select value={newTenantId} onValueChange={setNewTenantId}>
+                    <SelectTrigger><SelectValue placeholder="Select tenant" /></SelectTrigger>
+                    <SelectContent>
+                      {tenants.map((t: any) => (
+                        <SelectItem key={t.id} value={t.id}>{t.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">The tenant who will receive this message.</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Subject</Label>
-                <Input value={newSubject} onChange={(e) => setNewSubject(e.target.value)} placeholder="e.g. Rent Reminder" />
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Subject</h3></div>
+                <div className="space-y-2">
+                  <Label>Subject *</Label>
+                  <Input value={newSubject} onChange={(e) => setNewSubject(e.target.value)} placeholder="e.g. Rent Reminder, Maintenance Update, Lease Renewal" />
+                  <p className="mt-1 text-xs text-muted-foreground">Clear, concise subject line so the tenant knows the purpose.</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Message</Label>
-                <Textarea rows={5} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type your message..." />
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Message</h3></div>
+                <div className="space-y-2">
+                  <Label>Message *</Label>
+                  <Textarea rows={5} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type your message here. Be clear and professional in your communication with tenants." />
+                  <p className="mt-1 text-xs text-muted-foreground">Messages are visible in the tenant's portal and as a permanent record.</p>
+                </div>
               </div>
             </div>
             <DialogFooter>

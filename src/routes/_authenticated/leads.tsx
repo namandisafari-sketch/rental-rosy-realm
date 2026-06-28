@@ -130,38 +130,49 @@ function LeadsPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />{editing ? "Edit lead" : "New lead"}</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editing ? "Edit lead" : "Create a lead"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Contact name *</Label><Input value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Phone</Label><Input value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} /></div>
-                  <div><Label>Email</Label><Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} /></div>
-                </div>
-                <div><Label>Company</Label><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></div>
-                <div><Label>Description</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Source</Label>
-                    <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {sourceOptions.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div><Label>Status</Label>
-                    <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {statusOptions.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Contact Information</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Contact name <span className="text-destructive">*</span></Label><Input value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} placeholder="Full name of the contact person" /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Phone</Label><Input value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} placeholder="+256 XXX XXX XXX" /></div>
+                      <div><Label>Email</Label><Input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder="email@example.com" /></div>
+                    </div>
+                    <div><Label>Company</Label><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Company or organization name" /></div>
+                    <div><Label>Description</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief description of the lead and their needs" /></div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Budget min (UGX)</Label><Input type="number" value={form.budget_range_min} onChange={(e) => setForm({ ...form, budget_range_min: e.target.value })} /></div>
-                  <div><Label>Budget max (UGX)</Label><Input type="number" value={form.budget_range_max} onChange={(e) => setForm({ ...form, budget_range_max: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Lead Details</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Source <span className="text-destructive">*</span></Label>
+                      <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
+                        <SelectContent>
+                          {sourceOptions.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label>Status <span className="text-destructive">*</span></Label>
+                      <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div><Label>Budget min (UGX)</Label><Input type="number" value={form.budget_range_min} onChange={(e) => setForm({ ...form, budget_range_min: e.target.value })} placeholder="Minimum expected budget" /></div>
+                    <div><Label>Budget max (UGX)</Label><Input type="number" value={form.budget_range_max} onChange={(e) => setForm({ ...form, budget_range_max: e.target.value })} placeholder="Maximum expected budget" /></div>
+                  </div>
                 </div>
-                <div><Label>Assigned to</Label><Input value={form.assigned_to} onChange={(e) => setForm({ ...form, assigned_to: e.target.value })} /></div>
-                <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Assignment &amp; Notes</h3></div>
+                  <div><Label>Assigned to</Label><Input value={form.assigned_to} onChange={(e) => setForm({ ...form, assigned_to: e.target.value })} placeholder="Team member responsible for this lead" /></div>
+                  <div className="mt-3"><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes or comments" /></div>
+                </div>
               </div>
               <DialogFooter className="gap-2">
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>

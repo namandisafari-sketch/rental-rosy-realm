@@ -271,60 +271,66 @@ function PaymentProofs() {
                             <DialogTitle>Payment Proof Detail</DialogTitle>
                           </DialogHeader>
                           {detailProof && (
-                            <div className="space-y-3 text-sm">
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <Label>Payer Name</Label>
-                                  <p className="font-medium">{detailProof.payer_name}</p>
-                                </div>
-                                <div>
-                                  <Label>Provider</Label>
-                                  <div className="mt-1">{providerBadge(detailProof.payment_provider)}</div>
-                                </div>
-                                <div>
-                                  <Label>Transaction Reference</Label>
-                                  <p className="font-medium">{detailProof.transaction_reference}</p>
-                                </div>
-                                <div>
-                                  <Label>Amount</Label>
-                                  <p className="font-medium">{formatUGX(Number(detailProof.amount))}</p>
-                                </div>
-                                <div>
-                                  <Label>Payment Date</Label>
-                                  <p className="font-medium">{formatDate(detailProof.payment_date)}</p>
-                                </div>
-                                <div>
-                                  <Label>Status</Label>
-                                  <div className="mt-1">{statusBadge(detailProof.status)}</div>
+                            <div className="space-y-4 text-sm">
+                              <div>
+                                <div className="border-b pb-2 mb-3"><h3 className="text-sm font-semibold">Payment Info</h3></div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <Label>Payer Name</Label>
+                                    <p className="font-medium">{detailProof.payer_name}</p>
+                                  </div>
+                                  <div>
+                                    <Label>Provider</Label>
+                                    <div className="mt-1">{providerBadge(detailProof.payment_provider)}</div>
+                                  </div>
+                                  <div>
+                                    <Label>Transaction Reference</Label>
+                                    <p className="font-mono text-xs">{detailProof.transaction_reference}</p>
+                                  </div>
+                                  <div>
+                                    <Label>Amount</Label>
+                                    <p className="font-semibold">{formatUGX(Number(detailProof.amount))}</p>
+                                  </div>
+                                  <div>
+                                    <Label>Payment Date</Label>
+                                    <p>{formatDate(detailProof.payment_date)}</p>
+                                  </div>
+                                  <div>
+                                    <Label>Status</Label>
+                                    <div className="mt-1">{statusBadge(detailProof.status)}</div>
+                                  </div>
                                 </div>
                               </div>
-                              {detailProof.proof_image_url && (
-                                <div>
-                                  <Label>Proof Image</Label>
-                                  <img
-                                    src={detailProof.proof_image_url}
-                                    alt="Payment proof"
-                                    className="mt-1 rounded border max-h-64 object-contain"
-                                  />
-                                </div>
-                              )}
-                              {detailProof.rejection_reason && (
-                                <div>
-                                  <Label>Rejection Reason</Label>
-                                  <p className="mt-1 text-red-600">{detailProof.rejection_reason}</p>
-                                </div>
-                              )}
                               {detailProof.notes && (
                                 <div>
-                                  <Label>Notes</Label>
-                                  <p className="mt-1">{detailProof.notes}</p>
+                                  <div className="border-b pb-2 mb-3"><h3 className="text-sm font-semibold">Notes</h3></div>
+                                  <p>{detailProof.notes}</p>
                                 </div>
                               )}
-                              {detailProof.verified_at && (
-                                <div className="text-xs text-muted-foreground">
-                                  Verified at: {new Date(detailProof.verified_at).toLocaleString()}
-                                </div>
-                              )}
+                              <div>
+                                <div className="border-b pb-2 mb-3"><h3 className="text-sm font-semibold">Proof Details</h3></div>
+                                {detailProof.proof_image_url && (
+                                  <div className="mb-3">
+                                    <Label>Proof Image</Label>
+                                    <img
+                                      src={detailProof.proof_image_url}
+                                      alt="Payment proof"
+                                      className="mt-1 rounded border max-h-64 object-contain"
+                                    />
+                                  </div>
+                                )}
+                                {detailProof.rejection_reason && (
+                                  <div className="mb-2">
+                                    <Label>Rejection Reason</Label>
+                                    <p className="mt-1 text-red-600">{detailProof.rejection_reason}</p>
+                                  </div>
+                                )}
+                                {detailProof.verified_at && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Verified at: {new Date(detailProof.verified_at).toLocaleString()}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </DialogContent>
@@ -372,15 +378,19 @@ function PaymentProofs() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="reject-reason">Reason for rejection</Label>
-              <Textarea
-                id="reject-reason"
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Provide a reason for rejection..."
-                className="mt-1"
-                rows={4}
-              />
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Rejection Details</h3></div>
+              <div>
+                <Label htmlFor="reject-reason">Reason for Rejection *</Label>
+                <Textarea
+                  id="reject-reason"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Provide a detailed reason for rejection. This will be shared with the tenant."
+                  className="mt-1"
+                  rows={4}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">Clearly explain why the proof was rejected so the tenant can resubmit with corrections.</p>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setRejectOpen(false)}>

@@ -144,68 +144,87 @@ function RecurringBilling() {
               <Plus className="mr-2 h-4 w-4" /> Create Reminder
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>New Payment Reminder</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Lease (Tenant — Property/Unit)</Label>
-                <Select
-                  value={form.lease_id}
-                  onValueChange={(v) => {
-                    const lease = (leasesQ.data ?? []).find((l: any) => l.id === v);
-                    setForm((f) => ({
-                      ...f,
-                      lease_id: v,
-                      amount: lease?.monthly_rent ?? 0,
-                    }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a lease" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(leasesQ.data ?? []).map((l: any) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.tenant?.full_name ?? "Unknown"} — {l.unit?.property?.name ?? ""} / {l.unit?.unit_number ?? ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="space-y-5 py-2">
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Lease</h3></div>
+                <div className="space-y-2">
+                  <Label>Lease (Tenant — Property/Unit) *</Label>
+                  <Select
+                    value={form.lease_id}
+                    onValueChange={(v) => {
+                      const lease = (leasesQ.data ?? []).find((l: any) => l.id === v);
+                      setForm((f) => ({
+                        ...f,
+                        lease_id: v,
+                        amount: lease?.monthly_rent ?? 0,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a lease" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(leasesQ.data ?? []).length === 0 && (
+                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">All leases already have reminders.</div>
+                      )}
+                      {(leasesQ.data ?? []).map((l: any) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.tenant?.full_name ?? "Unknown"} — {l.unit?.property?.name ?? ""} / {l.unit?.unit_number ?? ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">Only active leases without existing reminders are shown.</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Due Day (1–31)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={form.due_day}
-                  onChange={(e) => setForm((f) => ({ ...f, due_day: Number(e.target.value) }))}
-                />
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Schedule</h3></div>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Due Day (1–31) *</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={form.due_day}
+                      onChange={(e) => setForm((f) => ({ ...f, due_day: Number(e.target.value) }))}
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">Day of month when payment is due. Default per standard lease terms is the 25th.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Reminder Type</Label>
+                    <Select
+                      value={form.reminder_type}
+                      onValueChange={(v) => setForm((f) => ({ ...f, reminder_type: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">Auto — Send automatically on due date</SelectItem>
+                        <SelectItem value="manual">Manual — Send on demand only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1 text-xs text-muted-foreground">Auto reminders are sent automatically. Manual reminders must be triggered from the list.</p>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Amount (UGX)</Label>
-                <Input
-                  type="number"
-                  value={form.amount}
-                  onChange={(e) => setForm((f) => ({ ...f, amount: Number(e.target.value) }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Reminder Type</Label>
-                <Select
-                  value={form.reminder_type}
-                  onValueChange={(v) => setForm((f) => ({ ...f, reminder_type: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">Auto</SelectItem>
-                    <SelectItem value="manual">Manual</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Amount</h3></div>
+                <div className="space-y-2">
+                  <Label>Amount (UGX) *</Label>
+                  <Input
+                    type="number"
+                    value={form.amount}
+                    onChange={(e) => setForm((f) => ({ ...f, amount: Number(e.target.value) }))}
+                    placeholder="e.g. 1500000"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">Monthly rent amount. Pre-filled from the selected lease.</p>
+                </div>
               </div>
             </div>
             <DialogFooter>

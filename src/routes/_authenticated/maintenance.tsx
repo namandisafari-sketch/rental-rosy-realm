@@ -372,85 +372,104 @@ function MaintenancePage() {
           <DialogHeader>
             <DialogTitle>New Maintenance Request</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Unit</Label>
-              <Select value={unitId} onValueChange={setUnitId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {isStaff
-                    ? allUnits?.map((u: any) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {u.name} - {u.properties?.name}
-                        </SelectItem>
-                      ))
-                    : leases?.map((l: any) => (
-                        <SelectItem key={l.unit_id} value={l.unit_id}>
-                          {l.units?.name} - {l.units?.properties?.name}
+          <div className="space-y-5">
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Request Details</h3></div>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="mt-title">Title *</Label>
+                  <Input id="mt-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Leaking kitchen faucet" />
+                  <p className="mt-1 text-xs text-muted-foreground">Brief, descriptive title of the issue.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mt-desc">Description</Label>
+                  <Textarea id="mt-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the issue in detail. Include any relevant information such as when it started, severity, etc." rows={3} />
+                  <p className="mt-1 text-xs text-muted-foreground">Detailed description helps the maintenance team assess and prioritize the issue.</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Location</h3></div>
+              <div className="space-y-2">
+                <Label htmlFor="mt-unit">Unit *</Label>
+                <Select value={unitId} onValueChange={setUnitId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isStaff
+                      ? allUnits?.map((u: any) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.name} - {u.properties?.name}
+                          </SelectItem>
+                        ))
+                      : leases?.map((l: any) => (
+                          <SelectItem key={l.unit_id} value={l.unit_id}>
+                            {l.units?.name} - {l.units?.properties?.name}
+                          </SelectItem>
+                        ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">The unit where the issue is located.</p>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Classification</h3></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Priority *</Label>
+                  <Select value={priority} onValueChange={setPriority}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">Urgent for safety hazards, High for major damage, Normal/Low for routine issues.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Category *</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(categoryLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
                         </SelectItem>
                       ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select value={priority} onValueChange={setPriority}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(categoryLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             {isStaff && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Estimated Cost (UGX)</Label>
-                  <Input
-                    type="number"
-                    value={estimatedCost}
-                    onChange={(e) => setEstimatedCost(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Reported By</Label>
-                  <Input
-                    value={reportedBy}
-                    onChange={(e) => setReportedBy(e.target.value)}
-                    placeholder="Name of reporter"
-                  />
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Additional Information</h3></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Estimated Cost (UGX)</Label>
+                    <Input
+                      type="number"
+                      value={estimatedCost}
+                      onChange={(e) => setEstimatedCost(e.target.value)}
+                      placeholder="e.g. 200000"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">Preliminary cost estimate for budget planning.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Reported By</Label>
+                    <Input
+                      value={reportedBy}
+                      onChange={(e) => setReportedBy(e.target.value)}
+                      placeholder="Name of reporter"
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -475,126 +494,150 @@ function MaintenancePage() {
             <DialogTitle>Edit Request</DialogTitle>
           </DialogHeader>
           {editingRequest && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={editStatus} onValueChange={setEditStatus}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(categoryLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Scheduled Date</Label>
-                <Input
-                  type="date"
-                  value={editScheduledDate}
-                  onChange={(e) => setEditScheduledDate(e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Estimated Cost (UGX)</Label>
-                  <Input
-                    type="number"
-                    value={editEstimatedCost}
-                    onChange={(e) => setEditEstimatedCost(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Actual Cost (UGX)</Label>
-                  <Input
-                    type="number"
-                    value={editActualCost}
-                    onChange={(e) => setEditActualCost(e.target.value)}
-                    placeholder="0"
-                  />
+            <div className="space-y-5">
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Status &amp; Classification</h3></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={editStatus} onValueChange={setEditStatus}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select value={editCategory} onValueChange={setEditCategory}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(categoryLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Contractor Name</Label>
-                <Input
-                  value={editContractorName}
-                  onChange={(e) => setEditContractorName(e.target.value)}
-                  placeholder="Contractor name"
-                />
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Scheduling</h3></div>
+                <div className="space-y-2">
+                  <Label>Scheduled Date</Label>
+                  <Input
+                    type="date"
+                    value={editScheduledDate}
+                    onChange={(e) => setEditScheduledDate(e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">Date when maintenance work is scheduled to begin.</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Contractor Phone</Label>
-                <Input
-                  value={editContractorPhone}
-                  onChange={(e) => setEditContractorPhone(e.target.value)}
-                  placeholder="Contact number"
-                />
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Costs &amp; Contractor</h3></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Estimated Cost (UGX)</Label>
+                    <Input
+                      type="number"
+                      value={editEstimatedCost}
+                      onChange={(e) => setEditEstimatedCost(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Actual Cost (UGX)</Label>
+                    <Input
+                      type="number"
+                      value={editActualCost}
+                      onChange={(e) => setEditActualCost(e.target.value)}
+                      placeholder="0"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">Final cost after completion.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-2">
+                    <Label>Contractor Name</Label>
+                    <Input
+                      value={editContractorName}
+                      onChange={(e) => setEditContractorName(e.target.value)}
+                      placeholder="e.g. John's Plumbing"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contractor Phone</Label>
+                    <Input
+                      value={editContractorPhone}
+                      onChange={(e) => setEditContractorPhone(e.target.value)}
+                      placeholder="e.g. +256 700 123456"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Resolution Notes</Label>
-                <Textarea
-                  value={editResolutionNotes}
-                  onChange={(e) => setEditResolutionNotes(e.target.value)}
-                  placeholder="Notes on resolution"
-                />
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Resolution</h3></div>
+                <div className="space-y-2">
+                  <Label>Resolution Notes</Label>
+                  <Textarea
+                    value={editResolutionNotes}
+                    onChange={(e) => setEditResolutionNotes(e.target.value)}
+                    placeholder="Describe the work performed, parts used, and any follow-up needed…"
+                    rows={3}
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">Detailed notes on what was done to resolve this request.</p>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Image className="h-4 w-4" />
-                  Photos
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {(imagesMap?.[editingRequest.id] || []).map((img: any) => (
-                    <div key={img.id} className="relative group">
-                      <button
-                        className="w-20 h-20 rounded-md overflow-hidden border border-border hover:ring-2 hover:ring-ring transition-all"
-                        onClick={() => setLightboxUrl(img.url)}
-                      >
-                        <img src={img.url} alt="" className="w-full h-full object-cover" />
-                      </button>
-                      <button
-                        className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => deleteImageMutation.mutate(img.id)}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input type="text" placeholder="Paste image URL..." id="new-image-url" />
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      const input = document.getElementById("new-image-url") as HTMLInputElement;
-                      if (input?.value) {
-                        uploadImageMutation.mutate({ requestId: editingRequest.id, url: input.value });
-                        input.value = "";
-                      }
-                    }}
-                  >
-                    Add
-                  </Button>
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Photos</h3></div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Image className="h-4 w-4" />
+                    Maintenance Photos
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(imagesMap?.[editingRequest.id] || []).map((img: any) => (
+                      <div key={img.id} className="relative group">
+                        <button
+                          className="w-20 h-20 rounded-md overflow-hidden border border-border hover:ring-2 hover:ring-ring transition-all"
+                          onClick={() => setLightboxUrl(img.url)}
+                        >
+                          <img src={img.url} alt="" className="w-full h-full object-cover" />
+                        </button>
+                        <button
+                          className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => deleteImageMutation.mutate(img.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input type="text" placeholder="Paste image URL..." id="new-image-url" />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const input = document.getElementById("new-image-url") as HTMLInputElement;
+                        if (input?.value) {
+                          uploadImageMutation.mutate({ requestId: editingRequest.id, url: input.value });
+                          input.value = "";
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Add photos of the issue or completed work for documentation.</p>
                 </div>
               </div>
             </div>

@@ -128,34 +128,43 @@ function ProposalsPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />{editing ? "Edit proposal" : "New proposal"}</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editing ? "Edit proposal" : "Create a proposal"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} /></div>
-                  <div><Label>Lead ID</Label><Input value={form.lead_id} onChange={(e) => setForm({ ...form, lead_id: e.target.value })} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Estimate ID</Label><Input value={form.estimate_id} onChange={(e) => setForm({ ...form, estimate_id: e.target.value })} /></div>
-                  <div><Label>Proposal #</Label><Input value={form.proposal_number} onChange={(e) => setForm({ ...form, proposal_number: e.target.value })} /></div>
-                </div>
-                <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-                <div><Label>Content</Label><Textarea rows={4} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Status</Label>
-                    <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {statusOptions.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Proposal Information</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Proposal number <span className="text-destructive">*</span></Label><Input value={form.proposal_number} onChange={(e) => setForm({ ...form, proposal_number: e.target.value })} placeholder="e.g. PRO-001" /></div>
+                    <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} placeholder="Reference project ID" /></div>
                   </div>
-                  <div><Label>Total (UGX)</Label><Input type="number" value={form.total_amount} onChange={(e) => setForm({ ...form, total_amount: e.target.value })} /></div>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div><Label>Lead ID</Label><Input value={form.lead_id} onChange={(e) => setForm({ ...form, lead_id: e.target.value })} placeholder="Associated lead ID" /></div>
+                    <div><Label>Estimate ID</Label><Input value={form.estimate_id} onChange={(e) => setForm({ ...form, estimate_id: e.target.value })} placeholder="Based on estimate ID" /></div>
+                  </div>
+                  <div className="mt-3"><Label>Title <span className="text-destructive">*</span></Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Proposal title" /></div>
+                  <div className="mt-3"><Label>Content</Label><Textarea rows={4} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Full proposal content, scope, and terms" /></div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Valid until</Label><Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} /></div>
-                  <div><Label>Sent at</Label><Input type="date" value={form.sent_at} onChange={(e) => setForm({ ...form, sent_at: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Financial</h3></div>
+                  <div><Label>Total (UGX)</Label><Input type="number" value={form.total_amount} onChange={(e) => setForm({ ...form, total_amount: e.target.value })} placeholder="Proposed total amount" /></div>
                 </div>
-                <div><Label>Accepted at</Label><Input type="date" value={form.accepted_at} onChange={(e) => setForm({ ...form, accepted_at: e.target.value })} /></div>
-                <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Status &amp; Notes</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Status</Label>
+                      <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label>Valid until</Label><Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} /></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div><Label>Sent at</Label><Input type="date" value={form.sent_at} onChange={(e) => setForm({ ...form, sent_at: e.target.value })} /></div>
+                    <div><Label>Accepted at</Label><Input type="date" value={form.accepted_at} onChange={(e) => setForm({ ...form, accepted_at: e.target.value })} /></div>
+                  </div>
+                  <div className="mt-3"><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Internal notes about this proposal" /></div>
+                </div>
               </div>
               <DialogFooter className="gap-2">
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>

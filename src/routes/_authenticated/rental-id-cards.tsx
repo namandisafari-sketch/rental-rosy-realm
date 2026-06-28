@@ -209,27 +209,35 @@ function RentalIdCardsPage() {
             <DialogHeader>
               <DialogTitle>Issue New ID Card</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Unit</Label>
-                <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                  <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
-                  <SelectContent>
-                    {units.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.properties?.name} · Unit {u.unit_number} {u.hasActiveCard ? "(has active card)" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="space-y-5">
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Tenant &amp; Unit</h3></div>
+                <div className="space-y-2">
+                  <Label>Unit *</Label>
+                  <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                    <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
+                    <SelectContent>
+                      {units.map((u: any) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.properties?.name} · Unit {u.unit_number} {u.hasActiveCard ? "(has active card)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">Units with an active card already are shown for reference. Only one active card per unit is allowed.</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Card Number</Label>
-                <div className="flex gap-2">
-                  <Input value={cardNumber} readOnly className="font-mono" />
-                  <Button variant="outline" onClick={() => setCardNumber(generateCardNumber())}>
-                    Regenerate
-                  </Button>
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Card Details</h3></div>
+                <div className="space-y-2">
+                  <Label>Card Number</Label>
+                  <div className="flex gap-2">
+                    <Input value={cardNumber} readOnly className="font-mono" />
+                    <Button variant="outline" onClick={() => setCardNumber(generateCardNumber())}>
+                      Regenerate
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Auto-generated unique card identifier. Click Regenerate for a new number.</p>
                 </div>
               </div>
               {previewSection}
@@ -354,20 +362,24 @@ function RentalIdCardsPage() {
             <DialogTitle>Mark Card as Lost</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <AlertDialogDescription className="text-sm">
-              {selectedCard && (
-                <span>
-                  Marking card <strong>{selectedCard.card_number}</strong> as lost. This will deactivate it.
-                </span>
-              )}
-            </AlertDialogDescription>
-            <div className="space-y-2">
-              <Label>Reason *</Label>
-              <Input
-                value={lostReason}
-                onChange={(e: any) => setLostReason(e.target.value)}
-                placeholder="e.g. Tenant reported lost, stolen, misplaced…"
-              />
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Lost Card Report</h3></div>
+              <AlertDialogDescription className="text-sm mb-4">
+                {selectedCard && (
+                  <span>
+                    Marking card <strong>{selectedCard.card_number}</strong> as lost. This will deactivate it and record the reason.
+                  </span>
+                )}
+              </AlertDialogDescription>
+              <div className="space-y-2">
+                <Label>Reason for Loss *</Label>
+                <Input
+                  value={lostReason}
+                  onChange={(e: any) => setLostReason(e.target.value)}
+                  placeholder="e.g. Tenant reported lost, stolen, misplaced, damaged…"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">Provide details about how the card was lost for record-keeping.</p>
+              </div>
             </div>
           </div>
           <DialogFooter>

@@ -343,61 +343,77 @@ function ELeasingPage() {
               <DialogHeader><DialogTitle>Application Details</DialogTitle></DialogHeader>
               {selectedApp && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Full Name</Label>
-                      <p className="text-sm font-medium">{selectedApp.full_name}</p>
-                    </div>
-                    <div>
-                      <Label>Email</Label>
-                      <p className="text-sm">{selectedApp.email}</p>
-                    </div>
-                    <div>
-                      <Label>Phone</Label>
-                      <p className="text-sm">{selectedApp.phone}</p>
-                    </div>
-                    <div>
-                      <Label>Property / Unit</Label>
-                      <p className="text-sm">
-                        {selectedApp.property?.name ?? "—"} {selectedApp.unit ? `/ ${selectedApp.unit.unit_number}` : ""}
-                      </p>
-                    </div>
-                    <div>
-                      <Label>ID Type</Label>
-                      <p className="text-sm">{selectedApp.id_type}</p>
-                    </div>
-                    <div>
-                      <Label>ID Number</Label>
-                      <p className="text-sm">{selectedApp.id_number}</p>
-                    </div>
-                    <div>
-                      <Label>Occupation</Label>
-                      <p className="text-sm">{selectedApp.occupation || "—"}</p>
-                    </div>
-                    <div>
-                      <Label>Employer</Label>
-                      <p className="text-sm">{selectedApp.employer || "—"}</p>
-                    </div>
-                    <div>
-                      <Label>Monthly Income</Label>
-                      <p className="text-sm">{selectedApp.monthly_income ? `UGX ${Number(selectedApp.monthly_income).toLocaleString()}` : "—"}</p>
-                    </div>
-                    <div>
-                      <Label>Status</Label>
-                      <div><StatusBadge status={selectedApp.status} /></div>
+                  <div>
+                    <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Applicant</h3></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Full Name</Label>
+                        <p className="text-sm font-medium">{selectedApp.full_name}</p>
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <p className="text-sm">{selectedApp.email}</p>
+                      </div>
+                      <div>
+                        <Label>Phone</Label>
+                        <p className="text-sm">{selectedApp.phone}</p>
+                      </div>
+                      <div>
+                        <Label>ID Type</Label>
+                        <p className="text-sm">{selectedApp.id_type}</p>
+                      </div>
+                      <div>
+                        <Label>ID Number</Label>
+                        <p className="text-sm">{selectedApp.id_number}</p>
+                      </div>
                     </div>
                   </div>
                   <div>
-                    <Label>Previous Address</Label>
-                    <p className="text-sm">{selectedApp.previous_address || "—"}</p>
+                    <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Property</h3></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Property / Unit</Label>
+                        <p className="text-sm">
+                          {selectedApp.property?.name ?? "—"} {selectedApp.unit ? `/ ${selectedApp.unit.unit_number}` : ""}
+                        </p>
+                      </div>
+                      <div>
+                        <Label>Status</Label>
+                        <div><StatusBadge status={selectedApp.status} /></div>
+                      </div>
+                    </div>
                   </div>
                   <div>
-                    <Label>Emergency Contact</Label>
-                    <p className="text-sm">{selectedApp.emergency_contact_name || "—"} {selectedApp.emergency_contact_phone ? `(${selectedApp.emergency_contact_phone})` : ""}</p>
+                    <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Terms</h3></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Occupation</Label>
+                        <p className="text-sm">{selectedApp.occupation || "—"}</p>
+                      </div>
+                      <div>
+                        <Label>Employer</Label>
+                        <p className="text-sm">{selectedApp.employer || "—"}</p>
+                      </div>
+                      <div>
+                        <Label>Monthly Income</Label>
+                        <p className="text-sm">{selectedApp.monthly_income ? `UGX ${Number(selectedApp.monthly_income).toLocaleString()}` : "—"}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <Label>Previous Address</Label>
+                      <p className="text-sm">{selectedApp.previous_address || "—"}</p>
+                    </div>
+                    <div className="mt-3">
+                      <Label>Emergency Contact</Label>
+                      <p className="text-sm">{selectedApp.emergency_contact_name || "—"} {selectedApp.emergency_contact_phone ? `(${selectedApp.emergency_contact_phone})` : ""}</p>
+                    </div>
                   </div>
                   <div>
-                    <Label>Notes</Label>
-                    <p className="text-sm">{selectedApp.notes || "—"}</p>
+                    <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Documents &amp; Notes</h3></div>
+                    <div>
+                      <Label>Notes</Label>
+                      <p className="text-sm">{selectedApp.notes || "—"}</p>
+                    </div>
                   </div>
 
                   <div className="space-y-2 border-t pt-2">
@@ -414,6 +430,7 @@ function ELeasingPage() {
                       </Select>
                       <Button onClick={handleStatusUpdate} disabled={updateStatus.isPending || statusUpdate === selectedApp.status}>Update</Button>
                     </div>
+                    <p className="mt-1 text-xs text-muted-foreground">Move the application through the review process.</p>
                   </div>
 
                   {selectedApp.status === "approved" && (
@@ -494,28 +511,35 @@ function ELeasingPage() {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Generate Listing Link</DialogTitle></DialogHeader>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
-                    <Label>Property *</Label>
-                    <Select value={linkForm.property_id} onValueChange={(v) => setLinkForm({ property_id: v, unit_id: "" })}>
-                      <SelectTrigger><SelectValue placeholder="Select property…" /></SelectTrigger>
-                      <SelectContent>
-                        {properties.map((p: any) => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Unit (optional)</Label>
-                    <Select value={linkForm.unit_id} onValueChange={(v) => setLinkForm({ ...linkForm, unit_id: v })} disabled={!linkForm.property_id}>
-                      <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
-                      <SelectContent>
-                        {filteredUnits.map((u: any) => (
-                          <SelectItem key={u.id} value={u.id}>Unit {u.unit_number}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Application Settings</h3></div>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Property *</Label>
+                        <Select value={linkForm.property_id} onValueChange={(v) => setLinkForm({ property_id: v, unit_id: "" })}>
+                          <SelectTrigger><SelectValue placeholder="Select property…" /></SelectTrigger>
+                          <SelectContent>
+                            {properties.map((p: any) => (
+                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="mt-1 text-xs text-muted-foreground">The property this listing link refers to.</p>
+                      </div>
+                      <div>
+                        <Label>Unit (optional)</Label>
+                        <Select value={linkForm.unit_id} onValueChange={(v) => setLinkForm({ ...linkForm, unit_id: v })} disabled={!linkForm.property_id}>
+                          <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
+                          <SelectContent>
+                            {filteredUnits.map((u: any) => (
+                              <SelectItem key={u.id} value={u.id}>Unit {u.unit_number}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="mt-1 text-xs text-muted-foreground">If omitted, applicants can choose from all available units in this property.</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>

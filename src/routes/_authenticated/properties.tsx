@@ -98,27 +98,38 @@ function PropertiesPage() {
         {isStaff && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />Add property</Button></DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>New property</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-                  <div><Label>Location / Area</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+              <div className="space-y-5">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Property Details</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Property Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Sunset Apartments, Hilltop Estate" /><p className="mt-1 text-xs text-muted-foreground">Official name of the property as used in lease agreements.</p></div>
+                    <div><Label>Property Type *</Label>
+                      <Select value={form.property_type} onValueChange={(v) => setForm({ ...form, property_type: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {PROPERTY_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ")}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief overview of the property, key features, amenities, etc." rows={3} /><p className="mt-1 text-xs text-muted-foreground">Describe the property's key features, number of units, and unique selling points.</p></div>
+                  </div>
                 </div>
-                <div><Label>Type</Label>
-                  <Select value={form.property_type} onValueChange={(v) => setForm({ ...form, property_type: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {PROPERTY_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ")}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Location &amp; Contact</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="e.g. Plot 42, Kampala Road" /></div>
+                    <div><Label>City / Municipality</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="e.g. Kampala, Entebbe" /></div>
+                    <div><Label>Location / Area</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. Kololo, Bugolobi" /><p className="mt-1 text-xs text-muted-foreground">Neighborhood or district within the city.</p></div>
+                  </div>
                 </div>
-                <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-                <div><Label>Image URL</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Media</h3></div>
+                  <div><Label>Image URL</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://example.com/property-image.jpg" /><p className="mt-1 text-xs text-muted-foreground">Link to a photo or rendering of the property for the listing card.</p></div>
+                </div>
               </div>
-              <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.name || create.isPending}>Create</Button></DialogFooter>
+              <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.name || create.isPending}>Create Property</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         )}
@@ -145,27 +156,38 @@ function PropertiesPage() {
       </div>
 
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingProp(null); }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader><DialogTitle>Edit property</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-            <div><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>City</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-              <div><Label>Location / Area</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+          <div className="space-y-5">
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Property Details</h3></div>
+              <div className="space-y-3">
+                <div><Label>Property Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /><p className="mt-1 text-xs text-muted-foreground">Official name of the property as used in lease agreements.</p></div>
+                <div><Label>Property Type</Label>
+                  <Select value={form.property_type} onValueChange={(v) => setForm({ ...form, property_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PROPERTY_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ")}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief overview of the property, key features, amenities, etc." rows={3} /></div>
+              </div>
             </div>
-            <div><Label>Type</Label>
-              <Select value={form.property_type} onValueChange={(v) => setForm({ ...form, property_type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PROPERTY_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ")}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Location &amp; Contact</h3></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+                <div><Label>City / Municipality</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+                <div><Label>Location / Area</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+              </div>
             </div>
-            <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            <div><Label>Image URL</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." /></div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Media</h3></div>
+              <div><Label>Image URL</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://example.com/property-image.jpg" /><p className="mt-1 text-xs text-muted-foreground">Link to a photo or rendering of the property for the listing card.</p></div>
+            </div>
           </div>
-          <DialogFooter><Button onClick={() => update.mutate()} disabled={!form.name || update.isPending}>Save</Button></DialogFooter>
+          <DialogFooter><Button onClick={() => update.mutate()} disabled={!form.name || update.isPending}>Save Changes</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -104,19 +104,26 @@ function SopFormsPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />New form</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editing ? "Edit form" : "Create a form"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-                <div><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-                <div><Label>Category</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
+              <div className="space-y-4">
                 <div>
-                  <Label>Form Config (JSON)</Label>
-                  <Textarea
-                    rows={12}
-                    className="font-mono text-xs"
-                    value={form.form_config}
-                    onChange={(e) => setForm({ ...form, form_config: e.target.value })}
-                    placeholder={`[\n  {\n    "label": "Field Name",\n    "type": "text",\n    "required": true\n  }\n]`}
-                  />
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Form Information</h3></div>
+                  <div><Label>Title <span className="text-destructive">*</span></Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Form title" /></div>
+                  <div className="mt-3"><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Purpose and usage of this form" /></div>
+                  <div className="mt-3"><Label>Category</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Safety, Quality Control, Inspection" /></div>
+                </div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Configuration</h3></div>
+                  <div>
+                    <Label>Form Config (JSON)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Define form fields as a JSON array of field objects</p>
+                    <Textarea
+                      rows={12}
+                      className="font-mono text-xs"
+                      value={form.form_config}
+                      onChange={(e) => setForm({ ...form, form_config: e.target.value })}
+                      placeholder={`[\n  {\n    "label": "Field Name",\n    "type": "text",\n    "required": true\n  }\n]`}
+                    />
+                  </div>
                 </div>
               </div>
               <DialogFooter className="gap-2">

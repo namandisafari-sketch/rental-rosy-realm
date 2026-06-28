@@ -270,135 +270,155 @@ function PaymentsPage() {
                 <Plus className="mr-2 h-4 w-4" />Record payment
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>Record a payment</DialogTitle></DialogHeader>
-              <div className="rounded-md bg-amber-50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-300">
+              <div className="rounded-md bg-amber-50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-300 mb-4">
                 <AlertTriangle className="mr-1 inline-block h-3 w-3" />
-                Rent due by the 25th per agreement. Late payments incur a <strong>5% penalty</strong> (clause 3).
+                Rent due by the <strong>25th</strong> per agreement. Late payments incur a <strong>5% penalty</strong> (clause 3).
               </div>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
-                  <Label>Lease</Label>
-                  <select
-                    className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm"
-                    value={form.lease_id}
-                    onChange={(e) => handleLeaseChange(e.target.value)}
-                  >
-                    <option value="">Select lease…</option>
-                    {leases.map((l: any) => (
-                      <option key={l.id} value={l.id}>
-                        {l.profile?.full_name ?? l.profile?.email} — {l.units?.properties?.name} · {l.units?.unit_number}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <Label>Payment type</Label>
-                  <Select value={form.payment_type} onValueChange={handlePaymentTypeChange}>
-                    <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {form.payment_type === "Rent" && (
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Lease &amp; Type</h3></div>
+                  <div className="space-y-3">
                     <div>
-                      <Label>Period start</Label>
+                      <Label>Lease *</Label>
+                      <select
+                        className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm"
+                        value={form.lease_id}
+                        onChange={(e) => handleLeaseChange(e.target.value)}
+                      >
+                        <option value="">Select lease…</option>
+                        {leases.map((l: any) => (
+                          <option key={l.id} value={l.id}>
+                            {l.profile?.full_name ?? l.profile?.email} — {l.units?.properties?.name} · {l.units?.unit_number}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-muted-foreground">Select the active lease this payment applies to.</p>
+                    </div>
+                    <div>
+                      <Label>Payment Type *</Label>
+                      <Select value={form.payment_type} onValueChange={handlePaymentTypeChange}>
+                        <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {PAYMENT_TYPES.map((t) => (
+                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                {form.payment_type === "Rent" && (
+                  <div>
+                    <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Period</h3></div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label>Period Start *</Label>
+                        <Input
+                          type="date"
+                          className="mt-1.5"
+                          value={form.period_start}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, period_start: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>Months Covered</Label>
+                        <Select value={form.months_covered} onValueChange={handleMonthsChange}>
+                          <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {MONTHS_OPTIONS.map((m) => (
+                              <SelectItem key={m} value={String(m)}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Period End</Label>
+                        <Input
+                          type="date"
+                          className="mt-1.5"
+                          value={periodEnd}
+                          readOnly
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">Auto-calculated</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Amount &amp; Date</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Amount (UGX) *</Label>
                       <Input
-                        type="date"
+                        type="number"
                         className="mt-1.5"
-                        value={form.period_start}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, period_start: e.target.value }))
-                        }
+                        value={form.amount}
+                        onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                        placeholder="e.g. 1500000"
                       />
                     </div>
                     <div>
-                      <Label>Months</Label>
-                      <Select value={form.months_covered} onValueChange={handleMonthsChange}>
+                      <Label>Payment Date *</Label>
+                      <Input
+                        type="date"
+                        className="mt-1.5"
+                        value={form.payment_date}
+                        onChange={(e) => setForm((f) => ({ ...f, payment_date: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Payment Details</h3></div>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Payment Method *</Label>
+                      <Select value={form.method} onValueChange={(v) => setForm((f) => ({ ...f, method: v }))}>
                         <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {MONTHS_OPTIONS.map((m) => (
-                            <SelectItem key={m} value={String(m)}>{m}</SelectItem>
+                          {METHODS.map((m) => (
+                            <SelectItem key={m} value={m}>{m === "mobile_money" ? "Mobile Money" : m.charAt(0).toUpperCase() + m.slice(1)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label>Period end</Label>
+                      <Label>Period Label</Label>
                       <Input
-                        type="date"
                         className="mt-1.5"
-                        value={periodEnd}
-                        readOnly
+                        value={form.period_label}
+                        onChange={(e) => setForm((f) => ({ ...f, period_label: e.target.value }))}
+                        placeholder="e.g. Jan 2026"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">Human-readable period description for receipts.</p>
+                    </div>
+                    <div>
+                      <Label>Reference / Receipt #</Label>
+                      <Input
+                        className="mt-1.5"
+                        value={form.reference}
+                        onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
+                        placeholder="e.g. TXN-001234"
                       />
                     </div>
                   </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
+                </div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
                   <div>
-                    <Label>Amount (UGX)</Label>
-                    <Input
-                      type="number"
+                    <Label>Internal Notes</Label>
+                    <Textarea
                       className="mt-1.5"
-                      value={form.amount}
-                      onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                      value={form.notes}
+                      onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                      placeholder="Any additional information about this payment…"
+                      rows={2}
                     />
                   </div>
-                  <div>
-                    <Label>Date</Label>
-                    <Input
-                      type="date"
-                      className="mt-1.5"
-                      value={form.payment_date}
-                      onChange={(e) => setForm((f) => ({ ...f, payment_date: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Method</Label>
-                  <Select value={form.method} onValueChange={(v) => setForm((f) => ({ ...f, method: v }))}>
-                    <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {METHODS.map((m) => (
-                        <SelectItem key={m} value={m}>{m.replace("_", " ")}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Period label (e.g. Jan 2026)</Label>
-                  <Input
-                    className="mt-1.5"
-                    value={form.period_label}
-                    onChange={(e) => setForm((f) => ({ ...f, period_label: e.target.value }))}
-                  />
-                </div>
-
-                <div>
-                  <Label>Reference / receipt #</Label>
-                  <Input
-                    className="mt-1.5"
-                    value={form.reference}
-                    onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
-                  />
-                </div>
-
-                <div>
-                  <Label>Notes</Label>
-                  <Textarea
-                    className="mt-1.5"
-                    value={form.notes}
-                    onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  />
                 </div>
               </div>
               <DialogFooter>
@@ -534,10 +554,11 @@ function PaymentsPage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit payment</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
+            <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Payment Details</h3></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Amount (UGX)</Label><Input type="number" className="mt-1.5" value={editForm.amount} onChange={(e) => setEditForm((f) => ({ ...f, amount: e.target.value }))} /></div>
-              <div><Label>Date</Label><Input type="date" className="mt-1.5" value={editForm.payment_date} onChange={(e) => setEditForm((f) => ({ ...f, payment_date: e.target.value }))} /></div>
+              <div><Label>Amount (UGX) *</Label><Input type="number" className="mt-1.5" value={editForm.amount} onChange={(e) => setEditForm((f) => ({ ...f, amount: e.target.value }))} placeholder="e.g. 1500000" /></div>
+              <div><Label>Date *</Label><Input type="date" className="mt-1.5" value={editForm.payment_date} onChange={(e) => setEditForm((f) => ({ ...f, payment_date: e.target.value }))} /></div>
             </div>
             <div>
               <Label>Method</Label>
@@ -545,13 +566,13 @@ function PaymentsPage() {
                 <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>{m.replace("_", " ")}</SelectItem>
+                    <SelectItem key={m} value={m}>{m === "mobile_money" ? "Mobile Money" : m.charAt(0).toUpperCase() + m.slice(1)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Reference / receipt #</Label><Input className="mt-1.5" value={editForm.reference} onChange={(e) => setEditForm((f) => ({ ...f, reference: e.target.value }))} /></div>
-            <div><Label>Notes</Label><Textarea className="mt-1.5" value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} /></div>
+            <div><Label>Reference / Receipt #</Label><Input className="mt-1.5" value={editForm.reference} onChange={(e) => setEditForm((f) => ({ ...f, reference: e.target.value }))} placeholder="e.g. TXN-001234" /></div>
+            <div><Label>Notes</Label><Textarea className="mt-1.5" value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Any additional information…" rows={2} /></div>
           </div>
           <DialogFooter>
             <Button onClick={() => update.mutate()} disabled={!editForm.amount || update.isPending}>Save</Button>

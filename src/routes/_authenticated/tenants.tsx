@@ -225,21 +225,22 @@ function TenantsPage() {
       <TabsContent value="basic" className="space-y-4 pt-4">
         <div className="space-y-2">
           <Label htmlFor="full_name">Full Name *</Label>
-          <Input id="full_name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+          <Input id="full_name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="e.g. John Mukasa" />
+          <p className="mt-1 text-xs text-muted-foreground">Legal full name as it appears on identification documents.</p>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <Label htmlFor="phone">Phone Number *</Label>
+            <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="e.g. +256 700 123456" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Label htmlFor="email">Email Address</Label>
+            <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="tenant@example.com" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="id_type">ID Type</Label>
+            <Label htmlFor="id_type">ID Type *</Label>
             <Select value={form.id_type} onValueChange={(v) => setForm({ ...form, id_type: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -250,8 +251,9 @@ function TenantsPage() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="id_number">ID Number</Label>
-            <Input id="id_number" value={form.id_number} onChange={(e) => setForm({ ...form, id_number: e.target.value })} />
+            <Label htmlFor="id_number">ID Number *</Label>
+            <Input id="id_number" value={form.id_number} onChange={(e) => setForm({ ...form, id_number: e.target.value })} placeholder="e.g. CM12345678" />
+            <p className="mt-1 text-xs text-muted-foreground">Government-issued identification number.</p>
           </div>
         </div>
         <div className="space-y-2">
@@ -264,6 +266,7 @@ function TenantsPage() {
               ))}
             </SelectContent>
           </Select>
+          <p className="mt-1 text-xs text-muted-foreground">Active tenants can be assigned leases. Blacklisted tenants cannot rent properties.</p>
         </div>
       </TabsContent>
 
@@ -271,16 +274,17 @@ function TenantsPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="emergency_contact_name">Emergency Contact Name</Label>
-            <Input id="emergency_contact_name" value={form.emergency_contact_name} onChange={(e) => setForm({ ...form, emergency_contact_name: e.target.value })} />
+            <Input id="emergency_contact_name" value={form.emergency_contact_name} onChange={(e) => setForm({ ...form, emergency_contact_name: e.target.value })} placeholder="e.g. Sarah Mukasa" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="emergency_contact_phone">Emergency Contact Phone</Label>
-            <Input id="emergency_contact_phone" value={form.emergency_contact_phone} onChange={(e) => setForm({ ...form, emergency_contact_phone: e.target.value })} />
+            <Input id="emergency_contact_phone" value={form.emergency_contact_phone} onChange={(e) => setForm({ ...form, emergency_contact_phone: e.target.value })} placeholder="e.g. +256 700 654321" />
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="previous_address">Previous Address</Label>
-          <Textarea id="previous_address" rows={3} value={form.previous_address} onChange={(e) => setForm({ ...form, previous_address: e.target.value })} />
+          <Textarea id="previous_address" rows={3} value={form.previous_address} onChange={(e) => setForm({ ...form, previous_address: e.target.value })} placeholder="e.g. Plot 10, Kololo, Kampala" />
+          <p className="mt-1 text-xs text-muted-foreground">Tenant's previous place of residence for reference.</p>
         </div>
       </TabsContent>
 
@@ -288,16 +292,17 @@ function TenantsPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="occupation">Occupation</Label>
-            <Input id="occupation" value={form.occupation} onChange={(e) => setForm({ ...form, occupation: e.target.value })} />
+            <Input id="occupation" value={form.occupation} onChange={(e) => setForm({ ...form, occupation: e.target.value })} placeholder="e.g. Software Engineer" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="employer">Employer</Label>
-            <Input id="employer" value={form.employer} onChange={(e) => setForm({ ...form, employer: e.target.value })} />
+            <Input id="employer" value={form.employer} onChange={(e) => setForm({ ...form, employer: e.target.value })} placeholder="e.g. ABC Company Ltd" />
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="monthly_income">Monthly Income (UGX)</Label>
-          <Input id="monthly_income" type="number" min={0} value={form.monthly_income} onChange={(e) => setForm({ ...form, monthly_income: Number(e.target.value) })} />
+          <Input id="monthly_income" type="number" min={0} value={form.monthly_income} onChange={(e) => setForm({ ...form, monthly_income: Number(e.target.value) })} placeholder="e.g. 3000000" />
+          <p className="mt-1 text-xs text-muted-foreground">Used for affordability assessment. Should be at least 2.5× the monthly rent.</p>
         </div>
       </TabsContent>
 
@@ -330,12 +335,14 @@ function TenantsPage() {
               <Copy className="h-4 w-4" />
             </Button>
           </div>
+          <p className="mt-1 text-xs text-muted-foreground">Used for tenant portal login. Must be a 4-digit number. Share securely with the tenant.</p>
         </div>
       </TabsContent>
 
       <div className="mt-4 space-y-2">
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea id="notes" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+        <Label htmlFor="notes">Internal Notes</Label>
+        <Textarea id="notes" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Any additional remarks, special considerations, or details about the tenant…" />
+        <p className="mt-1 text-xs text-muted-foreground">Notes visible only to staff. Not shared with the tenant.</p>
       </div>
     </Tabs>
   );

@@ -150,53 +150,72 @@ function PurchaseOrdersPage() {
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
               <DialogHeader><DialogTitle>Create purchase order</DialogTitle></DialogHeader>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Supplier</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}>
-                      <option value="">Select supplier…</option>
-                      {suppliers.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <Label>Project (optional)</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
-                      <option value="">Select project…</option>
-                      {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">PO Info</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Supplier *</Label>
+                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}>
+                        <option value="">Select supplier…</option>
+                        {suppliers.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <Label>Project (optional)</Label>
+                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
+                        <option value="">Select project…</option>
+                        {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between">
-                    <Label>Items</Label>
-                    <Button size="sm" variant="outline" onClick={addItem}><Plus className="mr-1 h-3 w-3" /> Add item</Button>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Items & Budget</h3></div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label>Items</Label>
+                      <Button size="sm" variant="outline" onClick={addItem}><Plus className="mr-1 h-3 w-3" /> Add item</Button>
+                    </div>
+                    <div className="space-y-2">
+                      {form.items.map((item, i) => (
+                        <div key={i} className="flex items-end gap-2 rounded-lg border border-border p-3">
+                          <div className="flex-1">
+                            <Label className="text-xs">Description *</Label>
+                            <Input value={item.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Item description" />
+                          </div>
+                          <div className="w-20">
+                            <Label className="text-xs">Qty</Label>
+                            <Input type="number" min={1} value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} />
+                          </div>
+                          <div className="w-28">
+                            <Label className="text-xs">Unit price</Label>
+                            <Input type="number" min={0} step={100} value={item.unit_price} onChange={(e) => updateItem(i, "unit_price", Number(e.target.value))} />
+                          </div>
+                          <div className="w-24 text-right">
+                            <Label className="text-xs">Total</Label>
+                            <div className="mt-1.5 text-sm font-semibold">UGX {(item.quantity * item.unit_price).toLocaleString()}</div>
+                          </div>
+                          <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0" disabled={form.items.length <= 1} onClick={() => removeItem(i)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="mt-2 space-y-2">
-                    {form.items.map((item, i) => (
-                      <div key={i} className="flex items-end gap-2 rounded-lg border border-border p-3">
-                        <div className="flex-1">
-                          <Label className="text-xs">Description</Label>
-                          <Input value={item.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Item description" />
-                        </div>
-                        <div className="w-20">
-                          <Label className="text-xs">Qty</Label>
-                          <Input type="number" min={1} value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} />
-                        </div>
-                        <div className="w-28">
-                          <Label className="text-xs">Unit price</Label>
-                          <Input type="number" min={0} step={100} value={item.unit_price} onChange={(e) => updateItem(i, "unit_price", Number(e.target.value))} />
-                        </div>
-                        <div className="w-24 text-right">
-                          <Label className="text-xs">Total</Label>
-                          <div className="mt-1.5 text-sm font-semibold">UGX {(item.quantity * item.unit_price).toLocaleString()}</div>
-                        </div>
-                        <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0" disabled={form.items.length <= 1} onClick={() => removeItem(i)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    ))}
+                </div>
+
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Dates & Status</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Order date</Label><Input type="date" /></div>
+                    <div><Label>Status</Label><span className="mt-1.5 block text-sm text-muted-foreground">Draft (set on create)</span></div>
                   </div>
+                </div>
+
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
+                  <div><Label>Internal notes</Label><textarea className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" rows={2} placeholder="Additional instructions or notes" /></div>
                 </div>
 
                 <div className="flex justify-end border-t border-border pt-3">

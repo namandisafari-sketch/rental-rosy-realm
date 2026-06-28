@@ -107,15 +107,24 @@ function ProjectBudgetPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />{editing ? "Edit budget item" : "New budget item"}</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editing ? "Edit budget item" : "Create a budget item"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} /></div>
-                <div><Label>Category</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div><Label>Budgeted</Label><Input type="number" value={form.budgeted} onChange={(e) => setForm({ ...form, budgeted: e.target.value })} /></div>
-                  <div><Label>Committed</Label><Input type="number" value={form.committed} onChange={(e) => setForm({ ...form, committed: e.target.value })} /></div>
-                  <div><Label>Spent</Label><Input type="number" value={form.spent} onChange={(e) => setForm({ ...form, spent: e.target.value })} /></div>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Category</h3></div>
+                  <div><Label>Project ID <span className="text-destructive">*</span></Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} placeholder="Reference project ID" /></div>
+                  <div className="mt-3"><Label>Category <span className="text-destructive">*</span></Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Materials, Labour, Equipment" /></div>
                 </div>
-                <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Financial</h3></div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div><Label>Budgeted (UGX) <span className="text-destructive">*</span></Label><Input type="number" value={form.budgeted} onChange={(e) => setForm({ ...form, budgeted: e.target.value })} placeholder="Planned budget" /></div>
+                    <div><Label>Committed (UGX)</Label><Input type="number" value={form.committed} onChange={(e) => setForm({ ...form, committed: e.target.value })} placeholder="Amount committed" /></div>
+                    <div><Label>Spent (UGX)</Label><Input type="number" value={form.spent} onChange={(e) => setForm({ ...form, spent: e.target.value })} placeholder="Amount spent" /></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
+                  <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes about this budget line item" /></div>
+                </div>
               </div>
               <DialogFooter className="gap-2">
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>

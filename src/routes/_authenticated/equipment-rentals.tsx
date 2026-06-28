@@ -386,147 +386,137 @@ function EquipmentRentalsPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="asset_id">Asset *</Label>
-                <Select
-                  value={form.asset_id}
-                  onValueChange={(v) => {
-                    const asset = availableAssets?.find((a) => a.id === v);
-                    setForm({
-                      ...form,
-                      asset_id: v,
-                      daily_rate: asset?.daily_rate ?? 0,
-                    });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select equipment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableAssets?.length === 0 && (
-                      <SelectItem value="__none__" disabled>
-                        No available equipment
-                      </SelectItem>
-                    )}
-                    {availableAssets?.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.name} ({a.category}) - {formatUGX(a.daily_rate ?? 0)}
-                        /day
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="employee_id">Employee *</Label>
-                  <Select
-                    value={form.employee_id}
-                    onValueChange={(v) =>
-                      setForm({ ...form, employee_id: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select employee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employees?.map((e) => (
-                        <SelectItem key={e.id} value={e.id}>
-                          {e.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="project_id">Project</Label>
-                  <Select
-                    value={form.project_id}
-                    onValueChange={(v) =>
-                      setForm({ ...form, project_id: v })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects?.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Equipment</h3></div>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="asset_id">Asset *</Label>
+                    <Select
+                      value={form.asset_id}
+                      onValueChange={(v) => {
+                        const asset = availableAssets?.find((a) => a.id === v);
+                        setForm({
+                          ...form,
+                          asset_id: v,
+                          daily_rate: asset?.daily_rate ?? 0,
+                        });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select equipment" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableAssets?.length === 0 && (
+                          <SelectItem value="__none__" disabled>
+                            No available equipment
+                          </SelectItem>
+                        )}
+                        {availableAssets?.map((a) => (
+                          <SelectItem key={a.id} value={a.id}>
+                            {a.name} ({a.category}) - {formatUGX(a.daily_rate ?? 0)}/day
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="condition_before">Condition Before</Label>
+                    <Input
+                      id="condition_before"
+                      value={form.condition_before}
+                      onChange={(e) => setForm({ ...form, condition_before: e.target.value })}
+                      placeholder="e.g. Good, fair, excellent"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start_date">Start Date *</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={form.start_date}
-                    onChange={(e) =>
-                      setForm({ ...form, start_date: e.target.value })
-                    }
-                  />
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Rental Period</h3></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start_date">Start Date *</Label>
+                    <Input
+                      id="start_date"
+                      type="date"
+                      value={form.start_date}
+                      onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="expected_return_date">Expected Return Date *</Label>
+                    <Input
+                      id="expected_return_date"
+                      type="date"
+                      value={form.expected_return_date}
+                      onChange={(e) => setForm({ ...form, expected_return_date: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expected_return_date">
-                    Expected Return Date *
-                  </Label>
-                  <Input
-                    id="expected_return_date"
-                    type="date"
-                    value={form.expected_return_date}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        expected_return_date: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="daily_rate">Daily Rate (UGX) *</Label>
-                  <Input
-                    id="daily_rate"
-                    type="number"
-                    min={0}
-                    value={form.daily_rate}
-                    onChange={(e) =>
-                      setForm({ ...form, daily_rate: Number(e.target.value) })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="deposit_amount">Deposit Amount (UGX)</Label>
-                  <Input
-                    id="deposit_amount"
-                    type="number"
-                    min={0}
-                    value={form.deposit_amount}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        deposit_amount: Number(e.target.value),
-                      })
-                    }
-                  />
+                <div className="grid grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="daily_rate">Daily Rate (UGX) *</Label>
+                    <Input
+                      id="daily_rate"
+                      type="number"
+                      min={0}
+                      value={form.daily_rate}
+                      onChange={(e) => setForm({ ...form, daily_rate: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="deposit_amount">Deposit Amount (UGX)</Label>
+                    <Input
+                      id="deposit_amount"
+                      type="number"
+                      min={0}
+                      value={form.deposit_amount}
+                      onChange={(e) => setForm({ ...form, deposit_amount: Number(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="condition_before">Condition Before</Label>
-                <Input
-                  id="condition_before"
-                  value={form.condition_before}
-                  onChange={(e) =>
-                    setForm({ ...form, condition_before: e.target.value })
-                  }
-                  placeholder="e.g. Good, fair, excellent"
-                />
+              <div>
+                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Vendor & Contact</h3></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="employee_id">Employee *</Label>
+                    <Select
+                      value={form.employee_id}
+                      onValueChange={(v) => setForm({ ...form, employee_id: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees?.map((e) => (
+                          <SelectItem key={e.id} value={e.id}>
+                            {e.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="project_id">Project</Label>
+                    <Select
+                      value={form.project_id}
+                      onValueChange={(v) => setForm({ ...form, project_id: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects?.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </div>
             <DialogFooter>

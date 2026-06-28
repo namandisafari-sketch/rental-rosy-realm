@@ -103,32 +103,48 @@ function ExpensesPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4"/>Add expense</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Record an expense</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Category</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
-                      <option value="">Select category…</option>
-                      {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-                  <div><Label>Amount (UGX)</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Date</Label><Input type="date" value={form.expense_date} onChange={(e) => setForm({ ...form, expense_date: e.target.value })} /></div>
-                  <div><Label>Employee</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })}>
-                      <option value="">Select employee…</option>
-                      {employees.map((e: any) => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                    </select>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Expense Info</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Description *</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What was this expense for?" /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Amount (UGX) *</Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0" /></div>
+                      <div><Label>Date *</Label><Input type="date" value={form.expense_date} onChange={(e) => setForm({ ...form, expense_date: e.target.value })} /></div>
+                    </div>
                   </div>
                 </div>
-                <div><Label>Project</Label>
-                  <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
-                    <option value="">Select project…</option>
-                    {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Category & Project</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Category</Label>
+                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
+                        <option value="">Select category…</option>
+                        {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div><Label>Employee</Label>
+                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })}>
+                        <option value="">Select employee…</option>
+                        {employees.map((e: any) => <option key={e.id} value={e.id}>{e.full_name}</option>)}
+                      </select>
+                    </div>
+                    <div><Label>Project</Label>
+                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
+                        <option value="">Select project…</option>
+                        {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div><Label>Description</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Payment Details</h3></div>
+                  <div><Label>Vendor</Label><Input placeholder="Vendor or payee name" /></div>
+                </div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Receipt</h3></div>
+                  <div><Label>Receipt image / URL</Label><Input placeholder="https://example.com/receipt.jpg" /></div>
+                </div>
               </div>
               <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.amount || Number(form.amount) <= 0 || create.isPending}>Record</Button></DialogFooter>
             </DialogContent>

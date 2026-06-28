@@ -114,14 +114,23 @@ function CostCodesPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />New cost code</Button></DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader><DialogTitle>{editing ? "Edit cost code" : "Create a cost code"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Code *</Label><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="e.g. 01-010" /></div>
-                <div><Label>Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-                <div><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-                <div><Label>Category</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Labour, Materials, Equipment" /></div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
-                  <Label>Active</Label>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Code Information</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Code <span className="text-destructive">*</span></Label><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="e.g. 01-010" /></div>
+                    <div><Label>Name <span className="text-destructive">*</span></Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name of the cost code" /></div>
+                  </div>
+                  <div className="mt-3"><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What this cost code covers" /></div>
+                </div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Classification</h3></div>
+                  <div><Label>Category <span className="text-destructive">*</span></Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Labour, Materials, Equipment" /></div>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+                    <Label>Active</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Inactive cost codes will be hidden from selection lists</p>
                 </div>
               </div>
               <DialogFooter className="gap-2">

@@ -116,17 +116,32 @@ function DailyLogsPage() {
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />{editing ? "Edit log" : "New log"}</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
               <DialogHeader><DialogTitle>{editing ? "Edit daily log" : "Create a daily log"}</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Log date *</Label><Input type="date" value={form.log_date} onChange={(e) => setForm({ ...form, log_date: e.target.value })} /></div>
-                <div><Label>Weather</Label><Input value={form.weather} onChange={(e) => setForm({ ...form, weather: e.target.value })} placeholder="e.g. Sunny, Rainy" /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Temperature (°C)</Label><Input type="number" value={form.temperature} onChange={(e) => setForm({ ...form, temperature: e.target.value })} /></div>
-                  <div><Label>Workers on site</Label><Input type="number" value={form.workers_on_site} onChange={(e) => setForm({ ...form, workers_on_site: e.target.value })} /></div>
+              <div className="space-y-4">
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Date & Weather</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Log date *</Label><Input type="date" value={form.log_date} onChange={(e) => setForm({ ...form, log_date: e.target.value })} /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label>Weather condition</Label><Input value={form.weather} onChange={(e) => setForm({ ...form, weather: e.target.value })} placeholder="e.g. Sunny, Rainy, Cloudy" /></div>
+                      <div><Label>Temperature (°C)</Label><Input type="number" value={form.temperature} onChange={(e) => setForm({ ...form, temperature: e.target.value })} placeholder="e.g. 28" /></div>
+                    </div>
+                  </div>
                 </div>
-                <div><Label>Hours worked</Label><Input type="number" value={form.hours_worked} onChange={(e) => setForm({ ...form, hours_worked: e.target.value })} /></div>
-                <div><Label>Notes</Label><Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
-                <div><Label>Delays</Label><Textarea rows={2} value={form.delays} onChange={(e) => setForm({ ...form, delays: e.target.value })} /></div>
-                <div><Label>Safety incidents</Label><Textarea rows={2} value={form.safety_incidents} onChange={(e) => setForm({ ...form, safety_incidents: e.target.value })} /></div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Workforce</h3></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label>Workers on site</Label><Input type="number" value={form.workers_on_site} onChange={(e) => setForm({ ...form, workers_on_site: e.target.value })} placeholder="Number of workers present" /></div>
+                    <div><Label>Hours worked</Label><Input type="number" value={form.hours_worked} onChange={(e) => setForm({ ...form, hours_worked: e.target.value })} placeholder="Total man-hours" /></div>
+                  </div>
+                </div>
+                <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes & Incidents</h3></div>
+                  <div className="space-y-3">
+                    <div><Label>Daily notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Summary of the day's activities" /></div>
+                    <div><Label>Delays</Label><Textarea rows={2} value={form.delays} onChange={(e) => setForm({ ...form, delays: e.target.value })} placeholder="Any delays and their causes" /></div>
+                    <div><Label>Safety incidents</Label><Textarea rows={2} value={form.safety_incidents} onChange={(e) => setForm({ ...form, safety_incidents: e.target.value })} placeholder="Report any safety issues or incidents" /></div>
+                  </div>
+                </div>
               </div>
               <DialogFooter className="gap-2">
                 <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
