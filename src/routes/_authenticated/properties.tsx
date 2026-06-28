@@ -20,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/properties")({
 });
 
 const PROPERTY_TYPES = ["residential", "commercial", "industrial", "land", "mixed_use"] as const;
+const UNIT_TYPES = ["residential", "commercial", "retail", "office", "warehouse", "storage"] as const;
+const EMPTY_UNIT = { unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant" };
 
 function PropertiesPage() {
   const role = useHighestRole();
