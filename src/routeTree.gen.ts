@@ -48,6 +48,7 @@ import { Route as AuthenticatedProgressPaymentsRouteImport } from './routes/_aut
 import { Route as AuthenticatedPreventativeMaintenanceRouteImport } from './routes/_authenticated/preventative-maintenance'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedPaymentProofsRouteImport } from './routes/_authenticated/payment-proofs'
+import { Route as AuthenticatedMyIdCardRouteImport } from './routes/_authenticated/my-id-card'
 import { Route as AuthenticatedMeetingMinutesRouteImport } from './routes/_authenticated/meeting-minutes'
 import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
 import { Route as AuthenticatedListingBannersRouteImport } from './routes/_authenticated/listing-banners'
@@ -284,6 +285,11 @@ const AuthenticatedPaymentProofsRoute =
     path: '/payment-proofs',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedMyIdCardRoute = AuthenticatedMyIdCardRouteImport.update({
+  id: '/my-id-card',
+  path: '/my-id-card',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedMeetingMinutesRoute =
   AuthenticatedMeetingMinutesRouteImport.update({
     id: '/meeting-minutes',
@@ -446,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/listing-banners': typeof AuthenticatedListingBannersRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/meeting-minutes': typeof AuthenticatedMeetingMinutesRoute
+  '/my-id-card': typeof AuthenticatedMyIdCardRoute
   '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
@@ -510,6 +517,7 @@ export interface FileRoutesByTo {
   '/listing-banners': typeof AuthenticatedListingBannersRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/meeting-minutes': typeof AuthenticatedMeetingMinutesRoute
+  '/my-id-card': typeof AuthenticatedMyIdCardRoute
   '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
@@ -576,6 +584,7 @@ export interface FileRoutesById {
   '/_authenticated/listing-banners': typeof AuthenticatedListingBannersRoute
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
   '/_authenticated/meeting-minutes': typeof AuthenticatedMeetingMinutesRoute
+  '/_authenticated/my-id-card': typeof AuthenticatedMyIdCardRoute
   '/_authenticated/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
@@ -642,6 +651,7 @@ export interface FileRouteTypes {
     | '/listing-banners'
     | '/maintenance'
     | '/meeting-minutes'
+    | '/my-id-card'
     | '/payment-proofs'
     | '/payments'
     | '/preventative-maintenance'
@@ -706,6 +716,7 @@ export interface FileRouteTypes {
     | '/listing-banners'
     | '/maintenance'
     | '/meeting-minutes'
+    | '/my-id-card'
     | '/payment-proofs'
     | '/payments'
     | '/preventative-maintenance'
@@ -771,6 +782,7 @@ export interface FileRouteTypes {
     | '/_authenticated/listing-banners'
     | '/_authenticated/maintenance'
     | '/_authenticated/meeting-minutes'
+    | '/_authenticated/my-id-card'
     | '/_authenticated/payment-proofs'
     | '/_authenticated/payments'
     | '/_authenticated/preventative-maintenance'
@@ -1091,6 +1103,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPaymentProofsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/my-id-card': {
+      id: '/_authenticated/my-id-card'
+      path: '/my-id-card'
+      fullPath: '/my-id-card'
+      preLoaderRoute: typeof AuthenticatedMyIdCardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/meeting-minutes': {
       id: '/_authenticated/meeting-minutes'
       path: '/meeting-minutes'
@@ -1300,6 +1319,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedListingBannersRoute: typeof AuthenticatedListingBannersRoute
   AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
   AuthenticatedMeetingMinutesRoute: typeof AuthenticatedMeetingMinutesRoute
+  AuthenticatedMyIdCardRoute: typeof AuthenticatedMyIdCardRoute
   AuthenticatedPaymentProofsRoute: typeof AuthenticatedPaymentProofsRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedPreventativeMaintenanceRoute: typeof AuthenticatedPreventativeMaintenanceRoute
@@ -1359,6 +1379,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedListingBannersRoute: AuthenticatedListingBannersRoute,
   AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
   AuthenticatedMeetingMinutesRoute: AuthenticatedMeetingMinutesRoute,
+  AuthenticatedMyIdCardRoute: AuthenticatedMyIdCardRoute,
   AuthenticatedPaymentProofsRoute: AuthenticatedPaymentProofsRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedPreventativeMaintenanceRoute:
@@ -1410,13 +1431,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
