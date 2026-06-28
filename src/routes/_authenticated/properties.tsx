@@ -174,6 +174,7 @@ function PropertiesPage() {
               <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.name || create.isPending}>Create Property</Button></DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
 
