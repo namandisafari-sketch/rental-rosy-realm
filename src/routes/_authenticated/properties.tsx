@@ -87,6 +87,39 @@ function PropertiesPage() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const createUnit = useMutation({
+    mutationFn: async () => {
+      if (!unitPropertyId) throw new Error("Select a property");
+      const { error } = await supabase.from("units").insert({
+        property_id: unitPropertyId,
+        unit_number: unitForm.unit_number,
+        unit_type: unitForm.unit_type,
+        floor_number: unitForm.floor_number ? Number(unitForm.floor_number) : null,
+        size_sqm: unitForm.size_sqm ? Number(unitForm.size_sqm) : null,
+        monthly_rent: Number(unitForm.monthly_rent),
+        bedrooms: Number(unitForm.bedrooms),
+        bathrooms: Number(unitForm.bathrooms),
+        deposit_amount: Number(unitForm.deposit_amount),
+        status: unitForm.status,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Unit added");
+      setUnitOpen(false);
+      setUnitForm(EMPTY_UNIT);
+      qc.invalidateQueries({ queryKey: ["properties"] });
+      qc.invalidateQueries({ queryKey: ["units", unitPropertyId] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  function openAddUnit(propertyId: string) {
+    setUnitPropertyId(propertyId);
+    setUnitForm(EMPTY_UNIT);
+    setUnitOpen(true);
+  }
+
   function openEdit(p: any) {
     setEditingProp(p);
     setForm({ name: p.name, address: p.address ?? "", location: p.location ?? "", city: (p as any).city ?? "", property_type: p.property_type ?? "residential", description: p.description ?? "", image_url: p.image_url ?? "" });
