@@ -134,6 +134,10 @@ function PropertiesPage() {
           <h1 className="display text-3xl font-bold">Properties</h1>
         </div>
         {isStaff && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" disabled={properties.length === 0} onClick={() => openAddUnit(unitPropertyId || (properties[0] as any)?.id || "")}>
+              <Home className="mr-2 h-4 w-4" />Add unit
+            </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />Add property</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
