@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Building2, MapPin, Pencil, Archive, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Building2, MapPin, Pencil, Archive, Search, SlidersHorizontal, Home } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/properties")({
@@ -20,6 +20,8 @@ export const Route = createFileRoute("/_authenticated/properties")({
 });
 
 const PROPERTY_TYPES = ["residential", "commercial", "industrial", "land", "mixed_use"] as const;
+const UNIT_TYPES = ["residential", "commercial", "retail", "office", "warehouse", "storage"] as const;
+const EMPTY_UNIT = { unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant" };
 
 function PropertiesPage() {
   const role = useHighestRole();
@@ -31,6 +33,9 @@ function PropertiesPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [form, setForm] = useState({ name: "", address: "", location: "", city: "", property_type: "residential", description: "", image_url: "" });
+  const [unitOpen, setUnitOpen] = useState(false);
+  const [unitPropertyId, setUnitPropertyId] = useState<string>("");
+  const [unitForm, setUnitForm] = useState(EMPTY_UNIT);
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["properties"],
@@ -82,6 +87,39 @@ function PropertiesPage() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const createUnit = useMutation({
+    mutationFn: async () => {
+      if (!unitPropertyId) throw new Error("Select a property");
+      const { error } = await supabase.from("units").insert({
+        property_id: unitPropertyId,
+        unit_number: unitForm.unit_number,
+        unit_type: unitForm.unit_type,
+        floor_number: unitForm.floor_number ? Number(unitForm.floor_number) : null,
+        size_sqm: unitForm.size_sqm ? Number(unitForm.size_sqm) : null,
+        monthly_rent: Number(unitForm.monthly_rent),
+        bedrooms: Number(unitForm.bedrooms),
+        bathrooms: Number(unitForm.bathrooms),
+        deposit_amount: Number(unitForm.deposit_amount),
+        status: unitForm.status,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Unit added");
+      setUnitOpen(false);
+      setUnitForm(EMPTY_UNIT);
+      qc.invalidateQueries({ queryKey: ["properties"] });
+      qc.invalidateQueries({ queryKey: ["units", unitPropertyId] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  function openAddUnit(propertyId: string) {
+    setUnitPropertyId(propertyId);
+    setUnitForm(EMPTY_UNIT);
+    setUnitOpen(true);
+  }
+
   function openEdit(p: any) {
     setEditingProp(p);
     setForm({ name: p.name, address: p.address ?? "", location: p.location ?? "", city: (p as any).city ?? "", property_type: p.property_type ?? "residential", description: p.description ?? "", image_url: p.image_url ?? "" });
@@ -96,6 +134,10 @@ function PropertiesPage() {
           <h1 className="display text-3xl font-bold">Properties</h1>
         </div>
         {isStaff && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" disabled={properties.length === 0} onClick={() => openAddUnit(unitPropertyId || (properties[0] as any)?.id || "")}>
+              <Home className="mr-2 h-4 w-4" />Add unit
+            </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />Add property</Button></DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -132,6 +174,7 @@ function PropertiesPage() {
               <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.name || create.isPending}>Create Property</Button></DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
 
@@ -191,6 +234,51 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={unitOpen} onOpenChange={(v) => { setUnitOpen(v); if (!v) setUnitForm(EMPTY_UNIT); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>New unit</DialogTitle><DialogDescription>Add a unit directly into one of your properties.</DialogDescription></DialogHeader>
+          <div className="grid gap-3">
+            <div>
+              <Label>Property *</Label>
+              <Select value={unitPropertyId} onValueChange={setUnitPropertyId}>
+                <SelectTrigger><SelectValue placeholder="Select a property" /></SelectTrigger>
+                <SelectContent>
+                  {(properties as any[]).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Unit number *</Label><Input value={unitForm.unit_number} onChange={(e) => setUnitForm({ ...unitForm, unit_number: e.target.value })} placeholder="e.g. A1, 101" /></div>
+              <div><Label>Type</Label>
+                <Select value={unitForm.unit_type} onValueChange={(v) => setUnitForm({ ...unitForm, unit_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{UNIT_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Floor</Label><Input type="number" value={unitForm.floor_number} onChange={(e) => setUnitForm({ ...unitForm, floor_number: e.target.value })} /></div>
+              <div><Label>Size (sqm)</Label><Input type="number" value={unitForm.size_sqm} onChange={(e) => setUnitForm({ ...unitForm, size_sqm: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Bedrooms</Label><Input type="number" value={unitForm.bedrooms} onChange={(e) => setUnitForm({ ...unitForm, bedrooms: e.target.value })} /></div>
+              <div><Label>Bathrooms</Label><Input type="number" value={unitForm.bathrooms} onChange={(e) => setUnitForm({ ...unitForm, bathrooms: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Monthly rent (UGX)</Label><Input type="number" value={unitForm.monthly_rent} onChange={(e) => setUnitForm({ ...unitForm, monthly_rent: e.target.value })} /></div>
+              <div><Label>Deposit (UGX)</Label><Input type="number" value={unitForm.deposit_amount} onChange={(e) => setUnitForm({ ...unitForm, deposit_amount: e.target.value })} /></div>
+            </div>
+            <div><Label>Status</Label>
+              <Select value={unitForm.status} onValueChange={(v) => setUnitForm({ ...unitForm, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="vacant">Vacant</SelectItem><SelectItem value="occupied">Occupied</SelectItem><SelectItem value="maintenance">Maintenance</SelectItem></SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter><Button onClick={() => createUnit.mutate()} disabled={!unitForm.unit_number || !unitPropertyId || createUnit.isPending}>Create Unit</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <div className="text-sm text-muted-foreground">Loading…</div> : filtered.length === 0 ? (
         <Card><CardContent className="flex flex-col items-center gap-2 py-16 text-center">
           <Building2 className="h-10 w-10 text-muted-foreground" />
@@ -223,6 +311,7 @@ function PropertiesPage() {
                 </Link>
                 {isStaff && (
                   <div className="absolute right-2 top-2 hidden gap-1 group-hover:flex">
+                    <Button size="icon" variant="secondary" className="h-7 w-7" title="Add unit" onClick={(e) => { e.preventDefault(); openAddUnit(p.id); }}><Plus className="h-3.5 w-3.5" /></Button>
                     <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => { e.preventDefault(); openEdit(p); }}><Pencil className="h-3.5 w-3.5" /></Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild><Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => e.preventDefault()}><Archive className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
