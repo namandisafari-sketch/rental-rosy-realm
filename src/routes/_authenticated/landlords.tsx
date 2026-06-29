@@ -236,6 +236,7 @@ function LandlordsPage() {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                      </div>
                     )}
                   </div>
                 </div>
