@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Search, Users, Phone, Mail, Eye, EyeOff, Copy, Key, ShieldAlert, Check, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Search, Users, Phone, Mail, Eye, EyeOff, Copy, Key, ShieldAlert, Check, RefreshCw, Building2, Home, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 const ID_TYPES = ["national_id", "passport", "drivers_license"] as const;
@@ -34,6 +34,8 @@ const emptyForm = {
   monthly_income: 0,
   access_pin: "",
   notes: "",
+  property_id: "",
+  unit_id: "",
 };
 
 export const Route = createFileRoute("/_authenticated/tenants")({
@@ -55,6 +57,31 @@ function TenantsPage() {
   const [pinVisible, setPinVisible] = useState(false);
   const [formTab, setFormTab] = useState("basic");
 
+  const { data: properties = [] } = useQuery({
+    queryKey: ["tenant-properties"],
+    queryFn: async () => {
+      const { data } = await supabase.from("properties").select("id, name, location").order("name");
+      return data ?? [];
+    },
+  });
+
+  const [formPropertyId, setFormPropertyId] = useState("");
+
+  const { data: propertyUnits = [] } = useQuery({
+    queryKey: ["tenant-property-units", formPropertyId],
+    queryFn: async () => {
+      if (!formPropertyId) return [];
+      const { data } = await supabase
+        .from("units")
+        .select("id, unit_number, floor_number, monthly_rent, bedrooms, bathrooms, status")
+        .eq("property_id", formPropertyId)
+        .order("floor_number", { ascending: true, nullsFirst: false })
+        .order("unit_number");
+      return data ?? [];
+    },
+    enabled: !!formPropertyId,
+  });
+
   const { data: tenants = [], isLoading } = useQuery({
     queryKey: ["tenants"],
     queryFn: async () => {
@@ -67,7 +94,7 @@ function TenantsPage() {
       if (tenantList.length === 0) return tenantList;
       const { data: leases } = await supabase
         .from("leases")
-        .select("tenant_id, monthly_rent, outstanding_balance, unit_id, units!inner(unit_number)")
+        .select("tenant_id, monthly_rent, outstanding_balance, unit_id, units!inner(unit_number, floor_number, property_id, properties!inner(name))")
         .eq("status", "active")
         .in("tenant_id", tenantList.map((t: any) => t.id));
       const leaseMap = new Map((leases ?? []).map((l: any) => [l.tenant_id, l]));
@@ -93,6 +120,8 @@ function TenantsPage() {
 
   function openEdit(t: any) {
     setSelectedTenant(t);
+    const leaseUnitId = t.lease?.unit_id ?? "";
+    const leasePropertyId = t.lease?.units?.property_id ?? "";
     setForm({
       full_name: t.full_name ?? "",
       phone: t.phone ?? "",
@@ -108,7 +137,10 @@ function TenantsPage() {
       monthly_income: t.monthly_income ?? 0,
       access_pin: t.access_pin ?? "",
       notes: t.notes ?? "",
+      property_id: leasePropertyId,
+      unit_id: leaseUnitId,
     });
+    setFormPropertyId(leasePropertyId);
     setPinVisible(false);
     setFormTab("basic");
     setEditOpen(true);
@@ -116,6 +148,7 @@ function TenantsPage() {
 
   function resetForm() {
     setForm({ ...emptyForm });
+    setFormPropertyId("");
     setPinVisible(false);
     setFormTab("basic");
   }
@@ -136,12 +169,34 @@ function TenantsPage() {
 
   const createMutation = useMutation({
     mutationFn: async (values: typeof form) => {
-      const { error } = await supabase.from("tenants").insert([values]);
+      const { property_id, unit_id, ...tenantData } = values;
+      const { data: newTenant, error } = await supabase.from("tenants").insert([tenantData]).select("id").single();
       if (error) throw error;
+      if (unit_id && newTenant) {
+        const unit = propertyUnits.find((u: any) => u.id === unit_id);
+        const monthlyRent = unit?.monthly_rent ?? 0;
+        const { error: le } = await supabase.from("leases").insert({
+          tenant_id: newTenant.id,
+          unit_id,
+          monthly_rent: monthlyRent,
+          deposit: monthlyRent,
+          deposit_months: 1,
+          start_date: new Date().toISOString().slice(0, 10),
+          payment_due_day: 25,
+          billing_period: "monthly",
+          late_fee_amount: Math.round(monthlyRent * 0.05),
+          late_fee_grace_days: 5,
+          notice_period_days: 30,
+          status: "active",
+        });
+        if (le) throw le;
+        await supabase.from("units").update({ status: "occupied" }).eq("id", unit_id);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tenants"] });
-      toast.success("Tenant created");
+      qc.invalidateQueries({ queryKey: ["leases"] });
+      toast.success("Tenant created" + (form.unit_id ? " with lease" : ""));
       setCreateOpen(false);
       resetForm();
     },
@@ -150,12 +205,55 @@ function TenantsPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (values: typeof form & { id: string }) => {
-      const { id, ...rest } = values;
+      const { id, property_id, unit_id, ...rest } = values;
       const { error } = await supabase.from("tenants").update(rest).eq("id", id);
       if (error) throw error;
+      if (unit_id) {
+        const existingLease = tenants.find((t: any) => t.id === id)?.lease;
+        if (existingLease) {
+          if (existingLease.unit_id !== unit_id) {
+            await supabase.from("units").update({ status: "vacant" }).eq("id", existingLease.unit_id);
+            const unit = propertyUnits.find((u: any) => u.id === unit_id);
+            const monthlyRent = unit?.monthly_rent ?? existingLease.monthly_rent;
+            const { error: le } = await supabase.from("leases").update({
+              unit_id,
+              monthly_rent: monthlyRent,
+              deposit: monthlyRent,
+            }).eq("id", existingLease.id);
+            if (le) throw le;
+            await supabase.from("units").update({ status: "occupied" }).eq("id", unit_id);
+          }
+        } else {
+          const unit = propertyUnits.find((u: any) => u.id === unit_id);
+          const monthlyRent = unit?.monthly_rent ?? 0;
+          const { error: le } = await supabase.from("leases").insert({
+            tenant_id: id,
+            unit_id,
+            monthly_rent: monthlyRent,
+            deposit: monthlyRent,
+            deposit_months: 1,
+            start_date: new Date().toISOString().slice(0, 10),
+            payment_due_day: 25,
+            billing_period: "monthly",
+            late_fee_amount: Math.round(monthlyRent * 0.05),
+            late_fee_grace_days: 5,
+            notice_period_days: 30,
+            status: "active",
+          });
+          if (le) throw le;
+          await supabase.from("units").update({ status: "occupied" }).eq("id", unit_id);
+        }
+      } else {
+        const existingLease = tenants.find((t: any) => t.id === id)?.lease;
+        if (existingLease) {
+          await supabase.from("leases").update({ status: "ended" }).eq("id", existingLease.id);
+          await supabase.from("units").update({ status: "vacant" }).eq("id", existingLease.unit_id);
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tenants"] });
+      qc.invalidateQueries({ queryKey: ["leases"] });
       toast.success("Tenant updated");
       setEditOpen(false);
       setSelectedTenant(null);
@@ -217,6 +315,7 @@ function TenantsPage() {
     <Tabs value={formTab} onValueChange={setFormTab} className="w-full">
       <TabsList className="w-full justify-start">
         <TabsTrigger value="basic">Basic Info</TabsTrigger>
+        <TabsTrigger value="lease">Property / Unit</TabsTrigger>
         <TabsTrigger value="emergency">Emergency</TabsTrigger>
         <TabsTrigger value="employment">Employment</TabsTrigger>
         <TabsTrigger value="portal">Portal Access</TabsTrigger>
@@ -268,6 +367,96 @@ function TenantsPage() {
           </Select>
           <p className="mt-1 text-xs text-muted-foreground">Active tenants can be assigned leases. Blacklisted tenants cannot rent properties.</p>
         </div>
+      </TabsContent>
+
+      <TabsContent value="lease" className="space-y-4 pt-4">
+        <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
+          Select a property and unit to automatically create an active lease for this tenant.
+          The tenant will be linked to the selected unit with standard payment terms.
+        </div>
+        <div className="space-y-2">
+          <Label>Property</Label>
+          <select
+            className="w-full rounded-md border border-input bg-background p-2 text-sm"
+            value={formPropertyId}
+            onChange={(e) => {
+              setFormPropertyId(e.target.value);
+              setForm({ ...form, property_id: e.target.value, unit_id: "" });
+            }}
+          >
+            <option value="">— Select property —</option>
+            {properties.map((p: any) => (
+              <option key={p.id} value={p.id}>
+                {p.name} {p.location ? `— ${p.location}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {formPropertyId && (
+          <div className="space-y-2">
+            <Label>Unit</Label>
+            {propertyUnits.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No units found for this property.</p>
+            ) : (
+              <div className="grid gap-2">
+                {propertyUnits
+                  .filter((u: any) => u.status === "vacant" || u.id === form.unit_id)
+                  .map((u: any) => {
+                    const isSelected = form.unit_id === u.id;
+                    return (
+                      <label
+                        key={u.id}
+                        className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm transition hover:bg-accent/10 ${
+                          isSelected ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-input"
+                        } ${u.status !== "vacant" && !isSelected ? "cursor-not-allowed opacity-40" : ""}`}
+                        onClick={() => {
+                          if (u.status === "vacant" || isSelected) {
+                            setForm({ ...form, property_id: formPropertyId, unit_id: isSelected ? "" : u.id });
+                          }
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="unit"
+                          className="h-4 w-4 accent-accent"
+                          checked={isSelected}
+                          readOnly
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">
+                            <Home className="mr-1 inline h-3.5 w-3.5 text-muted-foreground" />
+                            Unit {u.unit_number}
+                          </div>
+                          <div className="mt-0.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                            {u.floor_number != null && (
+                              <span className="flex items-center gap-1">
+                                <Layers className="h-3 w-3" />
+                                Floor {u.floor_number}
+                              </span>
+                            )}
+                            {u.bedrooms != null && <span>{u.bedrooms} bed</span>}
+                            {u.bathrooms != null && <span>{u.bathrooms} bath</span>}
+                            <span>UGX {Number(u.monthly_rent).toLocaleString()}/mo</span>
+                          </div>
+                        </div>
+                        <Badge variant={u.status === "vacant" ? "outline" : "default"} className="text-xs">
+                          {u.status}
+                        </Badge>
+                      </label>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {form.unit_id && (
+          <div className="rounded-md bg-green-50 dark:bg-green-950/20 p-3 text-xs text-green-800 dark:text-green-300">
+            <Check className="mr-1 inline h-3.5 w-3.5" />
+            A lease will be created with this unit. Start date: today, Deposit: 1 month, Due day: 25th.
+          </div>
+        )}
       </TabsContent>
 
       <TabsContent value="emergency" className="space-y-4 pt-4">
@@ -443,7 +632,7 @@ function TenantsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>ID Type / Number</TableHead>
-                <TableHead>Unit / Rent</TableHead>
+                <TableHead>Property / Unit</TableHead>
                 <TableHead>Arrears</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Emergency Contact</TableHead>
@@ -472,7 +661,26 @@ function TenantsPage() {
                       {t.id_type ? <><span className="text-xs text-muted-foreground">{formatIdType(t.id_type)}</span><br />{t.id_number || "—"}</> : "—"}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {t.lease ? <>Unit {t.lease.units?.unit_number ?? "—"}<br /><span className="text-xs">UGX {Number(t.lease.monthly_rent).toLocaleString()}/mo</span></> : "—"}
+                      {t.lease ? (
+                        <>
+                          <div className="font-medium text-foreground">
+                            {t.lease.units?.properties?.name ?? ""}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Home className="h-3 w-3" />
+                            Unit {t.lease.units?.unit_number ?? "—"}
+                            {t.lease.units?.floor_number != null && (
+                              <>
+                                <Layers className="ml-1 h-3 w-3" />
+                                Fl {t.lease.units?.floor_number}
+                              </>
+                            )}
+                          </div>
+                          <span className="text-xs">UGX {Number(t.lease.monthly_rent).toLocaleString()}/mo</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-red-500 font-medium">
                       {t.lease && Number(t.lease.outstanding_balance) > 0 ? `UGX ${Number(t.lease.outstanding_balance).toLocaleString()}` : "—"}
