@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   Building2, Users, Receipt, Wrench, TrendingUp, AlertTriangle,
-  ArrowRight, Home, FileText, Calendar, DollarSign,
+  ArrowRight, Home, FileText, Calendar, DollarSign, MapPin, Landmark, Link2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -50,13 +50,14 @@ function useStaffDashboardData() {
       const now = new Date();
       const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      const [propsRes, unitsRes, leasesRes, mrRes] = await Promise.all([
+      const [propsRes, unitsRes, leasesRes, mrRes, ownerRolesRes] = await Promise.all([
         supabase.from("properties").select("id", { count: "exact", head: true }),
         supabase.from("units").select("id,status"),
         supabase.from("leases")
           .select("*, units(unit_number, properties(name))")
           .order("created_at", { ascending: false }),
         supabase.from("maintenance_requests").select("id,status"),
+        supabase.from("user_roles").select("user_id").eq("role", "owner"),
       ]);
 
       const propertiesCount = propsRes.count ?? 0;
@@ -157,6 +158,18 @@ function useStaffDashboardData() {
       const collectionRate = expectedRent > 0 ? Math.round((collectedThisMonth / expectedRent) * 100) : 0;
       const uncollected = expectedRent - collectedThisMonth;
 
+      const ownerIds = (ownerRolesRes.data as any[] ?? []).map((r: any) => r.user_id).filter(Boolean);
+      let ownerProfiles: any[] = [];
+      let ownerProperties: any[] = [];
+      if (ownerIds.length > 0) {
+        const [profilesRes, ownerPropsRes] = await Promise.all([
+          supabase.from("profiles").select("*").in("id", ownerIds),
+          supabase.from("properties").select("*").in("owner_id", ownerIds),
+        ]);
+        ownerProfiles = (profilesRes.data as any) ?? [];
+        ownerProperties = (ownerPropsRes.data as any) ?? [];
+      }
+
       return {
         propertiesCount,
         totalUnits,
@@ -172,6 +185,8 @@ function useStaffDashboardData() {
         expiringLeases,
         openMR,
         outstandingBalances,
+        ownerProfiles,
+        ownerProperties,
       } as any;
     },
   });
@@ -327,6 +342,82 @@ function StaffDashboard() {
         </Card>
       </div>
 
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="display flex items-center gap-2">
+              <Landmark className="h-5 w-5 text-muted-foreground" />
+              About Habico
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex items-start gap-3">
+              <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
+              <div>
+                <p className="font-medium">Our Office</p>
+                <p className="text-muted-foreground">Habico Property Managers Limited<br />Kampala, Uganda</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Building2 className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
+              <div>
+                <p className="font-medium">What We Do</p>
+                <p className="text-muted-foreground">We manage residential &amp; commercial properties on behalf of landlords &mdash; handling tenants, rent collection, maintenance, and financial reporting.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Users className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
+              <div>
+                <p className="font-medium">Our Reach</p>
+                <p className="text-muted-foreground">{d.ownerProfiles.length} registered landlord{(d.ownerProfiles.length === 1 ? "" : "s")} &middot; {d.propertiesCount} properties &middot; {d.totalUnits} units &middot; {d.activeTenantsCount} active tenants</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="display flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-muted-foreground" />
+              Landlords &amp; Their Properties
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 max-h-80 overflow-y-auto">
+            {d.ownerProfiles.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No landlords registered yet. Invite property owners to create accounts with the <strong>owner</strong> role.</p>
+            ) : (
+              (d.ownerProfiles as any[]).map((owner: any) => {
+                const props = (d.ownerProperties as any[]).filter((p: any) => p.owner_id === owner.id);
+                return (
+                  <div key={owner.id} className="rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="h-4 w-4 text-accent" />
+                      <span className="font-semibold text-sm">{owner.full_name || owner.email?.split("@")[0] || "Unknown"}</span>
+                    </div>
+                    {props.length === 0 ? (
+                      <p className="text-xs text-muted-foreground ml-6">No properties linked yet.</p>
+                    ) : (
+                      <ul className="ml-6 space-y-1">
+                        {props.map((prop: any) => (
+                          <li key={prop.id} className="flex items-center gap-2 text-xs">
+                            <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                            <span className="font-medium">{prop.name}</span>
+                            <span className="text-muted-foreground">&middot; {prop.city || prop.location || "Location not set"}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1 ml-6">
+                      {props.length} property{props.length === 1 ? "" : "ies"} linked to this landlord
+                    </p>
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {d.expiringLeases.length > 0 && (
         <Card className="shadow-card">
           <CardHeader>
@@ -457,7 +548,7 @@ function StaffDashboard() {
               </div>
             </div>
             <div className="rounded-lg border border-border bg-background p-3 text-muted-foreground">
-              Tip: Habico delivers monthly landlord reports automatically. Visit Reports to download.
+              Tip: Habico delivers monthly landlord reports automatically. Visit Reports to download. The Landlords &amp; Properties panel above shows who owns what.
             </div>
           </CardContent>
         </Card>
