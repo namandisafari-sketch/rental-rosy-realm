@@ -260,6 +260,44 @@ function LandlordsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={!!resetFor} onOpenChange={(o) => { if (!o) { setResetFor(null); setIssuedPw(null); setNewPw(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset password — {resetFor?.full_name || resetFor?.email}</DialogTitle>
+          </DialogHeader>
+          {issuedPw ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">New password set. Share it securely — it will not be shown again.</p>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 font-mono text-sm">
+                <span className="flex-1 break-all">{issuedPw}</span>
+                <Button size="icon" variant="ghost" onClick={() => { navigator.clipboard.writeText(issuedPw); toast.success("Copied"); }}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Passwords are stored encrypted and cannot be viewed. You can set a new one here, or leave blank to auto-generate.
+              </p>
+              <div>
+                <Label>New password</Label>
+                <Input type="text" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="Leave blank to auto-generate" />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            {issuedPw ? (
+              <Button onClick={() => { setResetFor(null); setIssuedPw(null); }}>Done</Button>
+            ) : (
+              <Button onClick={() => resetMutation.mutate()} disabled={resetMutation.isPending}>
+                {resetMutation.isPending ? "Updating..." : "Set new password"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
