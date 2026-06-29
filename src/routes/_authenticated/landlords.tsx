@@ -207,18 +207,28 @@ function LandlordsPage() {
                       {l.propertyCount} property{l.propertyCount === 1 ? "" : "ies"}
                     </div>
                     {isStaff && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader><AlertDialogTitle>Remove landlord?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This removes the <strong>owner</strong> role from {l.full_name || l.email}. Their profile and linked properties will not be deleted.
-                          </AlertDialogDescription></AlertDialogHeader>
-                          <AlertDialogFooter>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          title="Reset password"
+                          onClick={() => { setIssuedPw(null); setNewPw(""); setResetFor(l); }}
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Remove role">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Remove landlord?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This removes the <strong>owner</strong> role from {l.full_name || l.email}. Their profile and linked properties will not be deleted.
+                            </AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction onClick={() => removeMutation.mutate(l.user_id)} className="bg-destructive text-destructive-foreground">
                               Remove Role
