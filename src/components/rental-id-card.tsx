@@ -1,6 +1,5 @@
 import { forwardRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Building2, ShieldCheck, Wifi } from "lucide-react";
 
 // CR80 standard ID card: 85.6 × 53.98 mm  ≈ 3.375" × 2.125"
 // Design canvas locked to 1012 × 638 px (≈300 DPI). Use CSS transform: scale()
@@ -11,9 +10,22 @@ export const CARD_HEIGHT_PX = 638;
 export interface RentalCardData {
   cardNumber: string;
   propertyName: string;
+  propertyLocation?: string | null;
   unitNumber: string;
+  floorNumber?: number | null;
+  monthlyRent?: number;
   tenantName?: string | null;
   tenantPhone?: string | null;
+  tenantEmail?: string | null;
+  idType?: string | null;
+  idNumber?: string | null;
+  emergencyContact?: string | null;
+  emergencyPhone?: string | null;
+  occupation?: string | null;
+  employer?: string | null;
+  leaseStart?: string | null;
+  leaseEnd?: string | null;
+  arrears?: number;
   issuedAt: string | null;
   status?: string;
 }
@@ -308,15 +320,36 @@ export const RentalCardFront = forwardRef<HTMLDivElement, { data: RentalCardData
 RentalCardFront.displayName = "RentalCardFront";
 
 /* ---------------- BACK ---------------- */
+function InfoRow({ label, value }: { label: string; value: string | number | null | undefined }) {
+  if (!value) return null;
+  return (
+    <div>
+      <div style={{ fontSize: 9, letterSpacing: 2, color: "rgba(244,239,230,0.5)", fontWeight: 700, marginBottom: 2 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "#F4EFE6", lineHeight: 1.3 }}>
+        {String(value)}
+      </div>
+    </div>
+  );
+}
+
+function formatIdTypeLabel(t: string | null | undefined) {
+  if (!t) return null;
+  return t === "drivers_license" ? "Driver's License" : t === "national_id" ? "National ID" : "Passport";
+}
+
 export const RentalCardBack = forwardRef<HTMLDivElement, { data: RentalCardData }>(
   ({ data }, ref) => {
+    const leftWidth = 480;
+    const rightX = 520;
     return (
       <div
         ref={ref}
         style={{
           width: CARD_WIDTH_PX,
           height: CARD_HEIGHT_PX,
-          background: "linear-gradient(180deg, #04181a 0%, #08272a 100%)",
+          background: "linear-gradient(180deg, #04181a 0%, #0a2e30 100%)",
           color: "#F4EFE6",
           fontFamily:
             'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial',
@@ -330,129 +363,157 @@ export const RentalCardBack = forwardRef<HTMLDivElement, { data: RentalCardData 
         <div
           style={{
             position: "absolute",
-            top: 56,
+            top: 40,
             left: 0,
             right: 0,
-            height: 76,
+            height: 60,
             background:
               "linear-gradient(180deg, #1a1a1a 0%, #000 50%, #1a1a1a 100%)",
           }}
         />
-        {/* signature panel */}
+
+        {/* Data panel - left side */}
+        <div style={{ position: "absolute", top: 116, left: 36, width: leftWidth }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
+            {/* Tenant identity */}
+            <div style={{ width: "100%", marginBottom: 4 }}>
+              <div style={{ fontSize: 10, letterSpacing: 3, color: "#F47B2A", fontWeight: 800 }}>
+                TENANT
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#FFFFFF", marginTop: 2 }}>
+                {data.tenantName || "UNASSIGNED"}
+              </div>
+            </div>
+            <div style={{ width: "100%", marginBottom: 2 }}>
+              <div style={{ height: 1, background: "rgba(244,239,230,0.12)" }} />
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px", marginTop: 2 }}>
+            <div style={{ width: "45%" }}>
+              <InfoRow label="PHONE" value={data.tenantPhone} />
+            </div>
+            <div style={{ width: "45%" }}>
+              <InfoRow label="EMAIL" value={data.tenantEmail} />
+            </div>
+            <div style={{ width: "45%" }}>
+              <InfoRow label="ID TYPE" value={formatIdTypeLabel(data.idType)} />
+            </div>
+            <div style={{ width: "45%" }}>
+              <InfoRow label="ID NUMBER" value={data.idNumber} />
+            </div>
+            <div style={{ width: "45%" }}>
+              <InfoRow label="OCCUPATION" value={data.occupation} />
+            </div>
+            <div style={{ width: "45%" }}>
+              <InfoRow label="EMPLOYER" value={data.employer} />
+            </div>
+            {data.emergencyContact && (
+              <>
+                <div style={{ width: "100%", marginTop: 2 }}>
+                  <div style={{ fontSize: 9, letterSpacing: 3, color: "#F47B2A", fontWeight: 800 }}>
+                    EMERGENCY CONTACT
+                  </div>
+                </div>
+                <div style={{ width: "45%" }}>
+                  <InfoRow label="NAME" value={data.emergencyContact} />
+                </div>
+                <div style={{ width: "45%" }}>
+                  <InfoRow label="PHONE" value={data.emergencyPhone} />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Data panel - right side */}
+        <div style={{ position: "absolute", top: 116, right: 36, width: 440 }}>
+          <div style={{ marginBottom: 4 }}>
+            <div style={{ fontSize: 10, letterSpacing: 3, color: "#F47B2A", fontWeight: 800 }}>
+              PROPERTY
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px" }}>
+            <div style={{ width: "100%" }}>
+              <InfoRow label="NAME" value={data.propertyName} />
+            </div>
+            <div style={{ width: "45%" }}>
+              <InfoRow label="LOCATION" value={data.propertyLocation} />
+            </div>
+            <div style={{ width: "45%" }}>
+              <InfoRow label="UNIT" value={data.unitNumber} />
+            </div>
+            {data.floorNumber != null && (
+              <div style={{ width: "45%" }}>
+                <InfoRow label="FLOOR / BLOCK" value={data.floorNumber} />
+              </div>
+            )}
+            {data.monthlyRent != null && data.monthlyRent > 0 && (
+              <div style={{ width: "45%" }}>
+                <InfoRow label="MONTHLY RENT" value={`UGX ${data.monthlyRent.toLocaleString()}`} />
+              </div>
+            )}
+            {data.arrears != null && data.arrears > 0 && (
+              <div style={{ width: "45%" }}>
+                <InfoRow label="ARREARS" value={`UGX ${data.arrears.toLocaleString()}`} />
+              </div>
+            )}
+            {data.leaseStart && (
+              <div style={{ width: "45%" }}>
+                <InfoRow label="LEASE START" value={data.leaseStart} />
+              </div>
+            )}
+            {data.leaseEnd && (
+              <div style={{ width: "45%" }}>
+                <InfoRow label="LEASE END" value={data.leaseEnd} />
+              </div>
+            )}
+          </div>
+
+          {/* QR + valid dates */}
+          <div style={{ position: "absolute", bottom: 140, right: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+            <div style={{ padding: 8, background: "#FFFFFF", borderRadius: 10 }}>
+              <QRCodeSVG value={buildPaymentPayload(data.cardNumber)} size={120} level="H" bgColor="#FFFFFF" fgColor="#0e3a3a" />
+            </div>
+            <div style={{ display: "flex", gap: 14, fontSize: 10, color: "rgba(244,239,230,0.85)" }}>
+              <div>
+                <div style={{ letterSpacing: 2, opacity: 0.6, fontWeight: 700 }}>ISSUED</div>
+                <div style={{ fontWeight: 700, color: "#FFFFFF" }}>{formatDate(data.issuedAt)}</div>
+              </div>
+              <div>
+                <div style={{ letterSpacing: 2, opacity: 0.6, fontWeight: 700 }}>EXPIRES</div>
+                <div style={{ fontWeight: 700, color: "#FFFFFF" }}>{formatExpiry(data.issuedAt)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer bar */}
         <div
           style={{
             position: "absolute",
-            top: 168,
-            left: 48,
-            right: 48,
-            height: 72,
-            background:
-              "repeating-linear-gradient(135deg, #f7f4ec 0 8px, #efe8d6 8px 16px)",
-            borderRadius: 6,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 34,
+            background: "rgba(0,0,0,0.35)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "flex-end",
-            padding: "0 16px",
-          }}
-        >
-          <div
-            style={{
-              fontFamily: '"OCR A", "Courier New", ui-monospace, monospace',
-              color: "#08272a",
-              fontWeight: 700,
-              letterSpacing: 4,
-              fontSize: 18,
-            }}
-          >
-            {data.cardNumber}
-          </div>
-        </div>
-
-        {/* Terms */}
-        <div
-          style={{
-            position: "absolute",
-            top: 264,
-            left: 48,
-            right: 380,
-            fontSize: 12,
-            lineHeight: 1.55,
-            color: "rgba(244,239,230,0.85)",
-          }}
-        >
-          <div style={{ fontSize: 11, letterSpacing: 3, color: "#F47B2A", fontWeight: 800, marginBottom: 10 }}>
-            HOW TO PAY
-          </div>
-          <div>
-            1. Open the Habico mobile app or any MTN MoMo / Airtel Money menu.
-          </div>
-          <div>2. Scan the QR on the front of this card.</div>
-          <div>3. Confirm tenant, unit and amount, then approve with your PIN.</div>
-          <div style={{ marginTop: 10, fontSize: 11, opacity: 0.75 }}>
-            This card is the property of Habico Property Management. If found,
-            return to the nearest Habico office or call the support line below.
-          </div>
-        </div>
-
-        {/* QR (links to a payment session) */}
-        <div
-          style={{
-            position: "absolute",
-            top: 264,
-            right: 48,
-            padding: 10,
-            background: "#FFFFFF",
-            borderRadius: 12,
-          }}
-        >
-          <QRCodeSVG
-            value={buildPaymentPayload(data.cardNumber)}
-            size={150}
-            level="H"
-            bgColor="#FFFFFF"
-            fgColor="#0e3a3a"
-          />
-          <div
-            style={{
-              fontSize: 9,
-              color: "#08272a",
-              textAlign: "center",
-              marginTop: 6,
-              fontWeight: 700,
-              letterSpacing: 2,
-            }}
-          >
-            SCAN TO PAY
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 28,
-            left: 48,
-            right: 48,
-            display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-end",
-            fontSize: 11,
-            color: "rgba(244,239,230,0.75)",
+            padding: "0 36px",
+            fontSize: 9,
+            color: "rgba(244,239,230,0.6)",
           }}
         >
-          <div>
-            <div style={{ fontWeight: 800, color: "#FFFFFF", letterSpacing: 3 }}>
-              HABICO PROPERTY MANAGEMENT
-            </div>
-            <div style={{ marginTop: 4 }}>Kampala · Uganda · support@habico.co.ug · +256 700 000 000</div>
+          <div style={{ fontWeight: 700, letterSpacing: 2, color: "rgba(244,239,230,0.8)" }}>
+            HABICO PROPERTY MANAGEMENT
           </div>
-          <div
-            style={{
-              fontFamily: '"OCR A", "Courier New", ui-monospace, monospace',
-              fontSize: 10,
-              letterSpacing: 2,
-            }}
-          >
+          <div style={{ display: "flex", gap: 16 }}>
+            <span>support@habico.co.ug</span>
+            <span>+256 700 000 000</span>
+          </div>
+          <div style={{ fontFamily: '"OCR A", "Courier New", ui-monospace, monospace', letterSpacing: 2 }}>
             {data.cardNumber}
           </div>
         </div>

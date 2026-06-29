@@ -29,12 +29,28 @@ function generateCardNumber() {
 }
 
 function toCardData(c: any): RentalCardData {
+  const t = c.tenants;
+  const u = c.units;
+  const l = c.lease;
   return {
     cardNumber: c.card_number,
-    propertyName: c.units?.properties?.name ?? "Habico Property",
-    unitNumber: c.units?.unit_number ?? "—",
-    tenantName: c.tenants?.full_name ?? null,
-    tenantPhone: c.tenants?.phone ?? null,
+    propertyName: u?.properties?.name ?? "Habico Property",
+    propertyLocation: u?.properties?.location ?? null,
+    unitNumber: u?.unit_number ?? "—",
+    floorNumber: u?.floor_number ?? null,
+    monthlyRent: l?.monthly_rent ?? u?.monthly_rent ?? null,
+    tenantName: t?.full_name ?? null,
+    tenantPhone: t?.phone ?? null,
+    tenantEmail: t?.email ?? null,
+    idType: t?.id_type ?? null,
+    idNumber: t?.id_number ?? null,
+    emergencyContact: t?.emergency_contact_name ?? null,
+    emergencyPhone: t?.emergency_contact_phone ?? null,
+    occupation: t?.occupation ?? null,
+    employer: t?.employer ?? null,
+    leaseStart: l?.start_date ?? null,
+    leaseEnd: l?.end_date ?? null,
+    arrears: l?.outstanding_balance ?? null,
     issuedAt: c.issued_at,
     status: c.status,
   };
@@ -62,10 +78,24 @@ function RentalIdCardsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rental_id_cards")
-        .select("*, units!inner(id, unit_number, properties!inner(id, name)), tenants!left(id, full_name, phone)")
+        .select("*, units!inner(id, unit_number, floor_number, monthly_rent, properties!inner(id, name, location)), tenants!left(id, full_name, phone, email, id_type, id_number, emergency_contact_name, emergency_contact_phone, occupation, employer)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as any;
+      const cards = (data ?? []) as any[];
+      const tenantIds = cards.map((c: any) => c.tenant_id).filter(Boolean);
+      const unitIds = cards.map((c: any) => c.unit_id).filter(Boolean);
+      let leaseMap = new Map();
+      if (tenantIds.length > 0) {
+        const { data: leases } = await supabase
+          .from("leases")
+          .select("id, tenant_id, unit_id, monthly_rent, outstanding_balance, start_date, end_date")
+          .eq("status", "active")
+          .in("tenant_id", tenantIds);
+        for (const l of leases ?? []) {
+          leaseMap.set(l.tenant_id, l);
+        }
+      }
+      return cards.map((c: any) => ({ ...c, lease: leaseMap.get(c.tenant_id) }));
     },
   });
 
@@ -79,7 +109,7 @@ function RentalIdCardsPage() {
       const occupiedIds = new Set((activeCardUnitIds ?? []).map((c: any) => c.unit_id));
       const { data } = await supabase
         .from("units")
-        .select("id, unit_number, properties(name)")
+        .select("id, unit_number, floor_number, monthly_rent, properties(id, name, location)")
         .order("unit_number");
       return ((data ?? []) as any).map((u: any) => ({
         ...u,
@@ -94,7 +124,7 @@ function RentalIdCardsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tenants")
-        .select("id, full_name, phone")
+        .select("id, full_name, phone, email, id_type, id_number, emergency_contact_name, emergency_contact_phone, occupation, employer")
         .order("full_name");
       if (error) throw error;
       return (data ?? []) as any;
@@ -203,13 +233,25 @@ function RentalIdCardsPage() {
     );
   }
 
+  const previewUnit = units.find((u: any) => u.id === selectedUnit) as any;
+  const previewTenant = tenants.find((t: any) => t.id === selectedTenant) as any;
   const previewData: RentalCardData | null = selectedUnit
     ? {
         cardNumber,
-        propertyName: (units.find((u: any) => u.id === selectedUnit) as any)?.properties?.name ?? "Habico Property",
-        unitNumber: (units.find((u: any) => u.id === selectedUnit) as any)?.unit_number ?? "—",
-        tenantName: (tenants.find((t: any) => t.id === selectedTenant) as any)?.full_name ?? null,
-        tenantPhone: (tenants.find((t: any) => t.id === selectedTenant) as any)?.phone ?? null,
+        propertyName: previewUnit?.properties?.name ?? "Habico Property",
+        propertyLocation: previewUnit?.properties?.location ?? null,
+        unitNumber: previewUnit?.unit_number ?? "—",
+        floorNumber: previewUnit?.floor_number ?? null,
+        monthlyRent: previewUnit?.monthly_rent ?? null,
+        tenantName: previewTenant?.full_name ?? null,
+        tenantPhone: previewTenant?.phone ?? null,
+        tenantEmail: previewTenant?.email ?? null,
+        idType: previewTenant?.id_type ?? null,
+        idNumber: previewTenant?.id_number ?? null,
+        emergencyContact: previewTenant?.emergency_contact_name ?? null,
+        emergencyPhone: previewTenant?.emergency_contact_phone ?? null,
+        occupation: previewTenant?.occupation ?? null,
+        employer: previewTenant?.employer ?? null,
         issuedAt: new Date().toISOString(),
         status: "active",
       }

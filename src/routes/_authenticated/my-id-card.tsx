@@ -17,12 +17,28 @@ export const Route = createFileRoute("/_authenticated/my-id-card")({
 });
 
 function toCardData(c: any): RentalCardData {
+  const t = c.tenants;
+  const u = c.units;
+  const l = c.lease;
   return {
     cardNumber: c.card_number,
-    propertyName: c.units?.properties?.name ?? "Habico Property",
-    unitNumber: c.units?.unit_number ?? "—",
-    tenantName: c.tenants?.full_name ?? null,
-    tenantPhone: c.tenants?.phone ?? null,
+    propertyName: u?.properties?.name ?? "Habico Property",
+    propertyLocation: u?.properties?.location ?? null,
+    unitNumber: u?.unit_number ?? "—",
+    floorNumber: u?.floor_number ?? null,
+    monthlyRent: l?.monthly_rent ?? u?.monthly_rent ?? null,
+    tenantName: t?.full_name ?? null,
+    tenantPhone: t?.phone ?? null,
+    tenantEmail: t?.email ?? null,
+    idType: t?.id_type ?? null,
+    idNumber: t?.id_number ?? null,
+    emergencyContact: t?.emergency_contact_name ?? null,
+    emergencyPhone: t?.emergency_contact_phone ?? null,
+    occupation: t?.occupation ?? null,
+    employer: t?.employer ?? null,
+    leaseStart: l?.start_date ?? null,
+    leaseEnd: l?.end_date ?? null,
+    arrears: l?.outstanding_balance ?? null,
     issuedAt: c.issued_at,
     status: c.status,
   };
@@ -40,10 +56,21 @@ function MyIdCardPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rental_id_cards")
-        .select("*, units!inner(id, unit_number, properties!inner(id, name)), tenants!inner(id, full_name, phone, auth_user_id)")
+        .select("*, units!inner(id, unit_number, floor_number, monthly_rent, properties!inner(id, name, location)), tenants!inner(id, full_name, phone, email, id_type, id_number, emergency_contact_name, emergency_contact_phone, occupation, employer, auth_user_id)")
         .order("issued_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as any;
+      const cards = (data ?? []) as any[];
+      const tenantIds = cards.map((c: any) => c.tenant_id).filter(Boolean);
+      let leaseMap = new Map();
+      if (tenantIds.length > 0) {
+        const { data: leases } = await supabase
+          .from("leases")
+          .select("id, tenant_id, unit_id, monthly_rent, outstanding_balance, start_date, end_date")
+          .eq("status", "active")
+          .in("tenant_id", tenantIds);
+        for (const l of leases ?? []) leaseMap.set(l.tenant_id, l);
+      }
+      return cards.map((c: any) => ({ ...c, lease: leaseMap.get(c.tenant_id) }));
     },
   });
 
