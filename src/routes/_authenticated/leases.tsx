@@ -13,8 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, XCircle, Building2 } from "lucide-react";
+import { Plus, Pencil, XCircle, Building2, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { TenancyAgreementDialog } from "@/components/tenancy-agreement-template";
+import type { AgreementData } from "@/components/tenancy-agreement-template";
 
 export const Route = createFileRoute("/_authenticated/leases")({
   head: () => ({ meta: [{ title: "Leases — Habico Portal" }] }),
@@ -40,6 +42,8 @@ function LeasesPage() {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [terminateOpen, setTerminateOpen] = useState(false);
+  const [agreementOpen, setAgreementOpen] = useState(false);
+  const [agreementData, setAgreementData] = useState<AgreementData | null>(null);
   const [editingLease, setEditingLease] = useState<any>(null);
   const [terminatingLease, setTerminatingLease] = useState<any>(null);
 
@@ -181,6 +185,62 @@ function LeasesPage() {
     setTerminatingLease(l);
     setTerminateForm({ outstanding_balance: "0", termination_reason: "" });
     setTerminateOpen(true);
+  }
+
+  function buildAgreementData(l: any): AgreementData {
+    const months = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+    const startD = l.start_date ? new Date(l.start_date) : new Date();
+    const endD = l.end_date ? new Date(l.end_date) : new Date(startD.getFullYear() + 1, startD.getMonth(), startD.getDate());
+    const tenant = l.profile ?? { full_name: l.tenant_email ?? "Tenant", email: l.tenant_email ?? "" };
+    const prop = l.units?.properties ?? { name: "", location: "", address: "" };
+    return {
+      day: String(startD.getDate()),
+      month: months[startD.getMonth()],
+      year: String(startD.getFullYear()),
+      startDate: startD.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/\//g, " "),
+      endDate: endD.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/\//g, " "),
+      tenant: {
+        name: tenant.full_name || tenant.email?.split("@")[0] || "Tenant",
+        nationalId: "",
+        dob: "",
+        poBox: "",
+        contact: l.tenant_phone ?? tenant.phone ?? "",
+        email: tenant.email ?? "",
+        occupation: "",
+        workplace: "",
+        nextOfKin: "",
+        nextOfKinContact: "",
+        relationship: "",
+      },
+      property: {
+        usage: "RESIDENTIAL",
+        rooms: l.units?.bedrooms ? String(l.units.bedrooms) : "1",
+        unitNo: l.units?.unit_number ?? "",
+        location: prop.location ?? "",
+        village: "",
+        parish: "",
+        county: "",
+        district: "",
+        propertyName: prop.name ?? "",
+        streetName: prop.address ?? "",
+      },
+      payment: {
+        monthlyRent: Number(l.monthly_rent),
+        amountPaid: Number(l.monthly_rent) * (l.billing_period === "quarterly" ? 3 : 1),
+        periodPaid: l.billing_period === "quarterly" ? "Quarterly" : l.billing_period === "annual" ? "Annual" : "Monthly",
+        deposit: Number(l.deposit ?? 0),
+      },
+      bank: {
+        bankName: "Stanbic Bank",
+        accountNumber: "9030027136418",
+        accountName: "HABICO PROPERTY MANAGERS LIMITED",
+      },
+    };
+  }
+
+  function openAgreement(l: any) {
+    setAgreementData(buildAgreementData(l));
+    setAgreementOpen(true);
   }
 
   function unitChange(value: string) {
@@ -404,6 +464,7 @@ function LeasesPage() {
                     {isStaff && (
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openAgreement(l)} title="Print tenancy agreement"><FileText className="h-4 w-4" /></Button>
                           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(l)} title="Edit lease"><Pencil className="h-4 w-4" /></Button>
                           {l.status === "active" && (
                             <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openTerminate(l)} title="Terminate lease"><XCircle className="h-4 w-4" /></Button>
@@ -427,6 +488,13 @@ function LeasesPage() {
             <Button variant="outline" onClick={() => { setEditOpen(false); setEditingLease(null); setForm({ ...blankForm }); }}>Cancel</Button>
             <Button onClick={() => update.mutate()} disabled={!form.unit_id || update.isPending}>Save changes</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={agreementOpen} onOpenChange={(v) => { setAgreementOpen(v); if (!v) setAgreementData(null); }}>
+        <DialogContent className="max-h-[95vh] overflow-y-auto max-w-4xl">
+          <DialogHeader><DialogTitle>Habico Tenancy Agreement</DialogTitle></DialogHeader>
+          {agreementData && <TenancyAgreementDialog data={agreementData} />}
         </DialogContent>
       </Dialog>
 
