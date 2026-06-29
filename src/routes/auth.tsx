@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Building2, HardHat, Users, UserCog, ShieldCheck } from "lucide-react";
+import { Building2, HardHat, Users, UserCog, ShieldCheck, CreditCard, Camera, CameraOff, Send, CheckCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { Html5Qrcode } from "html5-qrcode";
 
-const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).optional(), redirect: z.string().optional() });
+const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).optional(), redirect: z.string().optional(), c: z.string().optional() });
 
 export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
@@ -34,6 +35,11 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const [cardScanOpen, setCardScanOpen] = useState(!!search.c);
+  const [cardValue, setCardValue] = useState(search.c ?? "");
+  const [cardSending, setCardSending] = useState(false);
+  const [cardSent, setCardSent] = useState(false);
 
   useEffect(() => {
     if (!loading && user) nav({ to: search.redirect ?? "/dashboard" });
@@ -60,6 +66,42 @@ function AuthPage() {
       setBusy(false);
     }
   };
+
+  async function handleCardLookup(card?: string) {
+    const value = card ?? cardValue;
+    if (!value.trim()) return;
+    setCardSending(true);
+    try {
+      const { data, error } = await supabase
+        .from("rental_id_cards")
+        .select("card_number, status, tenants!left(id, full_name, email)")
+        .eq("card_number", value.trim())
+        .single();
+      if (error || !data) {
+        toast.error("Card not found");
+        return;
+      }
+      if (data.status !== "active") {
+        toast.error(`Card is ${data.status}`);
+        return;
+      }
+      if (!data.tenants?.email) {
+        toast.error("No email on file. Contact your property manager.");
+        return;
+      }
+      const { error: authErr } = await supabase.auth.signInWithOtp({
+        email: data.tenants.email,
+        options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (authErr) throw authErr;
+      setCardSent(true);
+      toast.success(`Login link sent to ${data.tenants.email}`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCardSending(false);
+    }
+  }
 
   return (
     <div className="grid min-h-screen md:grid-cols-2">
@@ -91,25 +133,133 @@ function AuthPage() {
         <div className="text-xs uppercase tracking-widest text-primary-foreground/60">Habico Property Managers · Kampala</div>
       </div>
       <div className="flex items-center justify-center bg-background p-6">
-        <form onSubmit={onSubmit} className="w-full max-w-sm">
-          <h2 className="display text-3xl font-bold">{mode === "signup" ? "Create account" : "Welcome back"}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{mode === "signup" ? "Sign up to access your Habico portal." : "Sign in to your Habico portal."}</p>
-          <div className="mt-6 space-y-4">
-            {mode === "signup" && (
-              <div><Label htmlFor="name">Full name</Label><Input id="name" value={name} onChange={(e)=>setName(e.target.value)} required maxLength={100} className="mt-1.5"/></div>
-            )}
-            <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required maxLength={255} className="mt-1.5"/></div>
-            <div><Label htmlFor="password">Password</Label><Input id="password" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required minLength={8} className="mt-1.5"/></div>
-            <Button type="submit" disabled={busy} className="w-full">{busy ? "…" : mode === "signup" ? "Create account" : "Sign in"}</Button>
-            <p className="text-center text-sm text-muted-foreground">
-              {mode === "signup" ? "Already have an account?" : "New to Habico?"}{" "}
-              <button type="button" className="font-medium text-primary underline-offset-4 hover:underline" onClick={()=>setMode(mode==="signup"?"signin":"signup")}>
-                {mode === "signup" ? "Sign in" : "Create one"}
-              </button>
-            </p>
+        <div className="w-full max-w-sm space-y-6">
+          <form onSubmit={onSubmit}>
+            <h2 className="display text-3xl font-bold">{mode === "signup" ? "Create account" : "Welcome back"}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{mode === "signup" ? "Sign up to access your Habico portal." : "Sign in to your Habico portal."}</p>
+            <div className="mt-6 space-y-4">
+              {mode === "signup" && (
+                <div><Label htmlFor="name">Full name</Label><Input id="name" value={name} onChange={(e)=>setName(e.target.value)} required maxLength={100} className="mt-1.5"/></div>
+              )}
+              <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required maxLength={255} className="mt-1.5"/></div>
+              <div><Label htmlFor="password">Password</Label><Input id="password" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required minLength={8} className="mt-1.5"/></div>
+              <Button type="submit" disabled={busy} className="w-full">{busy ? "…" : mode === "signup" ? "Create account" : "Sign in"}</Button>
+              <p className="text-center text-sm text-muted-foreground">
+                {mode === "signup" ? "Already have an account?" : "New to Habico?"}{" "}
+                <button type="button" className="font-medium text-primary underline-offset-4 hover:underline" onClick={()=>setMode(mode==="signup"?"signin":"signup")}>
+                  {mode === "signup" ? "Sign in" : "Create one"}
+                </button>
+              </p>
+            </div>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or sign in with ID card</span></div>
           </div>
-        </form>
+
+          {!cardScanOpen ? (
+            <Button variant="outline" className="w-full" onClick={() => setCardScanOpen(true)}>
+              <CreditCard className="mr-2 h-4 w-4" />
+              Scan Your ID Card
+            </Button>
+          ) : cardSent ? (
+            <div className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center">
+              <CheckCircle className="h-8 w-8 text-green-500" />
+              <div>
+                <p className="font-medium">Login link sent</p>
+                <p className="text-sm text-muted-foreground">Check your email to sign in instantly.</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => { setCardScanOpen(false); setCardSent(false); setCardValue(""); }}>
+                Back to sign in
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Card number (e.g. HBC-PUUX-BCXT)"
+                  value={cardValue}
+                  onChange={(e) => setCardValue(e.target.value)}
+                  className="font-mono"
+                />
+                <Button onClick={handleCardLookup} disabled={!cardValue.trim() || cardSending}>
+                  <Send className="mr-2 h-4 w-4" />
+                  {cardSending ? "…" : "Send Link"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                A one-time login link will be emailed to the address on file for this card.
+              </p>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or scan with camera</span></div>
+              </div>
+              <QrScanner onScan={(c) => { setCardValue(c); handleCardLookup(c); }} />
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function QrScanner({ onScan }: { onScan: (cardNumber: string) => void }) {
+  const [scanning, setScanning] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const elRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return () => {
+      scannerRef.current?.stop().catch(() => {});
+    };
+  }, []);
+
+  async function start() {
+    if (!elRef.current) return;
+    setScanning(true);
+    const scanner = new Html5Qrcode("auth-qr-scanner-el");
+    scannerRef.current = scanner;
+    try {
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          scanner.stop().catch(() => {});
+          setScanning(false);
+          const match = decodedText.match(/[?&]c=([^&]+)/);
+          const card = match ? decodeURIComponent(match[1]) : decodedText.trim();
+          if (card) onScan(card);
+        },
+        () => {},
+      );
+    } catch {
+      setScanning(false);
+      toast.error("Camera access denied or unavailable");
+    }
+  }
+
+  async function stop() {
+    await scannerRef.current?.stop().catch(() => {});
+    setScanning(false);
+  }
+
+  return (
+    <div className="w-full">
+      {!scanning ? (
+        <Button variant="outline" className="w-full" onClick={start}>
+          <Camera className="mr-2 h-4 w-4" />
+          Scan with Camera
+        </Button>
+      ) : (
+        <div className="space-y-3">
+          <div ref={elRef} id="auth-qr-scanner-el" className="overflow-hidden rounded-lg" style={{ width: "100%", maxWidth: 320, height: 240, margin: "0 auto" }} />
+          <Button variant="outline" className="w-full" onClick={stop}>
+            <CameraOff className="mr-2 h-4 w-4" />
+            Cancel Scan
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

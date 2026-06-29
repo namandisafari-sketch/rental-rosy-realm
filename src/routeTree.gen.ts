@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RentRouteImport } from './routes/rent'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CardRouteImport } from './routes/card'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -94,6 +95,11 @@ const RentRoute = RentRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CardRoute = CardRouteImport.update({
+  id: '/card',
+  path: '/card',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -438,6 +444,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/rent': typeof RentRoute
   '/services': typeof ServicesRoute
@@ -505,6 +512,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/rent': typeof RentRoute
   '/services': typeof ServicesRoute
@@ -574,6 +582,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/rent': typeof RentRoute
   '/services': typeof ServicesRoute
@@ -643,6 +652,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/card'
     | '/contact'
     | '/rent'
     | '/services'
@@ -710,6 +720,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/card'
     | '/contact'
     | '/rent'
     | '/services'
@@ -778,6 +789,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/auth'
+    | '/card'
     | '/contact'
     | '/rent'
     | '/services'
@@ -847,6 +859,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  CardRoute: typeof CardRoute
   ContactRoute: typeof ContactRoute
   RentRoute: typeof RentRoute
   ServicesRoute: typeof ServicesRoute
@@ -881,6 +894,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/card': {
+      id: '/card'
+      path: '/card'
+      fullPath: '/card'
+      preLoaderRoute: typeof CardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1465,6 +1485,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  CardRoute: CardRoute,
   ContactRoute: ContactRoute,
   RentRoute: RentRoute,
   ServicesRoute: ServicesRoute,
