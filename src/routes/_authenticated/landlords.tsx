@@ -60,14 +60,21 @@ function LandlordsPage() {
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const result = await createLandlord({
-        email: form.email,
-        full_name: form.full_name,
-        phone: form.phone || undefined,
-        password: form.password || undefined,
-      });
-      if (!result.success) throw new Error(result.error);
-      return result;
+      try {
+        const result = await createLandlord({
+          email: form.email,
+          full_name: form.full_name,
+          phone: form.phone || undefined,
+          password: form.password || undefined,
+        });
+        if (!result.success) throw new Error(result.error);
+        return result;
+      } catch (err: any) {
+        if (err?.message?.includes("SUPABASE_SERVICE_ROLE_KEY") || err?.message?.includes("Supabase environment variable")) {
+          throw new Error("Server not configured: missing Supabase service role key. Set SUPABASE_SERVICE_ROLE_KEY in your Vercel project environment variables.");
+        }
+        throw err;
+      }
     },
     onSuccess: () => {
       toast.success("Landlord created successfully");
@@ -76,7 +83,7 @@ function LandlordsPage() {
       qc.invalidateQueries({ queryKey: ["landlords"] });
       qc.invalidateQueries({ queryKey: ["properties"] });
     },
-    onError: (e) => toast.error((e as Error).message),
+    onError: (e: any) => toast.error(e?.message || "Failed to create landlord. Check server configuration."),
   });
 
   const removeMutation = useMutation({
