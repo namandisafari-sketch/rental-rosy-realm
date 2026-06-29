@@ -62,10 +62,12 @@ function LandlordsPage() {
     mutationFn: async () => {
       try {
         const result = await createLandlord({
-          email: form.email,
-          full_name: form.full_name,
-          phone: form.phone || undefined,
-          password: form.password || undefined,
+          data: {
+            email: form.email,
+            full_name: form.full_name,
+            phone: form.phone || undefined,
+            password: form.password || undefined,
+          },
         });
         if (!result.success) throw new Error(result.error);
         return result;
