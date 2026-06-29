@@ -100,6 +100,27 @@ function LandlordsPage() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const [resetFor, setResetFor] = useState<OwnerWithProfile | null>(null);
+  const [newPw, setNewPw] = useState("");
+  const [issuedPw, setIssuedPw] = useState<string | null>(null);
+
+  const resetMutation = useMutation({
+    mutationFn: async () => {
+      if (!resetFor) throw new Error("No landlord selected");
+      const res = await resetLandlordPassword({
+        data: { user_id: resetFor.user_id, password: newPw || undefined },
+      });
+      if (!res.success) throw new Error(res.error);
+      return res.password;
+    },
+    onSuccess: (pw) => {
+      setIssuedPw(pw);
+      setNewPw("");
+      toast.success("Password updated");
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
