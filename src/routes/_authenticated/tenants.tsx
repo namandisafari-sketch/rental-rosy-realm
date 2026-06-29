@@ -186,7 +186,6 @@ function TenantsPage() {
           billing_period: "monthly",
           late_fee_amount: Math.round(monthlyRent * 0.05),
           late_fee_grace_days: 5,
-          notice_period_days: 30,
           status: "active",
         });
         if (le) throw le;
@@ -237,7 +236,6 @@ function TenantsPage() {
             billing_period: "monthly",
             late_fee_amount: Math.round(monthlyRent * 0.05),
             late_fee_grace_days: 5,
-            notice_period_days: 30,
             status: "active",
           });
           if (le) throw le;

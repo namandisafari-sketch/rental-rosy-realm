@@ -44,8 +44,8 @@ function PropertiesPage() {
       const { data: ownerRoles } = await supabase.from("user_roles").select("user_id").eq("role", "owner");
       const ids = (ownerRoles ?? []).map((r: any) => r.user_id).filter(Boolean);
       if (ids.length === 0) return [];
-      const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
-      return (profiles ?? []) as any[];
+      const { data: ownerProfiles } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
+      return (ownerProfiles ?? []) as any[];
     },
   });
   const ownerMap = new Map((owners ?? []).map((o: any) => [o.id, o.full_name || o.email?.split("@")[0] || "Unknown"]));

@@ -77,11 +77,11 @@ function useStaffDashboardData() {
       const tenantIds = [...new Set(activeLeases.map((l: any) => l.tenant_id).filter(Boolean))] as string[];
       let profileMap = new Map<string, any>();
       if (tenantIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
+        const { data: tenantList } = await supabase
+          .from("tenants")
           .select("id, full_name, email")
           .in("id", tenantIds);
-        profileMap = new Map((profiles as any[])?.map((p: any) => [p.id, p]) ?? []);
+        profileMap = new Map((tenantList as any[])?.map((t: any) => [t.id, t]) ?? []);
       }
 
       const activeLeaseIds = activeLeases.map((l: any) => l.id);

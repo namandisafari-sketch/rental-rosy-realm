@@ -97,11 +97,11 @@ function ELeasingPage() {
         ? await supabase.from("lease_signatures").select("*").in("lease_id", leaseIds)
         : { data: [] };
 
-      const { data: profsData } = tenantIds.length
-        ? await supabase.from("profiles").select("id, full_name").in("id", tenantIds)
+      const { data: tenantList } = tenantIds.length
+        ? await supabase.from("tenants").select("id, full_name").in("id", tenantIds)
         : { data: [] };
 
-      const profMap = new Map((profsData ?? []).map((p: any) => [p.id, p]));
+      const profMap = new Map((tenantList ?? []).map((t: any) => [t.id, t]));
       const sigMap = new Map<string, any[]>();
       for (const s of sigsData ?? []) {
         const arr = sigMap.get(s.lease_id) ?? [];

@@ -66,10 +66,10 @@ function LeasesPage() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       const ids = Array.from(new Set((data ?? []).map((l: any) => l.tenant_id)));
-      const { data: profs } = ids.length
-        ? await supabase.from("profiles").select("id, full_name, email").in("id", ids)
+      const { data: tenantList } = ids.length
+        ? await supabase.from("tenants").select("id, full_name, email").in("id", ids)
         : { data: [] };
-      const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
+      const map = new Map((tenantList ?? []).map((t: any) => [t.id, t]));
       return (data ?? []).map((l: any) => ({ ...l, profile: map.get(l.tenant_id) }));
     },
   });
@@ -101,10 +101,12 @@ function LeasesPage() {
       const { data: prof, error: pe } = await supabase.from("profiles").select("id").eq("email", form.tenant_email).maybeSingle();
       if (pe) throw pe;
       if (!prof) throw new Error("No tenant account found for that email. Ask them to sign up first.");
+      const { data: tenantRec } = await supabase.from("tenants").select("id").eq("auth_user_id", prof.id).maybeSingle();
+      if (!tenantRec) throw new Error("No tenant record linked to that account. Create the tenant first.");
       const monthlyRent = Number(form.monthly_rent);
       const lateFee = Number(form.late_fee_amount) || Math.round(monthlyRent * LATE_PENALTY_RATE);
       const { error } = await supabase.from("leases").insert({
-        unit_id: form.unit_id, tenant_id: prof.id,
+        unit_id: form.unit_id, tenant_id: tenantRec.id,
         monthly_rent: monthlyRent, deposit: Number(form.deposit),
         deposit_months: Number(form.deposit_months),
         start_date: form.start_date, end_date: form.end_date || null,
@@ -112,7 +114,6 @@ function LeasesPage() {
         late_fee_amount: lateFee,
         late_fee_grace_days: Number(form.late_fee_grace_days),
         special_conditions: form.special_conditions || null,
-        notice_period_days: 30,
       });
       if (error) throw error;
       await supabase.from("units").update({ status: "occupied" }).eq("id", form.unit_id);
@@ -138,7 +139,6 @@ function LeasesPage() {
         late_fee_amount: lateFee,
         late_fee_grace_days: Number(form.late_fee_grace_days),
         special_conditions: form.special_conditions || null,
-        notice_period_days: 30,
       }).eq("id", editingLease.id);
       if (error) throw error;
     },

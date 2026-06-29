@@ -56,21 +56,42 @@ function MyIdCardPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rental_id_cards")
-        .select("*, units!inner(id, unit_number, floor_number, monthly_rent, properties!inner(id, name, location)), tenants!inner(id, full_name, phone, email, id_type, id_number, emergency_contact_name, emergency_contact_phone, occupation, employer, auth_user_id)")
+        .select("*, units!inner(id, unit_number, floor_number, monthly_rent, properties!inner(id, name, location)), tenants!left(id, full_name, phone, email, id_type, id_number, emergency_contact_name, emergency_contact_phone, occupation, employer, auth_user_id)")
         .order("issued_at", { ascending: false });
       if (error) throw error;
-      const cards = (data ?? []) as any[];
-      const tenantIds = cards.map((c: any) => c.tenant_id).filter(Boolean);
-      let leaseMap = new Map();
-      if (tenantIds.length > 0) {
-        const { data: leases } = await supabase
-          .from("leases")
-          .select("id, tenant_id, unit_id, monthly_rent, outstanding_balance, start_date, end_date")
-          .eq("status", "active")
-          .in("tenant_id", tenantIds);
-        for (const l of leases ?? []) leaseMap.set(l.tenant_id, l);
+      const allCards = (data ?? []) as any[];
+
+      const { data: allLeases } = await supabase
+        .from("leases")
+        .select("id, tenant_id, unit_id, monthly_rent, outstanding_balance, start_date, end_date")
+        .eq("status", "active");
+      const leasesByUnit = new Map((allLeases ?? []).map((l: any) => [l.unit_id, l]));
+      const leasesByTenant = new Map((allLeases ?? []).map((l: any) => [l.tenant_id, l]));
+
+      const cardTenantIds = allCards.map((c: any) => c.tenant_id).filter(Boolean);
+      const fallbackTenantIds = allCards
+        .filter((c: any) => !c.tenant_id)
+        .map((c: any) => leasesByUnit.get(c.unit_id)?.tenant_id)
+        .filter(Boolean);
+      const allTenantIds = [...new Set([...cardTenantIds, ...fallbackTenantIds])];
+
+      let tenantMap = new Map<string, any>();
+      if (allTenantIds.length > 0) {
+        const { data: tenantRows } = await supabase
+          .from("tenants")
+          .select("id, full_name, phone, email, id_type, id_number, emergency_contact_name, emergency_contact_phone, occupation, employer, auth_user_id")
+          .in("id", allTenantIds);
+        for (const t of tenantRows ?? []) tenantMap.set(t.id, t);
       }
-      return cards.map((c: any) => ({ ...c, lease: leaseMap.get(c.tenant_id) }));
+
+      const userId = user?.id;
+      return allCards
+        .map((c: any) => {
+          const tenant = c.tenants ?? (c.tenant_id ? tenantMap.get(c.tenant_id) : null) ?? (leasesByUnit.get(c.unit_id) ? tenantMap.get(leasesByUnit.get(c.unit_id).tenant_id) : null);
+          const lease = leasesByTenant.get(tenant?.id) ?? leasesByUnit.get(c.unit_id) ?? null;
+          return { ...c, tenants: tenant, lease };
+        })
+        .filter((c: any) => c.tenants?.auth_user_id === userId);
     },
   });
 

@@ -74,10 +74,10 @@ function PaymentsPage() {
         .order("payment_date", { ascending: false });
       if (error) throw error;
       const ids = Array.from(new Set((data ?? []).map((p: any) => p.leases?.tenant_id).filter(Boolean)));
-      const { data: profs } = ids.length
-        ? await supabase.from("profiles").select("id, full_name, email").in("id", ids)
+      const { data: tenantList } = ids.length
+        ? await supabase.from("tenants").select("id, full_name, email").in("id", ids)
         : { data: [] };
-      const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
+      const map = new Map((tenantList ?? []).map((t: any) => [t.id, t]));
       return (data ?? []).map((p: any) => ({ ...p, tenant: map.get(p.leases?.tenant_id) }));
     },
   });
@@ -91,10 +91,10 @@ function PaymentsPage() {
         .select("id, monthly_rent, tenant_id, units(unit_number, properties(name))")
         .eq("status", "active");
       const ids = Array.from(new Set((data ?? []).map((l: any) => l.tenant_id)));
-      const { data: profs } = ids.length
-        ? await supabase.from("profiles").select("id, full_name, email").in("id", ids)
+      const { data: tenantList } = ids.length
+        ? await supabase.from("tenants").select("id, full_name, email").in("id", ids)
         : { data: [] };
-      const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
+      const map = new Map((tenantList ?? []).map((t: any) => [t.id, t]));
       return (data ?? []).map((l: any) => ({ ...l, profile: map.get(l.tenant_id) }));
     },
   });

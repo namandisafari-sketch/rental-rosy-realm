@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,20 +82,35 @@ function RentalIdCardsPage() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       const cards = (data ?? []) as any[];
-      const tenantIds = cards.map((c: any) => c.tenant_id).filter(Boolean);
-      const unitIds = cards.map((c: any) => c.unit_id).filter(Boolean);
-      let leaseMap = new Map();
-      if (tenantIds.length > 0) {
-        const { data: leases } = await supabase
-          .from("leases")
-          .select("id, tenant_id, unit_id, monthly_rent, outstanding_balance, start_date, end_date")
-          .eq("status", "active")
-          .in("tenant_id", tenantIds);
-        for (const l of leases ?? []) {
-          leaseMap.set(l.tenant_id, l);
-        }
+
+      const { data: allLeases } = await supabase
+        .from("leases")
+        .select("id, tenant_id, unit_id, monthly_rent, outstanding_balance, start_date, end_date")
+        .eq("status", "active");
+      const leasesByUnit = new Map((allLeases ?? []).map((l: any) => [l.unit_id, l]));
+      const leasesByTenant = new Map((allLeases ?? []).map((l: any) => [l.tenant_id, l]));
+
+      const cardTenantIds = cards.map((c: any) => c.tenant_id).filter(Boolean);
+      const fallbackTenantIds = cards
+        .filter((c: any) => !c.tenant_id)
+        .map((c: any) => leasesByUnit.get(c.unit_id)?.tenant_id)
+        .filter(Boolean);
+      const allTenantIds = [...new Set([...cardTenantIds, ...fallbackTenantIds])];
+
+      let tenantMap = new Map<string, any>();
+      if (allTenantIds.length > 0) {
+        const { data: tenantRows } = await supabase
+          .from("tenants")
+          .select("id, full_name, phone, email, id_type, id_number, emergency_contact_name, emergency_contact_phone, occupation, employer")
+          .in("id", allTenantIds);
+        for (const t of tenantRows ?? []) tenantMap.set(t.id, t);
       }
-      return cards.map((c: any) => ({ ...c, lease: leaseMap.get(c.tenant_id) }));
+
+      return cards.map((c: any) => {
+        const tenant = c.tenants ?? (c.tenant_id ? tenantMap.get(c.tenant_id) : null) ?? (leasesByUnit.get(c.unit_id) ? tenantMap.get(leasesByUnit.get(c.unit_id).tenant_id) : null);
+        const lease = leasesByTenant.get(tenant?.id) ?? leasesByUnit.get(c.unit_id) ?? null;
+        return { ...c, tenants: tenant, lease };
+      });
     },
   });
 
@@ -131,6 +146,31 @@ function RentalIdCardsPage() {
     },
     enabled: isStaff,
   });
+
+  const { data: activeLeases = [] } = useQuery({
+    queryKey: ["active-leases-for-cards"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("leases")
+        .select("unit_id, tenant_id")
+        .eq("status", "active");
+      return (data ?? []) as any;
+    },
+    enabled: isStaff,
+  });
+
+  const leaseUnitMap = new Map(activeLeases.map((l: any) => [l.unit_id, l.tenant_id]));
+
+  useEffect(() => {
+    if (selectedUnit) {
+      const tid = leaseUnitMap.get(selectedUnit);
+      if (tid && tenants.some((t: any) => t.id === tid)) {
+        setSelectedTenant(tid);
+      }
+    } else {
+      setSelectedTenant("");
+    }
+  }, [selectedUnit, activeLeases, tenants]);
 
   const total = cards.length;
   const activeCount = cards.filter((c: any) => c.status === "active").length;

@@ -1,61 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, FileText, Calculator, CalendarDays, ShieldAlert } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/rental-tax-dashboard")({
   head: () => ({ meta: [{ title: "URA Tax Compliance — Habico Portal" }] }),
   component: RentalTaxDashboard,
 });
-
-const DOCUMENTS = [
-  "Property Deeds / Titles",
-  "Rental Receipts / Income Statements",
-  "Expense Receipts",
-  "Bank Statements",
-  "Insurance Certificates",
-  "Tenancy Agreements",
-  "Property Valuation Report",
-  "Depreciation Schedule",
-  "Tax Clearance Certificate",
-  "Previous Year Returns",
-];
-
-const ALERTS_DATA = [
-  {
-    icon: AlertTriangle,
-    title: "Q4 Provisional Tax Deadline",
-    description: "Final quarter provisional tax payment due by January 31. Avoid penalties by filing on time.",
-    variant: "warning" as const,
-  },
-  {
-    icon: FileText,
-    title: "Property Valuation Requirement",
-    description: "Properties must be revalued every 5 years for accurate depreciation calculations under URA guidelines.",
-    variant: "info" as const,
-  },
-  {
-    icon: CalendarDays,
-    title: "Annual Filing Deadline Approaching",
-    description: "Annual rental income tax return must be filed by June 30. Prepare your documents now.",
-    variant: "warning" as const,
-  },
-];
-
-const NEXT_STEPS = [
-  { label: "Register for URA TIN", description: "Obtain or verify your Tax Identification Number with URA" },
-  { label: "File Provisional Tax Return", description: "Submit estimated tax for the current income year" },
-  { label: "Prepare Financial Statements", description: "Compile income statements and balance sheet for the year" },
-  { label: "Calculate Taxable Income", description: "Apply allowable deductions to gross rental income" },
-  { label: "File Annual Return", description: "Submit final tax return before June 30 deadline" },
-  { label: "Pay Balance Due", description: "Settle any outstanding tax liability to avoid interest" },
-];
 
 function formatUGX(amount: number) {
   if (amount >= 1_000_000) return `UGX ${(amount / 1_000_000).toFixed(1)}M`;
@@ -114,19 +70,29 @@ function useTaxDashboardData() {
         : new Date(currentYear, 5, 30);
       const daysToDeadline = Math.max(0, Math.ceil((taxYearEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
-      const [paymentsRes, leasesRes, expensesRes, propertiesRes, unitsRes] = await Promise.all([
-        supabase.from("payments").select("amount, payment_date, lease_id"),
+      const [paymentsRes, leasesRes, expensesRes, propertiesRes, unitsRes, checklistRes, alertsRes, stepsRes] = await Promise.all([
+        supabase.from("payments").select("amount, payment_date, payment_type, lease_id"),
         supabase.from("leases").select("id, monthly_rent, status, unit_id").eq("status", "active"),
         supabase.from("expenses").select("amount, expense_date, expense_categories(name)"),
-        supabase.from("properties").select("id, name"),
+        supabase.from("properties").select("id, name, valuation_amount, last_valuation_date, depreciation_rate"),
         supabase.from("units").select("id, monthly_rent, property_id, status"),
+        supabase.from("tax_checklist_items").select("*").order("sort_order"),
+        supabase.from("tax_alerts").select("*").eq("is_active", true).order("created_at"),
+        supabase.from("tax_next_steps").select("*").order("sort_order"),
       ]);
 
-      const payments = (paymentsRes.data as any) ?? [];
+      const allPayments = (paymentsRes.data as any) ?? [];
       const activeLeases = (leasesRes.data as any) ?? [];
       const expenses = (expensesRes.data as any) ?? [];
       const properties = (propertiesRes.data as any) ?? [];
       const units = (unitsRes.data as any) ?? [];
+
+      const checklistItems = (checklistRes.data as any) ?? [];
+      const alertsData = (alertsRes.data as any) ?? [];
+      const stepsData = (stepsRes.data as any) ?? [];
+
+      const payments = allPayments.filter((p: any) => !p.payment_type || p.payment_type === "rent");
+      const taxPayments = allPayments.filter((p: any) => p.payment_type === "tax");
 
       const grossRentalIncome = payments.reduce((s: number, p: any) => s + Number(p.amount), 0);
 
@@ -170,13 +136,21 @@ function useTaxDashboardData() {
       }
 
       const totalMonthlyRent = units.reduce((s: number, u: any) => s + Number(u.monthly_rent), 0);
-      const estimatedPropertyValue = totalMonthlyRent * 12 * 10;
-      const depreciation = estimatedPropertyValue * 0.05;
+
+      const propertiesWithValuation = (propertiesRes.data as any)?.filter((p: any) => p.valuation_amount) ?? [];
+      const totalValuation = propertiesWithValuation.reduce((s: number, p: any) => s + Number(p.valuation_amount), 0);
+      const avgDepreciationRate = propertiesWithValuation.length > 0
+        ? propertiesWithValuation.reduce((s: number, p: any) => s + Number(p.depreciation_rate || 5), 0) / propertiesWithValuation.length
+        : 5;
+      const estimatedPropertyValue = totalValuation > 0 ? totalValuation : totalMonthlyRent * 12 * 10;
+      const depreciation = estimatedPropertyValue * (avgDepreciationRate / 100);
+
+      const provisionalTaxPaid = taxPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
 
       const totalDeductions = maintenanceExpenses + managementFees + insuranceExpenses + propertyTaxes + depreciation + otherDeductions;
       const taxableIncome = Math.max(0, grossRentalIncome - totalDeductions);
       const taxDue = taxableIncome * 0.30;
-      const taxPaid = grossRentalIncome * 0.10;
+      const taxPaid = provisionalTaxPaid > 0 ? provisionalTaxPaid : grossRentalIncome * 0.10;
       const balanceDue = Math.max(0, taxDue - taxPaid);
 
       const collectionRate = expectedMonthlyRent > 0 ? Math.round((collectedThisMonth / expectedMonthlyRent) * 100) : 100;
@@ -204,29 +178,52 @@ function useTaxDashboardData() {
         totalProperties: properties.length,
         totalUnits: units.length,
         activeLeasesCount: activeLeases.length,
+        checklistItems,
+        alertsData,
+        stepsData,
+        provisionalTaxPaid,
       } as any;
     },
   });
 }
 
 function RentalTaxDashboard() {
+  const qc = useQueryClient();
   const { data: d, isLoading } = useTaxDashboardData();
-  const [checkedItems, setCheckedItems] = useState<boolean[]>(new Array(DOCUMENTS.length).fill(false));
 
-  const toggleDoc = (index: number) => {
-    setCheckedItems((prev) => {
-      const next = [...prev];
-      next[index] = !next[index];
-      return next;
-    });
-  };
+  const toggleChecklist = useMutation({
+    mutationFn: async ({ id, checked }: { id: string; checked: boolean }) => {
+      const { error } = await supabase
+        .from("tax_checklist_items")
+        .update({ checked, checked_at: checked ? new Date().toISOString() : null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["rental-tax-dashboard"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const toggleStep = useMutation({
+    mutationFn: async ({ id, is_completed }: { id: string; is_completed: boolean }) => {
+      const { error } = await supabase
+        .from("tax_next_steps")
+        .update({ is_completed, completed_at: is_completed ? new Date().toISOString() : null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["rental-tax-dashboard"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
 
   if (isLoading || !d) {
     return <div className="text-sm text-muted-foreground">Loading tax compliance data…</div>;
   }
 
+  const checklistLen = d.checklistItems?.length ?? 1;
+  const checkedCount = d.checklistItems?.filter((c: any) => c.checked).length ?? 0;
+  const docsRatio = (checkedCount / checklistLen) * 100;
+
   const taxPaidRatio = d.taxDue > 0 ? Math.min(100, Math.round((d.taxPaid / d.taxDue) * 100)) : 100;
-  const docsRatio = (checkedItems.filter(Boolean).length / DOCUMENTS.length) * 100;
   const complianceScore = Math.min(100, Math.round(
     d.collectionRate * 0.25 +
     taxPaidRatio * 0.35 +
@@ -458,7 +455,7 @@ function RentalTaxDashboard() {
             <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-warning-foreground">
               <p className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span>Provisional tax payments are estimated at 10% of gross income. Update with actual payments for accurate calculation.</span>
+                <span>Provisional tax payments from actual tax payments ({formatUGX(Math.round(d.provisionalTaxPaid))}). Auto-calculated at 10% of gross income when no tax payments recorded.</span>
               </p>
             </div>
           </CardContent>
@@ -473,19 +470,19 @@ function RentalTaxDashboard() {
             <CardDescription>Required documents for URA annual tax filing</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
-            {DOCUMENTS.map((doc, i) => (
+            {d.checklistItems?.map((item: any) => (
               <label
-                key={doc}
+                key={item.id}
                 className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-sm transition-colors hover:bg-muted/50"
               >
                 <Checkbox
-                  checked={checkedItems[i]}
-                  onCheckedChange={() => toggleDoc(i)}
+                  checked={item.checked}
+                  onCheckedChange={() => toggleChecklist.mutate({ id: item.id, checked: !item.checked })}
                 />
-                <span className={checkedItems[i] ? "text-muted-foreground line-through" : ""}>
-                  {doc}
+                <span className={item.checked ? "text-muted-foreground line-through" : ""}>
+                  {item.label}
                 </span>
-                {checkedItems[i] && (
+                {item.checked && (
                   <CheckCircle className="ml-auto h-4 w-4 shrink-0 text-green-500" />
                 )}
               </label>
@@ -494,7 +491,7 @@ function RentalTaxDashboard() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Documents Ready</span>
                 <span className="font-semibold">
-                  {checkedItems.filter(Boolean).length} / {DOCUMENTS.length}
+                  {checkedCount} / {checklistLen}
                 </span>
               </div>
               <Progress
@@ -502,9 +499,6 @@ function RentalTaxDashboard() {
                 className="mt-2 h-2 [&>div]:bg-purple-500"
               />
             </div>
-            <p className="text-xs text-muted-foreground pt-2">
-              Checklist is stored locally and not persisted. Use as a tracking aid.
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -519,24 +513,28 @@ function RentalTaxDashboard() {
             <CardDescription>Important URA compliance notifications</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {ALERTS_DATA.map((alert, i) => (
-              <div
-                key={i}
-                className={`flex items-start gap-3 rounded-lg border p-3 text-sm ${
-                  alert.variant === "warning"
-                    ? "border-warning/30 bg-warning/10"
-                    : "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30"
-                }`}
-              >
-                <alert.icon className={`mt-0.5 h-4 w-4 shrink-0 ${
-                  alert.variant === "warning" ? "text-warning-foreground" : "text-blue-600 dark:text-blue-400"
-                }`} />
-                <div>
-                  <p className="font-medium">{alert.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{alert.description}</p>
+            {d.alertsData?.map((alert: any) => {
+              const Icon = alert.alert_type === "critical" ? AlertTriangle : alert.alert_type === "warning" ? AlertTriangle : FileText;
+              const isWarning = alert.alert_type === "warning" || alert.alert_type === "critical";
+              return (
+                <div
+                  key={alert.id}
+                  className={`flex items-start gap-3 rounded-lg border p-3 text-sm ${
+                    isWarning
+                      ? "border-warning/30 bg-warning/10"
+                      : "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30"
+                  }`}
+                >
+                  <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${
+                    isWarning ? "text-warning-foreground" : "text-blue-600 dark:text-blue-400"
+                  }`} />
+                  <div>
+                    <p className="font-medium">{alert.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{alert.description}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
 
@@ -549,16 +547,28 @@ function RentalTaxDashboard() {
             <CardDescription>Recommended actions for full URA compliance</CardDescription>
           </CardHeader>
           <CardContent className="space-y-0">
-            {NEXT_STEPS.map((step, i) => (
-              <div key={i} className="flex items-start gap-4 border-b border-border last:border-0 py-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">
-                  {i + 1}
+            {d.stepsData?.map((step: any, i: number) => (
+              <div
+                key={step.id}
+                className="flex items-start gap-4 border-b border-border last:border-0 py-3 cursor-pointer transition-colors hover:bg-muted/20"
+                onClick={() => toggleStep.mutate({ id: step.id, is_completed: !step.is_completed })}
+              >
+                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  step.is_completed
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    : "bg-accent/10 text-accent"
+                }`}>
+                  {step.is_completed ? <CheckCircle className="h-4 w-4" /> : i + 1}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{step.label}</p>
+                  <p className={`text-sm font-medium ${step.is_completed ? "text-muted-foreground line-through" : ""}`}>
+                    {step.label}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
                 </div>
-                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                {step.is_completed && (
+                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                )}
               </div>
             ))}
           </CardContent>
