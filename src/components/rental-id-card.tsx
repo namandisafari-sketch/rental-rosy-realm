@@ -33,10 +33,12 @@ export interface RentalCardData {
 
 const PAY_SCHEME = "habico-pay";
 
-export function buildPaymentPayload(cardNumber: string) {
-  // What the QR encodes — scanning this in the Habico app routes to
-  // a payment session for the unit tied to this card (MTN MoMo / Airtel API).
-  return `${PAY_SCHEME}://pay?card=${encodeURIComponent(cardNumber)}`;
+export function buildPaymentPayload(cardNumber: string, origin?: string) {
+  // QR encodes a web URL that:
+  //  - shows card info / login when opened in a browser
+  //  - routes to mobile payment when handled by the Habico app
+  const base = origin ?? (typeof window !== "undefined" ? window.location.origin : "https://habico.vercel.app");
+  return `${base}/card?c=${encodeURIComponent(cardNumber)}`;
 }
 
 function formatDate(d: string | null | undefined) {
