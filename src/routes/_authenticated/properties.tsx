@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Building2, MapPin, Pencil, Archive, Search, SlidersHorizontal, Home } from "lucide-react";
+import { Plus, Building2, MapPin, Pencil, Archive, Search, SlidersHorizontal, Home, User } from "lucide-react";
 import { toast } from "sonner";
 import { LocationSelector } from "@/components/location-selector";
 
@@ -33,10 +33,22 @@ function PropertiesPage() {
   const [editingProp, setEditingProp] = useState<any>(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [form, setForm] = useState({ name: "", address: "", location: "", city: "", property_type: "residential", description: "", image_url: "" });
+  const [form, setForm] = useState({ name: "", address: "", location: "", city: "", property_type: "residential", description: "", image_url: "", owner_id: "" });
   const [unitOpen, setUnitOpen] = useState(false);
   const [unitPropertyId, setUnitPropertyId] = useState<string>("");
   const [unitForm, setUnitForm] = useState(EMPTY_UNIT);
+
+  const { data: owners } = useQuery({
+    queryKey: ["property-owners"],
+    queryFn: async () => {
+      const { data: ownerRoles } = await supabase.from("user_roles").select("user_id").eq("role", "owner");
+      const ids = (ownerRoles ?? []).map((r: any) => r.user_id).filter(Boolean);
+      if (ids.length === 0) return [];
+      const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", ids);
+      return (profiles ?? []) as any[];
+    },
+  });
+  const ownerMap = new Map((owners ?? []).map((o: any) => [o.id, o.full_name || o.email?.split("@")[0] || "Unknown"]));
 
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ["properties"],
@@ -62,17 +74,17 @@ function PropertiesPage() {
 
   const create = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("properties").insert({ ...form, property_type: form.property_type || "residential" });
+      const { error } = await supabase.from("properties").insert({ ...form, owner_id: form.owner_id || null, property_type: form.property_type || "residential" });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Property created"); setOpen(false); setForm({ name: "", address: "", location: "", city: "", property_type: "residential", description: "", image_url: "" }); qc.invalidateQueries({ queryKey: ["properties"] }); },
+    onSuccess: () => { toast.success("Property created"); setOpen(false); setForm({ name: "", address: "", location: "", city: "", property_type: "residential", description: "", image_url: "", owner_id: "" }); qc.invalidateQueries({ queryKey: ["properties"] }); },
     onError: (e) => toast.error((e as Error).message),
   });
 
   const update = useMutation({
     mutationFn: async () => {
       if (!editingProp) return;
-      const { error } = await supabase.from("properties").update(form).eq("id", editingProp.id);
+      const { error } = await supabase.from("properties").update({ ...form, owner_id: form.owner_id || null }).eq("id", editingProp.id);
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Property updated"); setEditOpen(false); setEditingProp(null); qc.invalidateQueries({ queryKey: ["properties"] }); },
@@ -123,7 +135,7 @@ function PropertiesPage() {
 
   function openEdit(p: any) {
     setEditingProp(p);
-    setForm({ name: p.name, address: p.address ?? "", location: p.location ?? "", city: (p as any).city ?? "", property_type: p.property_type ?? "residential", description: p.description ?? "", image_url: p.image_url ?? "" });
+    setForm({ name: p.name, address: p.address ?? "", location: p.location ?? "", city: (p as any).city ?? "", property_type: p.property_type ?? "residential", description: p.description ?? "", image_url: p.image_url ?? "", owner_id: p.owner_id ?? "" });
     setEditOpen(true);
   }
 
@@ -167,11 +179,30 @@ function PropertiesPage() {
                   </div>
                 </div>
                 <div>
+                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Landlord / Owner</h3></div>
+                  <div>
+                    <Label>Property Owner *</Label>
+                    <Select value={form.owner_id} onValueChange={(v) => setForm({ ...form, owner_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Select landlord" /></SelectTrigger>
+                      <SelectContent>
+                        {(owners ?? []).length === 0 ? (
+                          <SelectItem value="" disabled>No landlords found</SelectItem>
+                        ) : (
+                          (owners ?? []).map((o: any) => (
+                            <SelectItem key={o.id} value={o.id}>{o.full_name || o.email?.split("@")[0]}</SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1 text-xs text-muted-foreground">Select the landlord who owns this property. Landlords must have an account with the <strong>owner</strong> role.</p>
+                  </div>
+                </div>
+                <div>
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Media</h3></div>
                   <div><Label>Image URL</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://example.com/property-image.jpg" /><p className="mt-1 text-xs text-muted-foreground">Link to a photo or rendering of the property for the listing card.</p></div>
                 </div>
               </div>
-              <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.name || create.isPending}>Create Property</Button></DialogFooter>
+              <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.name || !form.owner_id || create.isPending}>Create Property</Button></DialogFooter>
             </DialogContent>
           </Dialog>
           </div>
@@ -222,6 +253,25 @@ function PropertiesPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
                 <div className="col-span-2"><LocationSelector value={form.location} onChange={(v) => setForm({ ...form, location: v })} /></div>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Landlord / Owner</h3></div>
+              <div>
+                <Label>Property Owner</Label>
+                <Select value={form.owner_id} onValueChange={(v) => setForm({ ...form, owner_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select landlord" /></SelectTrigger>
+                  <SelectContent>
+                    {(owners ?? []).length === 0 ? (
+                      <SelectItem value="" disabled>No landlords found</SelectItem>
+                    ) : (
+                      (owners ?? []).map((o: any) => (
+                        <SelectItem key={o.id} value={o.id}>{o.full_name || o.email?.split("@")[0]}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">Select the landlord who owns this property. Landlords must have an account with the <strong>owner</strong> role.</p>
               </div>
             </div>
             <div>
@@ -301,6 +351,7 @@ function PropertiesPage() {
                       </div>
                       <h3 className="mt-4 display text-lg font-bold">{p.name}</h3>
                       <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" />{p.city ?? p.location ?? p.address ?? "—"}</div>
+                      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><User className="h-3 w-3" />{p.owner_id ? ownerMap.get(p.owner_id) ?? "Unknown" : "No landlord linked"}</div>
                       <div className="mt-4 flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Units</span>
                         <span className="font-semibold">{occ}/{units.length} occupied</span>
