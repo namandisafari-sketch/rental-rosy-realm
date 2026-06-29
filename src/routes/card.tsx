@@ -1,17 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { QRCodeSVG } from "qrcode.react";
-import { Building2, CreditCard, User, MapPin, CalendarDays, CheckCircle, Send, Mail } from "lucide-react";
+import { Building2, CreditCard, User, CheckCircle, Send, Mail, Camera, CameraOff } from "lucide-react";
 import { toast } from "sonner";
+import { Html5Qrcode } from "html5-qrcode";
 
 const searchSchema = z.object({ c: z.string().optional() });
 
@@ -70,10 +70,11 @@ function CardPage() {
                 <div>
                   <h1 className="text-xl font-bold">Scan Your ID Card</h1>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Enter your card number to verify your identity or sign in.
+                    Use your camera to scan the QR on your card, or type the card number.
                   </p>
                 </div>
                 <CardNumberInput />
+                <QrScanner onScan={(c) => window.location.href = `/card?c=${encodeURIComponent(c)}`} />
               </CardContent>
             </Card>
           ) : isLoading ? (
@@ -226,5 +227,65 @@ function CardNumberInput() {
       />
       <Button type="submit">Verify</Button>
     </form>
+  );
+}
+
+function QrScanner({ onScan }: { onScan: (cardNumber: string) => void }) {
+  const [scanning, setScanning] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const elRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return () => {
+      scannerRef.current?.stop().catch(() => {});
+    };
+  }, []);
+
+  async function start() {
+    if (!elRef.current) return;
+    setScanning(true);
+    const scanner = new Html5Qrcode("qr-scanner-el");
+    scannerRef.current = scanner;
+    try {
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          scanner.stop().catch(() => {});
+          setScanning(false);
+          const match = decodedText.match(/[?&]c=([^&]+)/);
+          const card = match ? decodeURIComponent(match[1]) : decodedText.trim();
+          if (card) onScan(card);
+        },
+        () => {},
+      );
+    } catch {
+      setScanning(false);
+      toast.error("Camera access denied or unavailable");
+    }
+  }
+
+  async function stop() {
+    await scannerRef.current?.stop().catch(() => {});
+    setScanning(false);
+  }
+
+  return (
+    <div className="w-full max-w-sm">
+      {!scanning ? (
+        <Button variant="outline" className="w-full" onClick={start}>
+          <Camera className="mr-2 h-4 w-4" />
+          Scan with Camera
+        </Button>
+      ) : (
+        <div className="space-y-3">
+          <div ref={elRef} id="qr-scanner-el" className="overflow-hidden rounded-lg" style={{ width: "100%", maxWidth: 320, height: 240 }} />
+          <Button variant="outline" className="w-full" onClick={stop}>
+            <CameraOff className="mr-2 h-4 w-4" />
+            Cancel Scan
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
