@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Building2, Mail, Phone, User, Plus, Trash2, Landmark } from "lucide-react";
+import { Building2, Mail, Phone, User, Plus, Trash2, Landmark, KeyRound, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { createLandlord } from "@/lib/landlord.server";
+import { createLandlord, resetLandlordPassword } from "@/lib/landlord.server";
 
 export const Route = createFileRoute("/_authenticated/landlords")({
   head: () => ({ meta: [{ title: "Landlords — Habico Portal" }] }),
@@ -96,6 +96,27 @@ function LandlordsPage() {
     onSuccess: () => {
       toast.success("Landlord role removed");
       qc.invalidateQueries({ queryKey: ["landlords"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const [resetFor, setResetFor] = useState<OwnerWithProfile | null>(null);
+  const [newPw, setNewPw] = useState("");
+  const [issuedPw, setIssuedPw] = useState<string | null>(null);
+
+  const resetMutation = useMutation({
+    mutationFn: async () => {
+      if (!resetFor) throw new Error("No landlord selected");
+      const res = await resetLandlordPassword({
+        data: { user_id: resetFor.user_id, password: newPw || undefined },
+      });
+      if (!res.success) throw new Error(res.error);
+      return res.password;
+    },
+    onSuccess: (pw) => {
+      setIssuedPw(pw);
+      setNewPw("");
+      toast.success("Password updated");
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -186,18 +207,28 @@ function LandlordsPage() {
                       {l.propertyCount} property{l.propertyCount === 1 ? "" : "ies"}
                     </div>
                     {isStaff && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader><AlertDialogTitle>Remove landlord?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This removes the <strong>owner</strong> role from {l.full_name || l.email}. Their profile and linked properties will not be deleted.
-                          </AlertDialogDescription></AlertDialogHeader>
-                          <AlertDialogFooter>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          title="Reset password"
+                          onClick={() => { setIssuedPw(null); setNewPw(""); setResetFor(l); }}
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Remove role">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Remove landlord?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This removes the <strong>owner</strong> role from {l.full_name || l.email}. Their profile and linked properties will not be deleted.
+                            </AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction onClick={() => removeMutation.mutate(l.user_id)} className="bg-destructive text-destructive-foreground">
                               Remove Role
@@ -205,6 +236,7 @@ function LandlordsPage() {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -228,6 +260,44 @@ function LandlordsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={!!resetFor} onOpenChange={(o) => { if (!o) { setResetFor(null); setIssuedPw(null); setNewPw(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset password — {resetFor?.full_name || resetFor?.email}</DialogTitle>
+          </DialogHeader>
+          {issuedPw ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">New password set. Share it securely — it will not be shown again.</p>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 font-mono text-sm">
+                <span className="flex-1 break-all">{issuedPw}</span>
+                <Button size="icon" variant="ghost" onClick={() => { navigator.clipboard.writeText(issuedPw); toast.success("Copied"); }}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Passwords are stored encrypted and cannot be viewed. You can set a new one here, or leave blank to auto-generate.
+              </p>
+              <div>
+                <Label>New password</Label>
+                <Input type="text" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="Leave blank to auto-generate" />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            {issuedPw ? (
+              <Button onClick={() => { setResetFor(null); setIssuedPw(null); }}>Done</Button>
+            ) : (
+              <Button onClick={() => resetMutation.mutate()} disabled={resetMutation.isPending}>
+                {resetMutation.isPending ? "Updating..." : "Set new password"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
