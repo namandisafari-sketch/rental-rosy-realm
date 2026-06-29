@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { Download, TrendingUp, TrendingDown, DollarSign, Building2 } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, DollarSign, Building2, Landmark, ScrollText } from "lucide-react";
+import { HabicoFinancialReport, buildPropertyReportData } from "@/components/habico-financial-report";
+import type { FinancialReportData } from "@/components/habico-financial-report";
 
 export const Route = createFileRoute("/_authenticated/financial-reports")({
   head: () => ({ meta: [{ title: "Financial Reports — Habico Portal" }] }),
@@ -78,6 +80,99 @@ function FinancialReportsPage() {
       return count ?? 0;
     },
   });
+
+  const { data: properties = [] } = useQuery({
+    queryKey: ["financial-reports-properties"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("id, name, location, owner_id")
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: ownerProfiles = [] } = useQuery({
+    queryKey: ["financial-reports-owners"],
+    queryFn: async () => {
+      const ids = properties.map((p: any) => p.owner_id).filter(Boolean);
+      const unique = [...new Set(ids)];
+      if (unique.length === 0) return [];
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, phone")
+        .in("id", unique);
+      return (data ?? []) as any[];
+    },
+    enabled: properties.length > 0,
+  });
+
+  const ownerMap = new Map(ownerProfiles.map((p: any) => [p.id, p]));
+
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
+
+  const { data: propertyLeases = [] } = useQuery({
+    queryKey: ["financial-reports-property-leases", selectedPropertyId],
+    queryFn: async () => {
+      if (!selectedPropertyId) return [];
+      const { data: unitIds } = await supabase
+        .from("units")
+        .select("id")
+        .eq("property_id", selectedPropertyId);
+      const uids = (unitIds ?? []).map((u: any) => u.id);
+      if (uids.length === 0) return [];
+      const { data, error } = await supabase
+        .from("leases")
+        .select("*, units!inner(unit_number)")
+        .in("unit_id", uids)
+        .order("start_date", { ascending: false });
+      if (error) throw error;
+      const ids = [...new Set((data ?? []).map((l: any) => l.tenant_id).filter(Boolean))];
+      const { data: profs } = ids.length
+        ? await supabase.from("profiles").select("id, full_name, email, phone").in("id", ids)
+        : { data: [] };
+      const pmap = new Map((profs ?? []).map((p: any) => [p.id, p]));
+      return (data ?? []).map((l: any) => ({ ...l, profile: pmap.get(l.tenant_id) }));
+    },
+    enabled: !!selectedPropertyId,
+  });
+
+  const { data: propertyPayments = [] } = useQuery({
+    queryKey: ["financial-reports-property-payments", selectedPropertyId],
+    queryFn: async () => {
+      if (!selectedPropertyId) return [];
+      const { data: unitIds } = await supabase
+        .from("units")
+        .select("id")
+        .eq("property_id", selectedPropertyId);
+      const uids = (unitIds ?? []).map((u: any) => u.id);
+      if (uids.length === 0) return [];
+      const { data: leaseIds } = await supabase
+        .from("leases")
+        .select("id")
+        .in("unit_id", uids);
+      const lids = (leaseIds ?? []).map((l: any) => l.id);
+      if (lids.length === 0) return [];
+      const { data, error } = await supabase
+        .from("payments")
+        .select("*")
+        .in("lease_id", lids)
+        .order("payment_date", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!selectedPropertyId,
+  });
+
+  const propertyReportData: FinancialReportData | null = selectedPropertyId && propertyLeases.length > 0
+    ? buildPropertyReportData({
+        property: properties.find((p: any) => p.id === selectedPropertyId) ?? null,
+        ownerProfile: ownerMap.get(properties.find((p: any) => p.id === selectedPropertyId)?.owner_id) ?? null,
+        leases: propertyLeases,
+        payments: propertyPayments,
+      })
+    : null;
 
   const years = Array.from(
     new Set([
@@ -267,6 +362,10 @@ function FinancialReportsPage() {
           <TabsTrigger value="pnl">P&amp;L Statement</TabsTrigger>
           <TabsTrigger value="collection">Collection Report</TabsTrigger>
           <TabsTrigger value="commission">Commission Split (66/9)</TabsTrigger>
+          <TabsTrigger value="landlord">
+            <Landmark className="mr-1.5 h-4 w-4" />
+            Landlord Report
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="pnl" className="space-y-4">
@@ -510,6 +609,64 @@ function FinancialReportsPage() {
                   </div>
                 );
               })()}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="landlord" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="display">Property Landlord Report</CardTitle>
+                  <CardDescription>
+                    Select a property to generate the official Habico financial report for the landlord
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="w-full max-w-sm">
+                  <label className="mb-1.5 block text-sm font-medium">Property</label>
+                  <select
+                    className="w-full rounded-md border border-input bg-background p-2 text-sm"
+                    value={selectedPropertyId}
+                    onChange={(e) => setSelectedPropertyId(e.target.value)}
+                  >
+                    <option value="">Select a property…</option>
+                    {properties.map((p: any) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} {p.owner_id ? `— ${ownerMap.get(p.owner_id)?.full_name ?? ""}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {!selectedPropertyId && (
+                <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
+                  <ScrollText className="h-10 w-10" />
+                  <p className="font-medium">Select a property</p>
+                  <p className="text-sm">
+                    Choose a property above to generate the landlord financial report.
+                  </p>
+                </div>
+              )}
+
+              {selectedPropertyId && propertyLeases.length === 0 && (
+                <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
+                  <Building2 className="h-10 w-10" />
+                  <p className="font-medium">No leases found</p>
+                  <p className="text-sm">
+                    This property has no lease records yet.
+                  </p>
+                </div>
+              )}
+
+              {selectedPropertyId && propertyLeases.length > 0 && propertyReportData && (
+                <HabicoFinancialReport data={propertyReportData} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
