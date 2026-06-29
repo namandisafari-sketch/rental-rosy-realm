@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Building2, Mail, Phone, User, Plus, Trash2, Landmark } from "lucide-react";
+import { Building2, Mail, Phone, User, Plus, Trash2, Landmark, KeyRound, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { createLandlord } from "@/lib/landlord.server";
+import { createLandlord, resetLandlordPassword } from "@/lib/landlord.server";
 
 export const Route = createFileRoute("/_authenticated/landlords")({
   head: () => ({ meta: [{ title: "Landlords — Habico Portal" }] }),
