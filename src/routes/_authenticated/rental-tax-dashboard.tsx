@@ -87,9 +87,47 @@ function useTaxDashboardData() {
       const properties = (propertiesRes.data as any) ?? [];
       const units = (unitsRes.data as any) ?? [];
 
-      const checklistItems = (checklistRes.data as any) ?? [];
-      const alertsData = (alertsRes.data as any) ?? [];
-      const stepsData = (stepsRes.data as any) ?? [];
+      let checklistItems = (checklistRes.data as any) ?? [];
+      let alertsData = (alertsRes.data as any) ?? [];
+      let stepsData = (stepsRes.data as any) ?? [];
+
+      if (checklistItems.length === 0) {
+        await supabase.from("tax_checklist_items").upsert([
+          { label: "Property Deeds / Titles", sort_order: 1 },
+          { label: "Rental Receipts / Income Statements", sort_order: 2 },
+          { label: "Expense Receipts", sort_order: 3 },
+          { label: "Bank Statements", sort_order: 4 },
+          { label: "Insurance Certificates", sort_order: 5 },
+          { label: "Tenancy Agreements", sort_order: 6 },
+          { label: "Property Valuation Report", sort_order: 7 },
+          { label: "Depreciation Schedule", sort_order: 8 },
+          { label: "Tax Clearance Certificate", sort_order: 9 },
+          { label: "Previous Year Returns", sort_order: 10 },
+        ], { onConflict: "label" });
+        const { data: rc } = await supabase.from("tax_checklist_items").select("*").order("sort_order");
+        checklistItems = (rc ?? []);
+      }
+      if (alertsData.length === 0) {
+        await supabase.from("tax_alerts").upsert([
+          { title: "Q4 Provisional Tax Deadline", description: "Final quarter provisional tax payment due by January 31. Avoid penalties by filing on time.", alert_type: "warning" },
+          { title: "Property Valuation Requirement", description: "Properties must be revalued every 5 years for accurate depreciation calculations under URA guidelines.", alert_type: "info" },
+          { title: "Annual Filing Deadline Approaching", description: "Annual rental income tax return must be filed by June 30. Prepare your documents now.", alert_type: "warning" },
+        ], { onConflict: "title" });
+        const { data: ra } = await supabase.from("tax_alerts").select("*").eq("is_active", true).order("created_at");
+        alertsData = (ra ?? []);
+      }
+      if (stepsData.length === 0) {
+        await supabase.from("tax_next_steps").upsert([
+          { label: "Register for URA TIN", description: "Obtain or verify your Tax Identification Number with URA", sort_order: 1 },
+          { label: "File Provisional Tax Return", description: "Submit estimated tax for the current income year", sort_order: 2 },
+          { label: "Prepare Financial Statements", description: "Compile income statements and balance sheet for the year", sort_order: 3 },
+          { label: "Calculate Taxable Income", description: "Apply allowable deductions to gross rental income", sort_order: 4 },
+          { label: "File Annual Return", description: "Submit final tax return before June 30 deadline", sort_order: 5 },
+          { label: "Pay Balance Due", description: "Settle any outstanding tax liability to avoid interest", sort_order: 6 },
+        ], { onConflict: "label" });
+        const { data: rs } = await supabase.from("tax_next_steps").select("*").order("sort_order");
+        stepsData = (rs ?? []);
+      }
 
       const payments = allPayments.filter((p: any) => !p.payment_type || p.payment_type === "rent");
       const taxPayments = allPayments.filter((p: any) => p.payment_type === "tax");
