@@ -49,6 +49,7 @@ export interface WorkspaceConfig {
 
 const rentalItems: NavItem[] = [
   { title: "Properties", url: "/properties", icon: Building2 },
+  { title: "Landlords", url: "/landlords", icon: Landmark },
   { title: "Leases", url: "/leases", icon: FileText },
   { title: "Tenants", url: "/tenants", icon: Users },
   { title: "Payments", url: "/payments", icon: Receipt },

@@ -56,6 +56,7 @@ import { Route as AuthenticatedListingBannersRouteImport } from './routes/_authe
 import { Route as AuthenticatedLienWaiversRouteImport } from './routes/_authenticated/lien-waivers'
 import { Route as AuthenticatedLeasesRouteImport } from './routes/_authenticated/leases'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
+import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedFinancialReportsRouteImport } from './routes/_authenticated/financial-reports'
 import { Route as AuthenticatedExpensesRouteImport } from './routes/_authenticated/expenses'
@@ -330,6 +331,11 @@ const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedLandlordsRoute = AuthenticatedLandlordsRouteImport.update({
+  id: '/landlords',
+  path: '/landlords',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
@@ -453,6 +459,7 @@ export interface FileRoutesByFullPath {
   '/expenses': typeof AuthenticatedExpensesRoute
   '/financial-reports': typeof AuthenticatedFinancialReportsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
+  '/landlords': typeof AuthenticatedLandlordsRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/leases': typeof AuthenticatedLeasesRoute
   '/lien-waivers': typeof AuthenticatedLienWaiversRoute
@@ -519,6 +526,7 @@ export interface FileRoutesByTo {
   '/expenses': typeof AuthenticatedExpensesRoute
   '/financial-reports': typeof AuthenticatedFinancialReportsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
+  '/landlords': typeof AuthenticatedLandlordsRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/leases': typeof AuthenticatedLeasesRoute
   '/lien-waivers': typeof AuthenticatedLienWaiversRoute
@@ -587,6 +595,7 @@ export interface FileRoutesById {
   '/_authenticated/expenses': typeof AuthenticatedExpensesRoute
   '/_authenticated/financial-reports': typeof AuthenticatedFinancialReportsRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
+  '/_authenticated/landlords': typeof AuthenticatedLandlordsRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/leases': typeof AuthenticatedLeasesRoute
   '/_authenticated/lien-waivers': typeof AuthenticatedLienWaiversRoute
@@ -655,6 +664,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/financial-reports'
     | '/inventory'
+    | '/landlords'
     | '/leads'
     | '/leases'
     | '/lien-waivers'
@@ -721,6 +731,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/financial-reports'
     | '/inventory'
+    | '/landlords'
     | '/leads'
     | '/leases'
     | '/lien-waivers'
@@ -788,6 +799,7 @@ export interface FileRouteTypes {
     | '/_authenticated/expenses'
     | '/_authenticated/financial-reports'
     | '/_authenticated/inventory'
+    | '/_authenticated/landlords'
     | '/_authenticated/leads'
     | '/_authenticated/leases'
     | '/_authenticated/lien-waivers'
@@ -1172,6 +1184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeadsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/landlords': {
+      id: '/_authenticated/landlords'
+      path: '/landlords'
+      fullPath: '/landlords'
+      preLoaderRoute: typeof AuthenticatedLandlordsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/inventory': {
       id: '/_authenticated/inventory'
       path: '/inventory'
@@ -1333,6 +1352,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedExpensesRoute: typeof AuthenticatedExpensesRoute
   AuthenticatedFinancialReportsRoute: typeof AuthenticatedFinancialReportsRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
+  AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedLeasesRoute: typeof AuthenticatedLeasesRoute
   AuthenticatedLienWaiversRoute: typeof AuthenticatedLienWaiversRoute
@@ -1393,6 +1413,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedExpensesRoute: AuthenticatedExpensesRoute,
   AuthenticatedFinancialReportsRoute: AuthenticatedFinancialReportsRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
+  AuthenticatedLandlordsRoute: AuthenticatedLandlordsRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedLeasesRoute: AuthenticatedLeasesRoute,
   AuthenticatedLienWaiversRoute: AuthenticatedLienWaiversRoute,
