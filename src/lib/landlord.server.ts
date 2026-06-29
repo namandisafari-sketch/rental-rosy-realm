@@ -1,12 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 
 export const createLandlord = createServerFn({ method: "POST" })
-  .handler(async (data: {
+  .inputValidator((input: {
     email: string;
     password?: string;
     full_name: string;
     phone?: string;
-  }) => {
+  }) => input)
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const pw = data.password || Math.random().toString(36).slice(2) + "A1!";
