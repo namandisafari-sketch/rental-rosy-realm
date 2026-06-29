@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { Building2, ShieldCheck, Wifi } from "lucide-react";
 
 // CR80 standard ID card: 85.6 × 53.98 mm  ≈ 3.375" × 2.125"
 // Design canvas locked to 1012 × 638 px (≈300 DPI). Use CSS transform: scale()
