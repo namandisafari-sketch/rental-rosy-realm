@@ -12,7 +12,7 @@ CREATE POLICY "ra_self_select" ON public.rental_applications
 DROP POLICY IF EXISTS "properties_public_select" ON public.properties;
 CREATE POLICY "properties_public_select" ON public.properties
   FOR SELECT TO anon, authenticated
-  USING (is_active = true);
+  USING (is_active IS NULL OR is_active = true);
 
 DROP POLICY IF EXISTS "units_public_select" ON public.units;
 CREATE POLICY "units_public_select" ON public.units

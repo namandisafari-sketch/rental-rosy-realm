@@ -84,11 +84,11 @@ function RentPage() {
       const { data, error } = await supabase
         .from("properties")
         .select("*, units(*)")
-        .eq("is_active", true)
+        .or("is_active.is.null,is_active.eq.true")
         .order("created_at", { ascending: false });
       if (error) throw error;
       const filtered = (data as Property[]).filter(
-        (p) => p.units?.some((u) => u.status === "vacant")
+        (p) => p.units?.some((u) => u.status?.toLowerCase() === "vacant")
       );
       return filtered;
     },
