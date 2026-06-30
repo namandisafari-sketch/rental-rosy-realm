@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Search, MessageSquare, Send, CheckCheck, Mail, MailOpen } from "lucide-react";
 import { toast } from "sonner";
@@ -220,14 +220,12 @@ function RentalMessagesPage() {
                 <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Recipient</h3></div>
                 <div className="space-y-2">
                   <Label>Tenant *</Label>
-                  <Select value={newTenantId} onValueChange={setNewTenantId}>
-                    <SelectTrigger><SelectValue placeholder="Select tenant" /></SelectTrigger>
-                    <SelectContent>
-                      {tenants.map((t: any) => (
-                        <SelectItem key={t.id} value={t.id}>{t.full_name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={newTenantId}
+                    onValueChange={setNewTenantId}
+                    placeholder="Select tenant"
+                    options={tenants.map((t: any) => ({ value: t.id, label: t.full_name }))}
+                  />
                   <p className="mt-1 text-xs text-muted-foreground">The tenant who will receive this message.</p>
                 </div>
               </div>

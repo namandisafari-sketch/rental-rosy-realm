@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Package, Monitor, Sofa, Wrench, HardDrive, Building2, ArmchairIcon, Plus, Search, Filter } from "lucide-react";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/assets")({
@@ -209,9 +210,12 @@ function AssetsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>Category *</Label>
-                        <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                          {categories.map((c) => <option key={c} value={c}>{categoryLabels[c]}</option>)}
-                        </select>
+                        <SearchableSelect
+                          value={form.category}
+                          onValueChange={(v) => setForm({ ...form, category: v })}
+                          placeholder="Select category"
+                          options={categories.map((c) => ({ value: c, label: categoryLabels[c] }))}
+                        />
                       </div>
                       <div>
                         <Label>Serial / ID #</Label>
@@ -241,23 +245,34 @@ function AssetsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Status</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                        {statuses.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.status}
+                        onValueChange={(v) => setForm({ ...form, status: v })}
+                        placeholder="Select status"
+                        options={statuses.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))}
+                      />
                     </div>
                     <div>
                       <Label>Condition</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })}>
-                        {conditions.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.condition}
+                        onValueChange={(v) => setForm({ ...form, condition: v })}
+                        placeholder="Select condition"
+                        options={conditions.map((c) => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))}
+                      />
                     </div>
                   </div>
                   <div className="mt-3">
                     <Label>Assigned to</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.assigned_to} onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}>
-                      <option value="">Unassigned</option>
-                      {employees.map((e: any) => <option key={e.id} value={e.id}>{e.full_name ?? e.email}</option>)}
-                    </select>
+                    <SearchableSelect
+                      value={form.assigned_to}
+                      onValueChange={(v) => setForm({ ...form, assigned_to: v })}
+                      placeholder="Unassigned"
+                      options={[
+                        { value: "", label: "Unassigned" },
+                        ...employees.map((e: any) => ({ value: e.id, label: e.full_name ?? e.email }))
+                      ]}
+                    />
                   </div>
                   <div className="mt-3">
                     <Label>Current value (UGX)</Label>
@@ -332,22 +347,24 @@ function AssetsPage() {
                   className="w-48 pl-8"
                 />
               </div>
-              <select
-                className="rounded-md border border-input bg-background p-2 text-sm"
+              <SearchableSelect
                 value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-              >
-                <option value="">All categories</option>
-                {categories.map((c) => <option key={c} value={c}>{categoryLabels[c]}</option>)}
-              </select>
-              <select
-                className="rounded-md border border-input bg-background p-2 text-sm"
+                onValueChange={setFilterCategory}
+                placeholder="All categories"
+                options={[
+                  { value: "", label: "All categories" },
+                  ...categories.map((c) => ({ value: c, label: categoryLabels[c] }))
+                ]}
+              />
+              <SearchableSelect
                 value={filterCondition}
-                onChange={(e) => setFilterCondition(e.target.value)}
-              >
-                <option value="">All conditions</option>
-                {conditions.map((c) => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-              </select>
+                onValueChange={setFilterCondition}
+                placeholder="All conditions"
+                options={[
+                  { value: "", label: "All conditions" },
+                  ...conditions.map((c) => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))
+                ]}
+              />
             </div>
           </div>
         </CardHeader>

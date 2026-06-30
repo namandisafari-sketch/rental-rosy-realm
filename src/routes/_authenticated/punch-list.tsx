@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, ClipboardCheck, AlertTriangle, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -153,10 +154,15 @@ function PunchListPage() {
                   <div className="space-y-3">
                     <div>
                       <Label>Project <span className="text-destructive">*</span></Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
-                        <option value="">Select a project...</option>
-                        {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.project_id}
+                        onValueChange={(v) => setForm({ ...form, project_id: v })}
+                        placeholder="Select a project..."
+                        options={[
+                          { value: "", label: "Select a project..." },
+                          ...projects.map((p: any) => ({ value: p.id, label: p.name }))
+                        ]}
+                      />
                     </div>
                     <div>
                       <Label>Title <span className="text-destructive">*</span></Label>
@@ -175,15 +181,21 @@ function PunchListPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Status</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                        {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.status}
+                        onValueChange={(v) => setForm({ ...form, status: v })}
+                        placeholder="Select status"
+                        options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                      />
                     </div>
                     <div>
                       <Label>Priority</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
-                        {priorityOptions.map((p) => <option key={p} value={p}>{p}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.priority}
+                        onValueChange={(v) => setForm({ ...form, priority: v })}
+                        placeholder="Select priority"
+                        options={priorityOptions.map((p) => ({ value: p, label: p }))}
+                      />
                     </div>
                   </div>
                 </fieldset>

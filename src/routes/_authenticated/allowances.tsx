@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -135,9 +136,12 @@ function AllowancesPage() {
                 <div>
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Status &amp; Notes</h3></div>
                   <div><Label>Status</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                      {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                    </select>
+                    <SearchableSelect
+                      value={form.status}
+                      onValueChange={(v) => setForm({ ...form, status: v })}
+                      placeholder="Select status"
+                      options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                    />
                   </div>
                   <div className="mt-3"><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes about this allowance" /></div>
                 </div>

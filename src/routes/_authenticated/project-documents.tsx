@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, FileText, FolderOpen, TrendingUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -146,9 +147,12 @@ function ProjectDocumentsPage() {
                     <div><Label>File type</Label><Input value={form.file_type} onChange={(e) => setForm({ ...form, file_type: e.target.value })} placeholder="e.g. pdf, dwg, xlsx" /></div>
                   </div>
                   <div className="mt-3"><Label>Category</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                      {categoryOptions.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                    </select>
+                    <SearchableSelect
+                      value={form.category}
+                      onValueChange={(v) => setForm({ ...form, category: v })}
+                      placeholder="Select category"
+                      options={categoryOptions.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))}
+                    />
                   </div>
                 </div>
                 <div>

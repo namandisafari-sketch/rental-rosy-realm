@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Plus, FileSpreadsheet, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -151,12 +151,12 @@ function ProposalsPage() {
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Status &amp; Notes</h3></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Status</Label>
-                      <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                        <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                        <SelectContent>
-                          {statusOptions.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={form.status}
+                        onValueChange={(v) => setForm({ ...form, status: v })}
+                        placeholder="Select status"
+                        options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                      />
                     </div>
                     <div><Label>Valid until</Label><Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} /></div>
                   </div>

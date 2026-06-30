@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Wrench, Image, X } from "lucide-react";
 import { toast } from "sonner";
@@ -393,24 +393,15 @@ function MaintenancePage() {
               <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Location</h3></div>
               <div className="space-y-2">
                 <Label htmlFor="mt-unit">Unit *</Label>
-                <Select value={unitId} onValueChange={setUnitId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isStaff
-                      ? allUnits?.map((u: any) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.name} - {u.properties?.name}
-                          </SelectItem>
-                        ))
-                      : leases?.map((l: any) => (
-                          <SelectItem key={l.unit_id} value={l.unit_id}>
-                            {l.units?.name} - {l.units?.properties?.name}
-                          </SelectItem>
-                        ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={unitId}
+                  onValueChange={setUnitId}
+                  placeholder="Select unit"
+                  options={isStaff
+                    ? (allUnits ?? []).map((u: any) => ({ value: u.id, label: `${u.name} - ${u.properties?.name}` }))
+                    : (leases ?? []).map((l: any) => ({ value: l.unit_id, label: `${l.units?.name} - ${l.units?.properties?.name}` }))
+                  }
+                />
                 <p className="mt-1 text-xs text-muted-foreground">The unit where the issue is located.</p>
               </div>
             </div>
@@ -419,33 +410,27 @@ function MaintenancePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Priority *</Label>
-                  <Select value={priority} onValueChange={setPriority}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={priority}
+                    onValueChange={setPriority}
+                    placeholder="Select priority"
+                    options={[
+                      { value: "low", label: "Low" },
+                      { value: "normal", label: "Normal" },
+                      { value: "high", label: "High" },
+                      { value: "urgent", label: "Urgent" },
+                    ]}
+                  />
                   <p className="mt-1 text-xs text-muted-foreground">Urgent for safety hazards, High for major damage, Normal/Low for routine issues.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Category *</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(categoryLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={category}
+                    onValueChange={setCategory}
+                    placeholder="Select category"
+                    options={Object.entries(categoryLabels).map(([value, label]) => ({ value, label }))}
+                  />
                 </div>
               </div>
             </div>
@@ -501,32 +486,26 @@ function MaintenancePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Status</Label>
-                    <Select value={editStatus} onValueChange={setEditStatus}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="open">Open</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="resolved">Resolved</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={editStatus}
+                      onValueChange={setEditStatus}
+                      placeholder="Select status"
+                      options={[
+                        { value: "open", label: "Open" },
+                        { value: "in_progress", label: "In Progress" },
+                        { value: "resolved", label: "Resolved" },
+                        { value: "cancelled", label: "Cancelled" },
+                      ]}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Category</Label>
-                    <Select value={editCategory} onValueChange={setEditCategory}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(categoryLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={editCategory}
+                      onValueChange={setEditCategory}
+                      placeholder="Select category"
+                      options={Object.entries(categoryLabels).map(([value, label]) => ({ value, label }))}
+                    />
                   </div>
                 </div>
               </div>

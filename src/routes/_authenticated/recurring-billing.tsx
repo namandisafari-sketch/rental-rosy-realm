@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Repeat, Send, ToggleLeft, ToggleRight } from "lucide-react";
@@ -153,7 +153,7 @@ function RecurringBilling() {
                 <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Lease</h3></div>
                 <div className="space-y-2">
                   <Label>Lease (Tenant — Property/Unit) *</Label>
-                  <Select
+                  <SearchableSelect
                     value={form.lease_id}
                     onValueChange={(v) => {
                       const lease = (leasesQ.data ?? []).find((l: any) => l.id === v);
@@ -163,21 +163,9 @@ function RecurringBilling() {
                         amount: lease?.monthly_rent ?? 0,
                       }));
                     }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a lease" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(leasesQ.data ?? []).length === 0 && (
-                        <div className="px-2 py-4 text-center text-sm text-muted-foreground">All leases already have reminders.</div>
-                      )}
-                      {(leasesQ.data ?? []).map((l: any) => (
-                        <SelectItem key={l.id} value={l.id}>
-                          {l.tenant?.full_name ?? "Unknown"} — {l.unit?.property?.name ?? ""} / {l.unit?.unit_number ?? ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select a lease"
+                    options={(leasesQ.data ?? []).map((l: any) => ({ value: l.id, label: `${l.tenant?.full_name ?? "Unknown"} — ${l.unit?.property?.name ?? ""} / ${l.unit?.unit_number ?? ""}` }))}
+                  />
                   <p className="mt-1 text-xs text-muted-foreground">Only active leases without existing reminders are shown.</p>
                 </div>
               </div>
@@ -197,18 +185,15 @@ function RecurringBilling() {
                   </div>
                   <div className="space-y-2">
                     <Label>Reminder Type</Label>
-                    <Select
+                    <SearchableSelect
                       value={form.reminder_type}
                       onValueChange={(v) => setForm((f) => ({ ...f, reminder_type: v }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="auto">Auto — Send automatically on due date</SelectItem>
-                        <SelectItem value="manual">Manual — Send on demand only</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select type"
+                      options={[
+                        { value: "auto", label: "Auto — Send automatically on due date" },
+                        { value: "manual", label: "Manual — Send on demand only" },
+                      ]}
+                    />
                     <p className="mt-1 text-xs text-muted-foreground">Auto reminders are sent automatically. Manual reminders must be triggered from the list.</p>
                   </div>
                 </div>

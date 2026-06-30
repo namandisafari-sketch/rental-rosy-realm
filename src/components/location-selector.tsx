@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { useUgandaLocations } from "@/hooks/use-uganda-locations";
 
 interface LocationSelectorProps {
@@ -83,61 +83,55 @@ export function LocationSelector({ value, onChange, label }: LocationSelectorPro
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-xs text-muted-foreground">Region</label>
-            <Select value={region} onValueChange={handleRegionChange}>
-              <SelectTrigger><SelectValue placeholder="Select region" /></SelectTrigger>
-              <SelectContent>
-                {regions.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={region}
+              onValueChange={handleRegionChange}
+              placeholder="Select region"
+              options={regions.map((r) => ({ value: r, label: r }))}
+            />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">District</label>
-            <Select value={districtName} onValueChange={handleDistrictChange} disabled={!region}>
-              <SelectTrigger><SelectValue placeholder={region ? "Select district" : "Select region first"} /></SelectTrigger>
-              <SelectContent>
-                {districts.map((d) => (
-                  <SelectItem key={d.district_code} value={d.district_name}>{d.district_name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={districtName}
+              onValueChange={handleDistrictChange}
+              placeholder={region ? "Select district" : "Select region first"}
+              disabled={!region}
+              options={districts.map((d) => ({ value: d.district_name, label: d.district_name }))}
+            />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="text-xs text-muted-foreground">Subcounty / Division</label>
-            <Select value={subcountyName} onValueChange={handleSubcountyChange} disabled={!districtName}>
-              <SelectTrigger><SelectValue placeholder={districtName ? "Select subcounty" : "Select district first"} /></SelectTrigger>
-              <SelectContent>
-                {subcounties.map((s) => (
-                  <SelectItem key={s.subcounty_code} value={s.subcounty_name}>{s.subcounty_name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={subcountyName}
+              onValueChange={handleSubcountyChange}
+              placeholder={districtName ? "Select subcounty" : "Select district first"}
+              disabled={!districtName}
+              options={subcounties.map((s) => ({ value: s.subcounty_name, label: s.subcounty_name }))}
+            />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Parish / Ward</label>
-            <Select value={parish} onValueChange={handleParishChange} disabled={!subcountyName}>
-              <SelectTrigger><SelectValue placeholder={subcountyName ? "Select parish" : "Select subcounty first"} /></SelectTrigger>
-              <SelectContent>
-                {parishes.map((p) => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={parish}
+              onValueChange={handleParishChange}
+              placeholder={subcountyName ? "Select parish" : "Select subcounty first"}
+              disabled={!subcountyName}
+              options={parishes.map((p) => ({ value: p, label: p }))}
+            />
           </div>
         </div>
         <div>
           <label className="text-xs text-muted-foreground">Village / Street / Landmark</label>
-          <Select value={village} onValueChange={setVillage} disabled={!parish}>
-            <SelectTrigger><SelectValue placeholder={parish ? "Select village" : "Select parish first"} /></SelectTrigger>
-            <SelectContent>
-              {villages.map((v) => (
-                <SelectItem key={v} value={v}>{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            value={village}
+            onValueChange={setVillage}
+            placeholder={parish ? "Select village" : "Select parish first"}
+            disabled={!parish}
+            options={villages.map((v) => ({ value: v, label: v }))}
+          />
         </div>
       </div>
     </div>

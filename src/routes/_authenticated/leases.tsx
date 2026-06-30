@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -23,9 +23,9 @@ export const Route = createFileRoute("/_authenticated/leases")({
   component: LeasesPage,
 });
 
-const PAYMENT_DUE_DAYS = [1, 5, 10, 15, 20, 25, 28];
-const BILLING_PERIODS = ["monthly", "quarterly", "bi_annual", "annual"];
-const TERMINATION_REASONS = ["Left without paying", "Absconded", "Evicted", "Dispute", "Other"];
+const PAYMENT_DUE_OPTIONS = [1, 5, 10, 15, 20, 25, 28].map((d) => ({ value: String(d), label: d > 28 ? "End of month" : `Day ${d}` }));
+const BILLING_PERIOD_OPTIONS = ["monthly", "quarterly", "bi_annual", "annual"].map((p) => ({ value: p, label: p.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()) }));
+const TERMINATION_REASON_OPTIONS = ["Left without paying", "Absconded", "Evicted", "Dispute", "Other"].map((r) => ({ value: r, label: r }));
 const LATE_PENALTY_RATE = 0.05;
 
 const statusColors: Record<string, string> = {
@@ -285,20 +285,12 @@ function LeasesPage() {
           <div className="space-y-3">
             <div>
               <Label>Unit *</Label>
-              <Select value={form.unit_id} onValueChange={unitChange}>
-                <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
-                <SelectContent>
-                  {units.map((u: any) => {
-                    const isOccupied = u.status === "occupied";
-                    const isCurrent = isEdit && u.id === editingLease?.unit_id;
-                    return (
-                      <SelectItem key={u.id} value={u.id} disabled={!isEdit && isOccupied}>
-                        {u.properties?.name} · Unit {u.unit_number} — UGX {Number(u.monthly_rent).toLocaleString()}/mo
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.unit_id}
+                onValueChange={unitChange}
+                placeholder="Select unit…"
+                options={units.map((u: any) => ({ value: u.id, label: `${u.properties?.name} · Unit ${u.unit_number} — UGX ${Number(u.monthly_rent).toLocaleString()}/mo` }))}
+              />
               <p className="mt-1 text-xs text-muted-foreground">Only vacant units are available for new leases.</p>
             </div>
             <div>
@@ -317,14 +309,12 @@ function LeasesPage() {
             </div>
             <div>
               <Label>Deposit (Months) *</Label>
-              <Select value={form.deposit_months} onValueChange={depositMonthsChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
-                    <SelectItem key={n} value={String(n)}>{n} month{n > 1 ? "s" : ""}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.deposit_months}
+                onValueChange={depositMonthsChange}
+                placeholder="Select months"
+                options={Array.from({ length: 12 }, (_, i) => i + 1).map((n) => ({ value: String(n), label: `${n} month${n > 1 ? "s" : ""}` }))}
+              />
               <p className="mt-1 text-xs text-muted-foreground">Security deposit equivalent to this many months' rent.</p>
             </div>
             <div>
@@ -339,26 +329,22 @@ function LeasesPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Payment Due Day *</Label>
-              <Select value={form.payment_due_day} onValueChange={(v) => setForm({ ...form, payment_due_day: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_DUE_DAYS.map((d) => (
-                    <SelectItem key={d} value={String(d)}>{d > 28 ? "End of month" : `Day ${d}`}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.payment_due_day}
+                onValueChange={(v) => setForm({ ...form, payment_due_day: v })}
+                placeholder="Select day"
+                options={PAYMENT_DUE_OPTIONS}
+              />
               <p className="mt-1 text-xs text-muted-foreground">Default: 25th per standard agreement terms.</p>
             </div>
             <div>
               <Label>Billing Period</Label>
-              <Select value={form.billing_period} onValueChange={(v) => setForm({ ...form, billing_period: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {BILLING_PERIODS.map((p) => (
-                    <SelectItem key={p} value={p}>{p.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.billing_period}
+                onValueChange={(v) => setForm({ ...form, billing_period: v })}
+                placeholder="Select period"
+                options={BILLING_PERIOD_OPTIONS}
+              />
             </div>
             <div>
               <Label>Late Fee (UGX)</Label>
@@ -516,14 +502,12 @@ function LeasesPage() {
             </div>
             <div>
               <Label>Termination Reason *</Label>
-              <Select value={terminateForm.termination_reason} onValueChange={(v) => setTerminateForm({ ...terminateForm, termination_reason: v })}>
-                <SelectTrigger><SelectValue placeholder="Select reason…" /></SelectTrigger>
-                <SelectContent>
-                  {TERMINATION_REASONS.map((r) => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={terminateForm.termination_reason}
+                onValueChange={(v) => setTerminateForm({ ...terminateForm, termination_reason: v })}
+                placeholder="Select reason…"
+                options={TERMINATION_REASON_OPTIONS}
+              />
             </div>
           </div>
           <DialogFooter>

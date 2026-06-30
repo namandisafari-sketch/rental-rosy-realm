@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Building2, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -138,12 +139,17 @@ function SuppliersPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label>Category</Label>
-                        <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                          <option value="materials">Materials</option>
-                          <option value="equipment">Equipment</option>
-                          <option value="services">Services</option>
-                          <option value="transport">Transport</option>
-                        </select>
+                        <SearchableSelect
+                          value={form.category}
+                          onValueChange={(v) => setForm({ ...form, category: v })}
+                          placeholder="Select category"
+                          options={[
+                            { value: "materials", label: "Materials" },
+                            { value: "equipment", label: "Equipment" },
+                            { value: "services", label: "Services" },
+                            { value: "transport", label: "Transport" }
+                          ]}
+                        />
                       </div>
                       <div><Label>Payment terms</Label><Input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} placeholder="e.g. Net 30" /></div>
                     </div>

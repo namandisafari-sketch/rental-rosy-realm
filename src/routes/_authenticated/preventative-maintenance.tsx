@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, CalendarCheck, CheckCircle, ToggleLeft, ToggleRight, AlertTriangle, Pencil } from "lucide-react";
@@ -298,18 +298,12 @@ function PreventativeMaintenancePage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Unit</Label>
-                <Select value={unitId} onValueChange={setUnitId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {units?.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.name} - {u.properties?.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={unitId}
+                  onValueChange={setUnitId}
+                  placeholder="Select unit"
+                  options={(units ?? []).map((u: any) => ({ value: u.id, label: `${u.name} - ${u.properties?.name}` }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Title</Label>
@@ -322,29 +316,21 @@ function PreventativeMaintenancePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(categoryLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={category}
+                    onValueChange={setCategory}
+                    placeholder="Select category"
+                    options={Object.entries(categoryLabels).map(([value, label]) => ({ value, label }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Frequency</Label>
-                  <Select value={frequency} onValueChange={(v) => { setFrequency(v); if (v === "one_time") setNextDueDate(""); }}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(frequencyLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={frequency}
+                    onValueChange={(v) => { setFrequency(v); if (v === "one_time") setNextDueDate(""); }}
+                    placeholder="Select frequency"
+                    options={Object.entries(frequencyLabels).map(([value, label]) => ({ value, label }))}
+                  />
                 </div>
               </div>
               {frequency !== "one_time" && (
@@ -528,18 +514,12 @@ function PreventativeMaintenancePage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Unit</Label>
-                <Select value={editUnitId} onValueChange={setEditUnitId}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {units?.map((u: any) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.name} - {u.properties?.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={editUnitId}
+                  onValueChange={setEditUnitId}
+                  placeholder="Select unit"
+                  options={(units ?? []).map((u: any) => ({ value: u.id, label: `${u.name} - ${u.properties?.name}` }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Title</Label>
@@ -552,29 +532,21 @@ function PreventativeMaintenancePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  <Select value={editCategory} onValueChange={setEditCategory}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(categoryLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={editCategory}
+                    onValueChange={setEditCategory}
+                    placeholder="Select category"
+                    options={Object.entries(categoryLabels).map(([value, label]) => ({ value, label }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Frequency</Label>
-                  <Select value={editFrequency} onValueChange={(v) => { setEditFrequency(v); if (v === "one_time") setEditNextDueDate(""); }}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(frequencyLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={editFrequency}
+                    onValueChange={(v) => { setEditFrequency(v); if (v === "one_time") setEditNextDueDate(""); }}
+                    placeholder="Select frequency"
+                    options={Object.entries(frequencyLabels).map(([value, label]) => ({ value, label }))}
+                  />
                 </div>
               </div>
               {editFrequency !== "one_time" && (

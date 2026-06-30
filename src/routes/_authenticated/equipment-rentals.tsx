@@ -29,13 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -392,7 +386,7 @@ function EquipmentRentalsPage() {
                 <div className="space-y-3">
                   <div className="space-y-2">
                     <Label htmlFor="asset_id">Asset *</Label>
-                    <Select
+                    <SearchableSelect
                       value={form.asset_id}
                       onValueChange={(v) => {
                         const asset = availableAssets?.find((a) => a.id === v);
@@ -402,23 +396,13 @@ function EquipmentRentalsPage() {
                           daily_rate: asset?.daily_rate ?? 0,
                         });
                       }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select equipment" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableAssets?.length === 0 && (
-                          <SelectItem value="__none__" disabled>
-                            No available equipment
-                          </SelectItem>
-                        )}
-                        {availableAssets?.map((a) => (
-                          <SelectItem key={a.id} value={a.id}>
-                            {a.name} ({a.category}) - {formatUGX(a.daily_rate ?? 0)}/day
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select equipment"
+                      options={
+                        availableAssets?.length === 0
+                          ? [{ value: "__none__", label: "No available equipment", disabled: true }]
+                          : availableAssets?.map((a) => ({ value: a.id, label: `${a.name} (${a.category}) - ${formatUGX(a.daily_rate ?? 0)}/day` })) ?? []
+                      }
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="condition_before">Condition Before</Label>
@@ -483,39 +467,21 @@ function EquipmentRentalsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="employee_id">Employee *</Label>
-                    <Select
+                    <SearchableSelect
                       value={form.employee_id}
                       onValueChange={(v) => setForm({ ...form, employee_id: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select employee" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees?.map((e) => (
-                          <SelectItem key={e.id} value={e.id}>
-                            {e.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select employee"
+                      options={employees?.map((e) => ({ value: e.id, label: e.full_name })) ?? []}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="project_id">Project</Label>
-                    <Select
+                    <SearchableSelect
                       value={form.project_id}
                       onValueChange={(v) => setForm({ ...form, project_id: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select project" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects?.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select project"
+                      options={projects?.map((p) => ({ value: p.id, label: p.name })) ?? []}
+                    />
                   </div>
                 </div>
               </div>
@@ -613,19 +579,15 @@ function EquipmentRentalsPage() {
             className="pl-8"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {RENTAL_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s.charAt(0).toUpperCase() + s.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+          placeholder="All Statuses"
+          options={[
+            { value: "all", label: "All Statuses" },
+            ...RENTAL_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))
+          ]}
+        />
       </div>
 
       <Card>
@@ -908,7 +870,7 @@ function EquipmentRentalsPage() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="damage-status">Status</Label>
-              <Select
+              <SearchableSelect
                 value={damageForm.status}
                 onValueChange={(v) =>
                   setDamageForm({
@@ -916,15 +878,12 @@ function EquipmentRentalsPage() {
                     status: v as "damaged" | "lost",
                   })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="damaged">Damaged</SelectItem>
-                  <SelectItem value="lost">Lost</SelectItem>
-                </SelectContent>
-              </Select>
+                placeholder="Select status"
+                options={[
+                  { value: "damaged", label: "Damaged" },
+                  { value: "lost", label: "Lost" },
+                ]}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="damage-notes">Notes *</Label>

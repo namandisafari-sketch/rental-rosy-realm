@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,8 +21,8 @@ export const Route = createFileRoute("/_authenticated/payments")({
   component: PaymentsPage,
 });
 
-const PAYMENT_TYPES = ["Rent", "Deposit", "Late Fee", "Utility", "Other"] as const;
-const METHODS = ["cash", "bank", "mobile_money", "cheque"] as const;
+const PAYMENT_TYPE_OPTIONS = ["Rent", "Deposit", "Late Fee", "Utility", "Other"].map((t) => ({ value: t, label: t }));
+const METHOD_OPTIONS = ["cash", "bank", "mobile_money", "cheque"].map((m) => ({ value: m, label: m === "mobile_money" ? "Mobile Money" : m.charAt(0).toUpperCase() + m.slice(1) }));
 const MONTHS_OPTIONS = [1, 2, 3, 4, 6, 12] as const;
 
 function addMonths(dateStr: string, n: number) {
@@ -299,14 +299,12 @@ function PaymentsPage() {
                     </div>
                     <div>
                       <Label>Payment Type *</Label>
-                      <Select value={form.payment_type} onValueChange={handlePaymentTypeChange}>
-                        <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {PAYMENT_TYPES.map((t) => (
-                            <SelectItem key={t} value={t}>{t}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={form.payment_type}
+                        onValueChange={handlePaymentTypeChange}
+                        placeholder="Select type"
+                        options={PAYMENT_TYPE_OPTIONS}
+                      />
                     </div>
                   </div>
                 </div>
@@ -327,14 +325,12 @@ function PaymentsPage() {
                       </div>
                       <div>
                         <Label>Months Covered</Label>
-                        <Select value={form.months_covered} onValueChange={handleMonthsChange}>
-                          <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {MONTHS_OPTIONS.map((m) => (
-                              <SelectItem key={m} value={String(m)}>{m}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          value={form.months_covered}
+                          onValueChange={handleMonthsChange}
+                          placeholder="Select months"
+                          options={MONTHS_OPTIONS.map((m) => ({ value: String(m), label: String(m) }))}
+                        />
                       </div>
                       <div>
                         <Label>Period End</Label>
@@ -378,14 +374,12 @@ function PaymentsPage() {
                   <div className="space-y-3">
                     <div>
                       <Label>Payment Method *</Label>
-                      <Select value={form.method} onValueChange={(v) => setForm((f) => ({ ...f, method: v }))}>
-                        <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {METHODS.map((m) => (
-                            <SelectItem key={m} value={m}>{m === "mobile_money" ? "Mobile Money" : m.charAt(0).toUpperCase() + m.slice(1)}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={form.method}
+                        onValueChange={(v) => setForm((f) => ({ ...f, method: v }))}
+                        placeholder="Select method"
+                        options={METHOD_OPTIONS}
+                      />
                     </div>
                     <div>
                       <Label>Period Label</Label>
@@ -563,14 +557,12 @@ function PaymentsPage() {
             </div>
             <div>
               <Label>Method</Label>
-              <Select value={editForm.method} onValueChange={(v) => setEditForm((f) => ({ ...f, method: v }))}>
-                <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>{m === "mobile_money" ? "Mobile Money" : m.charAt(0).toUpperCase() + m.slice(1)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={editForm.method}
+                onValueChange={(v) => setEditForm((f) => ({ ...f, method: v }))}
+                placeholder="Select method"
+                options={METHOD_OPTIONS}
+              />
             </div>
             <div><Label>Reference / Receipt #</Label><Input className="mt-1.5" value={editForm.reference} onChange={(e) => setEditForm((f) => ({ ...f, reference: e.target.value }))} placeholder="e.g. TXN-001234" /></div>
             <div><Label>Notes</Label><Textarea className="mt-1.5" value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Any additional information…" rows={2} /></div>

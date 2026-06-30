@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Plus, Home, Pencil, Trash2, Phone, MapPin } from "lucide-react";
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/properties/$id")({
   component: PropertyDetail,
 });
 
-const UNIT_TYPES = ["residential", "commercial", "retail", "office", "warehouse", "storage"] as const;
+const UNIT_TYPE_OPTIONS = ["residential", "commercial", "retail", "office", "warehouse", "storage"].map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
 
 function PropertyDetail() {
   const { id } = Route.useParams();
@@ -135,12 +135,18 @@ function PropertyDetail() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-3">
             <CardTitle className="display">Units</CardTitle>
-            <select className="rounded-md border bg-background px-2 py-1 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="all">All</option>
-              <option value="vacant">Vacant</option>
-              <option value="occupied">Occupied</option>
-              <option value="maintenance">Maintenance</option>
-            </select>
+            <SearchableSelect
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+              placeholder="All"
+              options={[
+                { value: "all", label: "All" },
+                { value: "vacant", label: "Vacant" },
+                { value: "occupied", label: "Occupied" },
+                { value: "maintenance", label: "Maintenance" },
+              ]}
+              className="w-36"
+            />
           </div>
           {isStaff && (
             <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
@@ -151,10 +157,12 @@ function PropertyDetail() {
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Unit number *</Label><Input value={form.unit_number} onChange={(e) => setForm({ ...form, unit_number: e.target.value })} /></div>
                     <div><Label>Type</Label>
-                      <Select value={form.unit_type} onValueChange={(v) => setForm({ ...form, unit_type: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{UNIT_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={form.unit_type}
+                        onValueChange={(v) => setForm({ ...form, unit_type: v })}
+                        placeholder="Select type"
+                        options={UNIT_TYPE_OPTIONS}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -170,10 +178,16 @@ function PropertyDetail() {
                     <div><Label>Deposit (UGX)</Label><Input type="number" value={form.deposit_amount} onChange={(e) => setForm({ ...form, deposit_amount: e.target.value })} /></div>
                   </div>
                   <div><Label>Status</Label>
-                    <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="vacant">Vacant</SelectItem><SelectItem value="occupied">Occupied</SelectItem><SelectItem value="maintenance">Maintenance</SelectItem></SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={form.status}
+                      onValueChange={(v) => setForm({ ...form, status: v })}
+                      placeholder="Select status"
+                      options={[
+                        { value: "vacant", label: "Vacant" },
+                        { value: "occupied", label: "Occupied" },
+                        { value: "maintenance", label: "Maintenance" },
+                      ]}
+                    />
                   </div>
                 </div>
                 <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.unit_number || create.isPending}>Create</Button></DialogFooter>
@@ -189,10 +203,12 @@ function PropertyDetail() {
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Unit number *</Label><Input value={form.unit_number} onChange={(e) => setForm({ ...form, unit_number: e.target.value })} /></div>
                   <div><Label>Type</Label>
-                    <Select value={form.unit_type} onValueChange={(v) => setForm({ ...form, unit_type: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{UNIT_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={form.unit_type}
+                      onValueChange={(v) => setForm({ ...form, unit_type: v })}
+                      placeholder="Select type"
+                      options={UNIT_TYPE_OPTIONS}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -208,10 +224,16 @@ function PropertyDetail() {
                   <div><Label>Deposit (UGX)</Label><Input type="number" value={form.deposit_amount} onChange={(e) => setForm({ ...form, deposit_amount: e.target.value })} /></div>
                 </div>
                 <div><Label>Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="vacant">Vacant</SelectItem><SelectItem value="occupied">Occupied</SelectItem><SelectItem value="maintenance">Maintenance</SelectItem></SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={form.status}
+                    onValueChange={(v) => setForm({ ...form, status: v })}
+                    placeholder="Select status"
+                    options={[
+                      { value: "vacant", label: "Vacant" },
+                      { value: "occupied", label: "Occupied" },
+                      { value: "maintenance", label: "Maintenance" },
+                    ]}
+                  />
                 </div>
               </div>
               <DialogFooter><Button onClick={() => update.mutate()} disabled={!form.unit_number || update.isPending}>Save</Button></DialogFooter>

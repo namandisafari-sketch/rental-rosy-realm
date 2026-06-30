@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, ClipboardList, CheckCircle2, Circle, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -159,10 +160,15 @@ function MeetingMinutesPage() {
                   <div className="space-y-3">
                     <div>
                       <Label>Project <span className="text-destructive">*</span></Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
-                        <option value="">Select a project...</option>
-                        {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.project_id}
+                        onValueChange={(v) => setForm({ ...form, project_id: v })}
+                        placeholder="Select a project..."
+                        options={[
+                          { value: "", label: "Select a project..." },
+                          ...projects.map((p: any) => ({ value: p.id, label: p.name }))
+                        ]}
+                      />
                     </div>
                     <div>
                       <Label>Title <span className="text-destructive">*</span></Label>
@@ -239,9 +245,12 @@ function MeetingMinutesPage() {
                             </div>
                             <div>
                               <Label className="text-xs">Status</Label>
-                              <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={item.status} onChange={(e) => updateActionItem(idx, "status", e.target.value)}>
-                                {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                              </select>
+                              <SearchableSelect
+                                value={item.status}
+                                onValueChange={(v) => updateActionItem(idx, "status", v)}
+                                placeholder="Select status"
+                                options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                              />
                             </div>
                           </div>
                         </div>

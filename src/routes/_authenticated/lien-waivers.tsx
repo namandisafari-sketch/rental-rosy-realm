@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, FileSignature, TrendingUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -123,9 +124,12 @@ function LienWaiversPage() {
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Waiver Information</h3></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Waiver type <span className="text-destructive">*</span></Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.waiver_type} onChange={(e) => setForm({ ...form, waiver_type: e.target.value })}>
-                        {waiverTypeOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.waiver_type}
+                        onValueChange={(v) => setForm({ ...form, waiver_type: v })}
+                        placeholder="Select waiver type"
+                        options={waiverTypeOptions.map((s) => ({ value: s, label: s }))}
+                      />
                     </div>
                     <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} placeholder="Reference project ID" /></div>
                   </div>
@@ -139,9 +143,12 @@ function LienWaiversPage() {
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Status &amp; Dates</h3></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Status</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                        {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.status}
+                        onValueChange={(v) => setForm({ ...form, status: v })}
+                        placeholder="Select status"
+                        options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                      />
                     </div>
                     <div><Label>Signed date</Label><Input type="date" value={form.signed_date} onChange={(e) => setForm({ ...form, signed_date: e.target.value })} /></div>
                   </div>

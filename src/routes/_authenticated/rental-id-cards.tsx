@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -323,29 +323,21 @@ function RentalIdCardsPage() {
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Assignment</h3></div>
                   <div className="space-y-2">
                     <Label>Unit *</Label>
-                    <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                      <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
-                      <SelectContent>
-                        {units.map((u: any) => (
-                          <SelectItem key={u.id} value={u.id}>
-                            {u.properties?.name} · Unit {u.unit_number} {u.hasActiveCard ? "(has active card)" : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={selectedUnit}
+                      onValueChange={setSelectedUnit}
+                      placeholder="Select unit…"
+                      options={units.map((u: any) => ({ value: u.id, label: `${u.properties?.name} · Unit ${u.unit_number}${u.hasActiveCard ? " (has active card)" : ""}` }))}
+                    />
                   </div>
                   <div className="mt-3 space-y-2">
                     <Label>Tenant (optional)</Label>
-                    <Select value={selectedTenant} onValueChange={setSelectedTenant}>
-                      <SelectTrigger><SelectValue placeholder="Assign to a tenant…" /></SelectTrigger>
-                      <SelectContent>
-                        {tenants.map((t: any) => (
-                          <SelectItem key={t.id} value={t.id}>
-                            {t.full_name}{t.phone ? ` · ${t.phone}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={selectedTenant}
+                      onValueChange={setSelectedTenant}
+                      placeholder="Assign to a tenant…"
+                      options={tenants.map((t: any) => ({ value: t.id, label: `${t.full_name}${t.phone ? ` · ${t.phone}` : ""}` }))}
+                    />
                     <p className="text-xs text-muted-foreground">Assigning a tenant lets them see the card in their portal.</p>
                   </div>
                 </div>

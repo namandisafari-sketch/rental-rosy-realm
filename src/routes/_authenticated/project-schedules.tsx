@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, CalendarDays, CheckCircle2, AlertTriangle, Clock, Loader2, Flag, GripVertical } from "lucide-react";
 import { toast } from "sonner";
@@ -174,10 +175,15 @@ function ProjectSchedulesPage() {
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Project Assignment</p>
                 </div>
                 <div><Label>Project <span className="text-destructive">*</span></Label>
-                  <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
-                    <option value="">Select a project...</option>
-                    {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  <SearchableSelect
+                    value={form.project_id}
+                    onValueChange={(v) => setForm({ ...form, project_id: v })}
+                    placeholder="Select a project..."
+                    options={[
+                      { value: "", label: "Select a project..." },
+                      ...projects.map((p: any) => ({ value: p.id, label: p.name }))
+                    ]}
+                  />
                 </div>
 
                 <div className="rounded-lg border border-border bg-muted/30 p-3">
@@ -200,9 +206,12 @@ function ProjectSchedulesPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div><Label>Status <span className="text-destructive">*</span></Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                      {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                    </select>
+                    <SearchableSelect
+                      value={form.status}
+                      onValueChange={(v) => setForm({ ...form, status: v })}
+                      placeholder="Select status"
+                      options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                    />
                   </div>
                   <div><Label>Progress (%)</Label>
                     <div className="mt-1.5 flex items-center gap-3">
@@ -221,14 +230,15 @@ function ProjectSchedulesPage() {
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hierarchy &amp; Notes</p>
                 </div>
                 <div><Label>Parent task</Label>
-                  <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.parent_id} onChange={(e) => setForm({ ...form, parent_id: e.target.value })}>
-                    <option value="">No parent (top-level task)</option>
-                    {parentCandidates.map((s: any) => (
-                      <option key={s.id} value={s.id}>
-                        {s.title}{s.project_id ? ` — ${s.projects?.name ?? ""}` : ""}
-                      </option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    value={form.parent_id}
+                    onValueChange={(v) => setForm({ ...form, parent_id: v })}
+                    placeholder="No parent (top-level task)"
+                    options={[
+                      { value: "", label: "No parent (top-level task)" },
+                      ...parentCandidates.map((s: any) => ({ value: s.id, label: `${s.title}${s.project_id ? ` — ${s.projects?.name ?? ""}` : ""}` }))
+                    ]}
+                  />
                   <p className="mt-1 text-xs text-muted-foreground">Assign this task as a sub-task of another schedule item to build a hierarchy.</p>
                 </div>
                 <div><Label>Notes</Label><Textarea rows={3} placeholder="Additional notes, assumptions, constraints, or references..." value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>

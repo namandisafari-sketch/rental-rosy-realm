@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   BarChart3, CheckCircle2, ClipboardList, Clock, DollarSign,
   FileText, HardHat, Loader2, MessageSquare, Target, TrendingDown,
@@ -172,16 +173,16 @@ function ProjectDashboardPage() {
         </div>
         <div className="flex items-center gap-3">
           <label className="text-sm font-medium text-muted-foreground">Project</label>
-          <select
-            className="min-w-[220px] rounded-md border border-input bg-background p-2 text-sm"
+          <SearchableSelect
             value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
-          >
-            {projects.length === 0 && <option value="">No projects</option>}
-            {projects.map((p: any) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+            onValueChange={setSelectedProjectId}
+            placeholder="Select a project"
+            options={
+              projects.length === 0
+                ? [{ value: "", label: "No projects" }]
+                : projects.map((p: any) => ({ value: p.id, label: p.name }))
+            }
+          />
         </div>
       </div>
 

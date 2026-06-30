@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, CreditCard, TrendingUp, TrendingDown, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -176,9 +177,12 @@ function ProgressPaymentsPage() {
                 <div>
                   <div className="mb-3 border-b pb-1"><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status & Dates</span></div>
                   <div><Label>Status</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                      {statusOptions.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                    </select>
+                    <SearchableSelect
+                      value={form.status}
+                      onValueChange={(v) => setForm({ ...form, status: v })}
+                      placeholder="Select status"
+                      options={statusOptions.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))}
+                    />
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-3">
                     <div><Label>Submit date</Label><Input type="date" value={form.submit_date} onChange={(e) => setForm({ ...form, submit_date: e.target.value })} /></div>

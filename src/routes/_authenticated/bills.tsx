@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Receipt, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -144,9 +145,12 @@ function BillsPage() {
                 <div>
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Payment</h3></div>
                   <div><Label>Status</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                      {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                    </select>
+                    <SearchableSelect
+                      value={form.status}
+                      onValueChange={(v) => setForm({ ...form, status: v })}
+                      placeholder="Select status"
+                      options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                    />
                   </div>
                   <div className="mt-3"><Label>Paid date</Label><Input type="date" value={form.paid_date} onChange={(e) => setForm({ ...form, paid_date: e.target.value })} /></div>
                 </div>

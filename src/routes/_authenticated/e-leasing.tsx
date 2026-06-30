@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -419,15 +419,17 @@ function ELeasingPage() {
                   <div className="space-y-2 border-t pt-2">
                     <Label>Update Status</Label>
                     <div className="flex gap-2">
-                      <Select value={statusUpdate} onValueChange={setStatusUpdate}>
-                        <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="screening">Screening</SelectItem>
-                          <SelectItem value="approved">Approved</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={statusUpdate}
+                        onValueChange={setStatusUpdate}
+                        placeholder="Select status"
+                        options={[
+                          { value: "pending", label: "Pending" },
+                          { value: "screening", label: "Screening" },
+                          { value: "approved", label: "Approved" },
+                          { value: "rejected", label: "Rejected" },
+                        ]}
+                      />
                       <Button onClick={handleStatusUpdate} disabled={updateStatus.isPending || statusUpdate === selectedApp.status}>Update</Button>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">Move the application through the review process.</p>
@@ -517,26 +519,23 @@ function ELeasingPage() {
                     <div className="space-y-3">
                       <div>
                         <Label>Property *</Label>
-                        <Select value={linkForm.property_id} onValueChange={(v) => setLinkForm({ property_id: v, unit_id: "" })}>
-                          <SelectTrigger><SelectValue placeholder="Select property…" /></SelectTrigger>
-                          <SelectContent>
-                            {properties.map((p: any) => (
-                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          value={linkForm.property_id}
+                          onValueChange={(v) => setLinkForm({ property_id: v, unit_id: "" })}
+                          placeholder="Select property…"
+                          options={properties.map((p: any) => ({ value: p.id, label: p.name }))}
+                        />
                         <p className="mt-1 text-xs text-muted-foreground">The property this listing link refers to.</p>
                       </div>
                       <div>
                         <Label>Unit (optional)</Label>
-                        <Select value={linkForm.unit_id} onValueChange={(v) => setLinkForm({ ...linkForm, unit_id: v })} disabled={!linkForm.property_id}>
-                          <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
-                          <SelectContent>
-                            {filteredUnits.map((u: any) => (
-                              <SelectItem key={u.id} value={u.id}>Unit {u.unit_number}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                          value={linkForm.unit_id}
+                          onValueChange={(v) => setLinkForm({ ...linkForm, unit_id: v })}
+                          placeholder="Select unit…"
+                          disabled={!linkForm.property_id}
+                          options={filteredUnits.map((u: any) => ({ value: u.id, label: `Unit ${u.unit_number}` }))}
+                        />
                         <p className="mt-1 text-xs text-muted-foreground">If omitted, applicants can choose from all available units in this property.</p>
                       </div>
                     </div>

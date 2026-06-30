@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/rent")({
 });
 
 const PROPERTY_TYPES = ["residential", "commercial", "industrial", "mixed_use"] as const;
-const ID_TYPES = [
+const ID_TYPE_OPTIONS: SearchableOption[] = [
   { value: "national_id", label: "National ID" },
   { value: "passport", label: "Passport" },
   { value: "drivers_license", label: "Driver's License" },
@@ -188,16 +188,16 @@ function RentPage() {
             </div>
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4 text-primary-foreground/60" />
-              <select
-                className="rounded-md border border-primary-foreground/20 bg-primary-foreground/10 px-3 py-2 text-sm text-primary-foreground"
+              <SearchableSelect
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="all">All types</option>
-                {PROPERTY_TYPES.map((t) => (
-                  <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ")}</option>
-                ))}
-              </select>
+                onValueChange={setTypeFilter}
+                placeholder="All types"
+                options={[
+                  { value: "all", label: "All types" },
+                  ...PROPERTY_TYPES.map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ") })),
+                ]}
+                className="w-44 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground"
+              />
             </div>
           </div>
         </div>
@@ -379,12 +379,12 @@ function RentPage() {
               <div className="mb-3 border-b pb-2"><h3 className="text-sm font-semibold">Identification</h3></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>ID Type</Label>
-                  <Select value={appForm.id_type} onValueChange={(v) => setAppForm({ ...appForm, id_type: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {ID_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={appForm.id_type}
+                    onValueChange={(v) => setAppForm({ ...appForm, id_type: v })}
+                    placeholder="Select ID type"
+                    options={ID_TYPE_OPTIONS}
+                  />
                 </div>
                 <div><Label>ID Number</Label><Input value={appForm.id_number} onChange={(e) => setAppForm({ ...appForm, id_number: e.target.value })} placeholder="e.g. CM12345678" /></div>
               </div>

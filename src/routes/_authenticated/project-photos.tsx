@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Image as ImageIcon, Camera, Layers, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -126,9 +127,12 @@ function ProjectPhotosPage() {
                   <div><Label>Caption</Label><Textarea rows={2} value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })} placeholder="Brief description of what the photo shows..." /></div>
                   <div className="mt-3"><Label>Location</Label><LocationSelector value={form.location} onChange={(v) => setForm({ ...form, location: v })} /></div>
                   <div className="mt-3"><Label>Category</Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                      {categoryOptions.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                    </select>
+                    <SearchableSelect
+                      value={form.category}
+                      onValueChange={(v) => setForm({ ...form, category: v })}
+                      placeholder="Select category"
+                      options={categoryOptions.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))}
+                    />
                   </div>
                 </div>
               </div>

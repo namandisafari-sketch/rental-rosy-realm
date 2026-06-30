@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -200,14 +200,12 @@ function ListingBannersPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="banner-property">Property</Label>
-                <Select value={form.property_id} onValueChange={handlePropertySelect}>
-                  <SelectTrigger><SelectValue placeholder="Select a property" /></SelectTrigger>
-                  <SelectContent>
-                    {properties.map((p: any) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.property_id}
+                  onValueChange={handlePropertySelect}
+                  placeholder="Select a property"
+                  options={properties.map((p: any) => ({ value: p.id, label: p.name }))}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="banner-image-url">Banner Image URL</Label>

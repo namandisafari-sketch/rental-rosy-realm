@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, ShieldAlert, AlertCircle, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -159,10 +160,15 @@ function SafetyIncidentsPage() {
                   <div className="space-y-3">
                     <div>
                       <Label>Project <span className="text-destructive">*</span></Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
-                        <option value="">Select a project...</option>
-                        {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.project_id}
+                        onValueChange={(v) => setForm({ ...form, project_id: v })}
+                        placeholder="Select a project..."
+                        options={[
+                          { value: "", label: "Select a project..." },
+                          ...projects.map((p: any) => ({ value: p.id, label: p.name }))
+                        ]}
+                      />
                     </div>
                     <div>
                       <Label>Incident date <span className="text-destructive">*</span></Label>
@@ -170,9 +176,12 @@ function SafetyIncidentsPage() {
                     </div>
                     <div>
                       <Label>Incident type <span className="text-destructive">*</span></Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.incident_type} onChange={(e) => setForm({ ...form, incident_type: e.target.value })}>
-                        {incidentTypeOptions.map((t) => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.incident_type}
+                        onValueChange={(v) => setForm({ ...form, incident_type: v })}
+                        placeholder="Select incident type"
+                        options={incidentTypeOptions.map((t) => ({ value: t, label: t.replace("_", " ") }))}
+                      />
                     </div>
                     <div>
                       <Label>Location <span className="text-destructive">*</span></Label>
@@ -191,15 +200,21 @@ function SafetyIncidentsPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Severity <span className="text-destructive">*</span></Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value })}>
-                        {severityOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.severity}
+                        onValueChange={(v) => setForm({ ...form, severity: v })}
+                        placeholder="Select severity"
+                        options={severityOptions.map((s) => ({ value: s, label: s }))}
+                      />
                     </div>
                     <div>
                       <Label>Status</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                        {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.status}
+                        onValueChange={(v) => setForm({ ...form, status: v })}
+                        placeholder="Select status"
+                        options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                      />
                     </div>
                   </div>
                 </fieldset>

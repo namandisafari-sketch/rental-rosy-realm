@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, ShoppingCart, Trash2, ChevronRight } from "lucide-react";
@@ -156,17 +157,27 @@ function PurchaseOrdersPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label>Supplier *</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}>
-                        <option value="">Select supplier…</option>
-                        {suppliers.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.supplier_id}
+                        onValueChange={(v) => setForm({ ...form, supplier_id: v })}
+                        placeholder="Select supplier…"
+                        options={[
+                          { value: "", label: "Select supplier…" },
+                          ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))
+                        ]}
+                      />
                     </div>
                     <div>
                       <Label>Project (optional)</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
-                        <option value="">Select project…</option>
-                        {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.project_id}
+                        onValueChange={(v) => setForm({ ...form, project_id: v })}
+                        placeholder="Select project…"
+                        options={[
+                          { value: "", label: "Select project…" },
+                          ...projects.map((p: any) => ({ value: p.id, label: p.name }))
+                        ]}
+                      />
                     </div>
                   </div>
                 </div>

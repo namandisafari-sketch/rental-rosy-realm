@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Plus, FileText, TrendingUp, Clock, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -180,12 +180,12 @@ function EstimatesPage() {
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div><Label>Estimate number <span className="text-destructive">*</span></Label><Input value={form.estimate_number} onChange={(e) => setForm({ ...form, estimate_number: e.target.value })} placeholder="e.g. EST-001" /></div>
                     <div><Label>Status</Label>
-                      <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                        <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                        <SelectContent>
-                          {statusOptions.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={form.status}
+                        onValueChange={(v) => setForm({ ...form, status: v })}
+                        placeholder="Select status"
+                        options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                      />
                     </div>
                   </div>
                   <div className="mt-3"><Label>Title <span className="text-destructive">*</span></Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Estimate title or scope summary" /></div>

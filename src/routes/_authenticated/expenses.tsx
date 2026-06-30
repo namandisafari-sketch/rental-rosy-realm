@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Trash2 } from "lucide-react";
@@ -119,22 +120,37 @@ function ExpensesPage() {
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Category & Project</h3></div>
                   <div className="space-y-3">
                     <div><Label>Category</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
-                        <option value="">Select category…</option>
-                        {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.category_id}
+                        onValueChange={(v) => setForm({ ...form, category_id: v })}
+                        placeholder="Select category…"
+                        options={[
+                          { value: "", label: "Select category…" },
+                          ...categories.map((c: any) => ({ value: c.id, label: c.name }))
+                        ]}
+                      />
                     </div>
                     <div><Label>Employee</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })}>
-                        <option value="">Select employee…</option>
-                        {employees.map((e: any) => <option key={e.id} value={e.id}>{e.full_name}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.employee_id}
+                        onValueChange={(v) => setForm({ ...form, employee_id: v })}
+                        placeholder="Select employee…"
+                        options={[
+                          { value: "", label: "Select employee…" },
+                          ...employees.map((e: any) => ({ value: e.id, label: e.full_name }))
+                        ]}
+                      />
                     </div>
                     <div><Label>Project</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })}>
-                        <option value="">Select project…</option>
-                        {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                      <SearchableSelect
+                        value={form.project_id}
+                        onValueChange={(v) => setForm({ ...form, project_id: v })}
+                        placeholder="Select project…"
+                        options={[
+                          { value: "", label: "Select project…" },
+                          ...projects.map((p: any) => ({ value: p.id, label: p.name }))
+                        ]}
+                      />
                     </div>
                   </div>
                 </div>
@@ -155,10 +171,15 @@ function ExpensesPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <Label className="text-sm font-medium">Filter by category</Label>
-        <select className="rounded-md border border-input bg-background p-2 text-sm" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
-          <option value="">All categories</option>
-          {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <SearchableSelect
+          value={catFilter}
+          onValueChange={setCatFilter}
+          placeholder="All categories"
+          options={[
+            { value: "", label: "All categories" },
+            ...categories.map((c: any) => ({ value: c.id, label: c.name }))
+          ]}
+        />
       </div>
 
       <Card>

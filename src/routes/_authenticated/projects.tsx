@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, FolderKanban, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -135,9 +136,12 @@ function ProjectsPage() {
                     <div><Label>Description</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief description of the project scope and objectives" /></div>
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label>Status</Label>
-                        <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                          {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                        </select>
+                        <SearchableSelect
+                          value={form.status}
+                          onValueChange={(v) => setForm({ ...form, status: v })}
+                          placeholder="Select status"
+                          options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                        />
                       </div>
                       <div className="col-span-2"><LocationSelector value={form.location} onChange={(v) => setForm({ ...form, location: v })} /></div>
                     </div>

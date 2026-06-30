@@ -29,13 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -383,39 +377,21 @@ function InventoryPage() {
                 <div className="grid grid-cols-2 gap-4 mt-3">
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
-                    <Select
+                    <SearchableSelect
                       value={form.category}
                       onValueChange={(v) => setForm({ ...form, category: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIES.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select category"
+                      options={CATEGORIES.map((cat) => ({ value: cat, label: cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()) }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="unit">Unit of Measure</Label>
-                    <Select
+                    <SearchableSelect
                       value={form.unit}
                       onValueChange={(v) => setForm({ ...form, unit: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {UNITS.map((u) => (
-                          <SelectItem key={u} value={u}>
-                            {u.charAt(0).toUpperCase() + u.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select unit"
+                      options={UNITS.map((u) => ({ value: u, label: u.charAt(0).toUpperCase() + u.slice(1) }))}
+                    />
                   </div>
                 </div>
               </div>
@@ -465,21 +441,12 @@ function InventoryPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="supplier_id">Supplier</Label>
-                    <Select
+                    <SearchableSelect
                       value={form.supplier_id}
                       onValueChange={(v) => setForm({ ...form, supplier_id: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select supplier" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {suppliers?.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select supplier"
+                      options={suppliers?.map((s) => ({ value: s.id, label: s.name })) ?? []}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="location">Storage Location</Label>
@@ -602,19 +569,15 @@ function InventoryPage() {
             className="pl-8"
           />
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {CATEGORIES.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          value={categoryFilter}
+          onValueChange={setCategoryFilter}
+          placeholder="All Categories"
+          options={[
+            { value: "all", label: "All Categories" },
+            ...CATEGORIES.map((cat) => ({ value: cat, label: cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()) }))
+          ]}
+        />
       </div>
 
       <Card>
@@ -793,39 +756,21 @@ function InventoryPage() {
               <div className="grid grid-cols-2 gap-4 mt-3">
                 <div className="space-y-2">
                   <Label htmlFor="edit-category">Category *</Label>
-                  <Select
+                  <SearchableSelect
                     value={form.category}
                     onValueChange={(v) => setForm({ ...form, category: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select category"
+                    options={CATEGORIES.map((cat) => ({ value: cat, label: cat.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()) }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-unit">Unit of Measure</Label>
-                  <Select
+                  <SearchableSelect
                     value={form.unit}
                     onValueChange={(v) => setForm({ ...form, unit: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {UNITS.map((u) => (
-                        <SelectItem key={u} value={u}>
-                          {u.charAt(0).toUpperCase() + u.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select unit"
+                    options={UNITS.map((u) => ({ value: u, label: u.charAt(0).toUpperCase() + u.slice(1) }))}
+                  />
                 </div>
               </div>
             </div>
@@ -875,21 +820,12 @@ function InventoryPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-supplier_id">Supplier</Label>
-                  <Select
+                  <SearchableSelect
                     value={form.supplier_id}
                     onValueChange={(v) => setForm({ ...form, supplier_id: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select supplier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {suppliers?.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select supplier"
+                    options={suppliers?.map((s) => ({ value: s.id, label: s.name })) ?? []}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-location">Storage Location</Label>

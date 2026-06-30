@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, FileUp, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -132,9 +133,12 @@ function SubmittalsPage() {
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Review</h3></div>
                   <div className="space-y-3">
                     <div><Label>Status</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                        {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                      </select>
+                    <SearchableSelect
+                      value={form.status}
+                      onValueChange={(v) => setForm({ ...form, status: v })}
+                      placeholder="Select status"
+                      options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                    />
                     </div>
                     <div><Label>Review notes</Label><Textarea rows={2} value={form.review_notes} onChange={(e) => setForm({ ...form, review_notes: e.target.value })} placeholder="Reviewer comments and feedback" /></div>
                   </div>

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Building2, MapPin, Pencil, Archive, Search, SlidersHorizontal, Home, User } from "lucide-react";
@@ -20,8 +20,8 @@ export const Route = createFileRoute("/_authenticated/properties")({
   component: PropertiesPage,
 });
 
-const PROPERTY_TYPES = ["residential", "commercial", "industrial", "land", "mixed_use"] as const;
-const UNIT_TYPES = ["residential", "commercial", "retail", "office", "warehouse", "storage"] as const;
+const PROPERTY_TYPE_OPTIONS = ["residential", "commercial", "industrial", "land", "mixed_use"].map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ") }));
+const UNIT_TYPE_OPTIONS = ["residential", "commercial", "retail", "office", "warehouse", "storage"].map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
 const EMPTY_UNIT = { unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant" };
 
 function PropertiesPage() {
@@ -161,12 +161,12 @@ function PropertiesPage() {
                   <div className="space-y-3">
                     <div><Label>Property Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Sunset Apartments, Hilltop Estate" /><p className="mt-1 text-xs text-muted-foreground">Official name of the property as used in lease agreements.</p></div>
                     <div><Label>Property Type *</Label>
-                      <Select value={form.property_type} onValueChange={(v) => setForm({ ...form, property_type: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {PROPERTY_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ")}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={form.property_type}
+                        onValueChange={(v) => setForm({ ...form, property_type: v })}
+                        placeholder="Select type"
+                        options={PROPERTY_TYPE_OPTIONS}
+                      />
                     </div>
                     <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief overview of the property, key features, amenities, etc." rows={3} /><p className="mt-1 text-xs text-muted-foreground">Describe the property's key features, number of units, and unique selling points.</p></div>
                   </div>
@@ -182,18 +182,12 @@ function PropertiesPage() {
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Landlord / Owner</h3></div>
                   <div>
                     <Label>Property Owner *</Label>
-                    <Select value={form.owner_id} onValueChange={(v) => setForm({ ...form, owner_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="Select landlord" /></SelectTrigger>
-                      <SelectContent>
-                        {(owners ?? []).length === 0 ? (
-                          <SelectItem value="" disabled>No landlords found</SelectItem>
-                        ) : (
-                          (owners ?? []).map((o: any) => (
-                            <SelectItem key={o.id} value={o.id}>{o.full_name || o.email?.split("@")[0]}</SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={form.owner_id}
+                      onValueChange={(v) => setForm({ ...form, owner_id: v })}
+                      placeholder="Select landlord"
+                      options={(owners ?? []).length === 0 ? [{ value: "", label: "No landlords found" }] : (owners ?? []).map((o: any) => ({ value: o.id, label: o.full_name || o.email?.split("@")[0] }))}
+                    />
                     <p className="mt-1 text-xs text-muted-foreground">Select the landlord who owns this property. Landlords must have an account with the <strong>owner</strong> role.</p>
                   </div>
                 </div>
@@ -222,10 +216,16 @@ function PropertiesPage() {
         </div>
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-          <select className="rounded-md border bg-background px-3 py-1.5 text-sm" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-            <option value="all">All types</option>
-            {PROPERTY_TYPES.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ")}</option>)}
-          </select>
+          <SearchableSelect
+            value={typeFilter}
+            onValueChange={setTypeFilter}
+            placeholder="All types"
+            options={[
+              { value: "all", label: "All types" },
+              ...PROPERTY_TYPE_OPTIONS,
+            ]}
+            className="w-44"
+          />
         </div>
       </div>
 
@@ -238,12 +238,12 @@ function PropertiesPage() {
               <div className="space-y-3">
                 <div><Label>Property Name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /><p className="mt-1 text-xs text-muted-foreground">Official name of the property as used in lease agreements.</p></div>
                 <div><Label>Property Type</Label>
-                  <Select value={form.property_type} onValueChange={(v) => setForm({ ...form, property_type: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {PROPERTY_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ")}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={form.property_type}
+                    onValueChange={(v) => setForm({ ...form, property_type: v })}
+                    placeholder="Select type"
+                    options={PROPERTY_TYPE_OPTIONS}
+                  />
                 </div>
                 <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Brief overview of the property, key features, amenities, etc." rows={3} /></div>
               </div>
@@ -259,18 +259,12 @@ function PropertiesPage() {
               <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Landlord / Owner</h3></div>
               <div>
                 <Label>Property Owner</Label>
-                <Select value={form.owner_id} onValueChange={(v) => setForm({ ...form, owner_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select landlord" /></SelectTrigger>
-                  <SelectContent>
-                    {(owners ?? []).length === 0 ? (
-                      <SelectItem value="" disabled>No landlords found</SelectItem>
-                    ) : (
-                      (owners ?? []).map((o: any) => (
-                        <SelectItem key={o.id} value={o.id}>{o.full_name || o.email?.split("@")[0]}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.owner_id}
+                  onValueChange={(v) => setForm({ ...form, owner_id: v })}
+                  placeholder="Select landlord"
+                  options={(owners ?? []).length === 0 ? [{ value: "", label: "No landlords found" }] : (owners ?? []).map((o: any) => ({ value: o.id, label: o.full_name || o.email?.split("@")[0] }))}
+                />
                 <p className="mt-1 text-xs text-muted-foreground">Select the landlord who owns this property. Landlords must have an account with the <strong>owner</strong> role.</p>
               </div>
             </div>
@@ -289,20 +283,22 @@ function PropertiesPage() {
           <div className="grid gap-3">
             <div>
               <Label>Property *</Label>
-              <Select value={unitPropertyId} onValueChange={setUnitPropertyId}>
-                <SelectTrigger><SelectValue placeholder="Select a property" /></SelectTrigger>
-                <SelectContent>
-                  {(properties as any[]).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={unitPropertyId}
+                onValueChange={setUnitPropertyId}
+                placeholder="Select a property"
+                options={(properties as any[]).map((p) => ({ value: p.id, label: p.name }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Unit number *</Label><Input value={unitForm.unit_number} onChange={(e) => setUnitForm({ ...unitForm, unit_number: e.target.value })} placeholder="e.g. A1, 101" /></div>
               <div><Label>Type</Label>
-                <Select value={unitForm.unit_type} onValueChange={(v) => setUnitForm({ ...unitForm, unit_type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{UNIT_TYPES.map((t) => <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>)}</SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={unitForm.unit_type}
+                  onValueChange={(v) => setUnitForm({ ...unitForm, unit_type: v })}
+                  placeholder="Select type"
+                  options={UNIT_TYPE_OPTIONS}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -318,10 +314,16 @@ function PropertiesPage() {
               <div><Label>Deposit (UGX)</Label><Input type="number" value={unitForm.deposit_amount} onChange={(e) => setUnitForm({ ...unitForm, deposit_amount: e.target.value })} /></div>
             </div>
             <div><Label>Status</Label>
-              <Select value={unitForm.status} onValueChange={(v) => setUnitForm({ ...unitForm, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="vacant">Vacant</SelectItem><SelectItem value="occupied">Occupied</SelectItem><SelectItem value="maintenance">Maintenance</SelectItem></SelectContent>
-              </Select>
+              <SearchableSelect
+                value={unitForm.status}
+                onValueChange={(v) => setUnitForm({ ...unitForm, status: v })}
+                placeholder="Select status"
+                options={[
+                  { value: "vacant", label: "Vacant" },
+                  { value: "occupied", label: "Occupied" },
+                  { value: "maintenance", label: "Maintenance" },
+                ]}
+              />
             </div>
           </div>
           <DialogFooter><Button onClick={() => createUnit.mutate()} disabled={!unitForm.unit_number || !unitPropertyId || createUnit.isPending}>Create Unit</Button></DialogFooter>

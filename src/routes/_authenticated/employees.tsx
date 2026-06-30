@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Plus, Users, UserCheck, Clock, FileText, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -168,14 +169,20 @@ function EmployeesPage() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label>Role *</Label>
-                        <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                          {roleOptions.map((r) => <option key={r} value={r}>{r.replace("_", " ")}</option>)}
-                        </select>
+                        <SearchableSelect
+                          value={form.role}
+                          onValueChange={(v) => setForm({ ...form, role: v })}
+                          placeholder="Select role"
+                          options={roleOptions.map((r) => ({ value: r, label: r.replace("_", " ") }))}
+                        />
                       </div>
                       <div><Label>Type *</Label>
-                        <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.employee_type} onChange={(e) => setForm({ ...form, employee_type: e.target.value })}>
-                          {typeOptions.map((t) => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
-                        </select>
+                        <SearchableSelect
+                          value={form.employee_type}
+                          onValueChange={(v) => setForm({ ...form, employee_type: v })}
+                          placeholder="Select type"
+                          options={typeOptions.map((t) => ({ value: t, label: t.replace("_", " ") }))}
+                        />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -242,19 +249,34 @@ function EmployeesPage() {
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="Search name or phone…" className="w-48 pl-8" value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
-                <select className="rounded-md border border-input bg-background p-2 text-sm" value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
-                  <option value="">All roles</option>
-                  {roleOptions.map((r) => <option key={r} value={r}>{r.replace("_", " ")}</option>)}
-                </select>
-                <select className="rounded-md border border-input bg-background p-2 text-sm" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-                  <option value="">All types</option>
-                  {typeOptions.map((t) => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
-                </select>
-                <select className="rounded-md border border-input bg-background p-2 text-sm" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                  <option value="">All status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                <SearchableSelect
+                  value={filterRole}
+                  onValueChange={setFilterRole}
+                  placeholder="All roles"
+                  options={[
+                    { value: "", label: "All roles" },
+                    ...roleOptions.map((r) => ({ value: r, label: r.replace("_", " ") }))
+                  ]}
+                />
+                <SearchableSelect
+                  value={filterType}
+                  onValueChange={setFilterType}
+                  placeholder="All types"
+                  options={[
+                    { value: "", label: "All types" },
+                    ...typeOptions.map((t) => ({ value: t, label: t.replace("_", " ") }))
+                  ]}
+                />
+                <SearchableSelect
+                  value={filterStatus}
+                  onValueChange={setFilterStatus}
+                  placeholder="All status"
+                  options={[
+                    { value: "", label: "All status" },
+                    { value: "active", label: "Active" },
+                    { value: "inactive", label: "Inactive" }
+                  ]}
+                />
               </div>
             )}
           </div>

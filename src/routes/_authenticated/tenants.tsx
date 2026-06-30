@@ -9,15 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Search, Users, Phone, Mail, Eye, EyeOff, Copy, Key, ShieldAlert, Check, RefreshCw, Building2, Home, Layers } from "lucide-react";
 import { toast } from "sonner";
 
-const ID_TYPES = ["national_id", "passport", "drivers_license"] as const;
-const STATUSES = ["active", "inactive", "blacklisted"] as const;
+const ID_TYPE_OPTIONS = ["national_id", "passport", "drivers_license"].map((t) => ({ value: t, label: t === "drivers_license" ? "Driver's License" : t === "national_id" ? "National ID" : "Passport" }));
+const STATUS_OPTIONS = ["active", "inactive", "blacklisted"].map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }));
 
 const emptyForm = {
   full_name: "",
@@ -338,14 +338,12 @@ function TenantsPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="id_type">ID Type *</Label>
-            <Select value={form.id_type} onValueChange={(v) => setForm({ ...form, id_type: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ID_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{formatIdType(t)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              value={form.id_type}
+              onValueChange={(v) => setForm({ ...form, id_type: v })}
+              placeholder="Select ID type"
+              options={ID_TYPE_OPTIONS}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="id_number">ID Number *</Label>
@@ -355,14 +353,12 @@ function TenantsPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            value={form.status}
+            onValueChange={(v) => setForm({ ...form, status: v })}
+            placeholder="Select status"
+            options={STATUS_OPTIONS}
+          />
           <p className="mt-1 text-xs text-muted-foreground">Active tenants can be assigned leases. Blacklisted tenants cannot rent properties.</p>
         </div>
       </TabsContent>

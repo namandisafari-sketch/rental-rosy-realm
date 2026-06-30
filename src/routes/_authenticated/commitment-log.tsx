@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -140,9 +141,12 @@ function CommitmentLogPage() {
                   <div><Label>Project ID <span className="text-destructive">*</span></Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} placeholder="e.g. a1b2c3d4-..." /></div>
                   <div className="mt-3"><Label>Vendor / Contractor <span className="text-destructive">*</span></Label><Input value={form.vendor} onChange={(e) => setForm({ ...form, vendor: e.target.value })} placeholder="e.g. ABC Construction Ltd" /></div>
                   <div className="mt-3"><Label>Type <span className="text-destructive">*</span></Label>
-                    <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                      {typeOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>)}
-                    </select>
+                    <SearchableSelect
+                      value={form.type}
+                      onValueChange={(v) => setForm({ ...form, type: v })}
+                      placeholder="Select type"
+                      options={typeOptions.map((s) => ({ value: s, label: s.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()) }))}
+                    />
                   </div>
                   <div className="mt-3"><Label>Amount (UGX) <span className="text-destructive">*</span></Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="e.g. 50000000" /></div>
                 </div>
@@ -150,9 +154,12 @@ function CommitmentLogPage() {
                   <div className="mb-3 border-b pb-1"><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Terms & Status</span></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Status</Label>
-                      <select className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                        {statusOptions.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                      </select>
+                      <SearchableSelect
+                      value={form.status}
+                      onValueChange={(v) => setForm({ ...form, status: v })}
+                      placeholder="Select status"
+                      options={statusOptions.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))}
+                    />
                     </div>
                     <div><Label>Budget line</Label><Input value={form.budget_line} onChange={(e) => setForm({ ...form, budget_line: e.target.value })} placeholder="e.g. 01-100-STRUCT" /></div>
                   </div>
