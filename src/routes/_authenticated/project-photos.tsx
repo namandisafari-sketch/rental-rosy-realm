@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -119,7 +120,7 @@ function ProjectPhotosPage() {
                 <div>
                   <div className="mb-3 border-b pb-1"><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Required Information</span></div>
                   <div><Label>Project ID <span className="text-destructive">*</span></Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} placeholder="e.g. a1b2c3d4-..." /></div>
-                  <div className="mt-3"><Label>Image URL <span className="text-destructive">*</span></Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://storage.example.com/photo.jpg" /></div>
+                  <FileUpload value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} label="Image *" accept="image/*" maxSizeMB={5} />
                   <div className="mt-3"><Label>Photo date <span className="text-destructive">*</span></Label><Input type="date" value={form.photo_date} onChange={(e) => setForm({ ...form, photo_date: e.target.value })} /></div>
                 </div>
                 <div>

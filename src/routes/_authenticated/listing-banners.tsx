@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -207,10 +208,7 @@ function ListingBannersPage() {
                   options={properties.map((p: any) => ({ value: p.id, label: p.name }))}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="banner-image-url">Banner Image URL</Label>
-                <Input id="banner-image-url" value={form.banner_image_url} onChange={(e) => setForm({ ...form, banner_image_url: e.target.value })} placeholder="https://example.com/banner.jpg" />
-              </div>
+              <FileUpload value={form.banner_image_url} onChange={(url) => setForm({ ...form, banner_image_url: url })} label="Banner Image" accept="image/*" maxSizeMB={5} />
               <p className="text-xs text-muted-foreground">Slug will be auto-generated from the property name.</p>
             </div>
             <DialogFooter>

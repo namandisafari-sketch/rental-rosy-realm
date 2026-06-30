@@ -13,6 +13,7 @@ import { SearchableSelect, type SearchableOption } from "@/components/ui/searcha
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Plus, Pencil, XCircle, Building2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { TenancyAgreementDialog } from "@/components/tenancy-agreement-template";
@@ -52,6 +53,7 @@ function LeasesPage() {
     deposit_months: "1", start_date: new Date().toISOString().slice(0, 10), end_date: "",
     payment_due_day: "25", billing_period: "monthly",
     late_fee_amount: "0", late_fee_grace_days: "0", special_conditions: "",
+    signed_document_url: "",
   };
   const [form, setForm] = useState({ ...blankForm });
 
@@ -62,12 +64,12 @@ function LeasesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leases")
-        .select("*, units(unit_number, properties(name))")
+        .select("*, units(unit_number, floor_number, bedrooms, properties(id, name, location, address))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       const ids = Array.from(new Set((data ?? []).map((l: any) => l.tenant_id)));
       const { data: tenantList } = ids.length
-        ? await supabase.from("tenants").select("id, full_name, email").in("id", ids)
+        ? await supabase.from("tenants").select("*").in("id", ids)
         : { data: [] };
       const map = new Map((tenantList ?? []).map((t: any) => [t.id, t]));
       return (data ?? []).map((l: any) => ({ ...l, profile: map.get(l.tenant_id) }));
@@ -98,6 +100,7 @@ function LeasesPage() {
 
   const create = useMutation({
     mutationFn: async () => {
+      if (!form.signed_document_url) throw new Error("Upload the signed & stamped tenancy agreement before creating the lease.");
       const { data: prof, error: pe } = await supabase.from("profiles").select("id").eq("email", form.tenant_email).maybeSingle();
       if (pe) throw pe;
       if (!prof) throw new Error("No tenant account found for that email. Ask them to sign up first.");
@@ -114,6 +117,7 @@ function LeasesPage() {
         late_fee_amount: lateFee,
         late_fee_grace_days: Number(form.late_fee_grace_days),
         special_conditions: form.special_conditions || null,
+        signed_document_url: form.signed_document_url,
       });
       if (error) throw error;
       await supabase.from("units").update({ status: "occupied" }).eq("id", form.unit_id);
@@ -125,6 +129,7 @@ function LeasesPage() {
   const update = useMutation({
     mutationFn: async () => {
       if (!editingLease) return;
+      if (!form.signed_document_url && !editingLease.signed_document_url) throw new Error("Upload the signed & stamped tenancy agreement before updating the lease.");
       if (editingLease.unit_id !== form.unit_id) {
         await supabase.from("units").update({ status: "vacant" }).eq("id", editingLease.unit_id);
         await supabase.from("units").update({ status: "occupied" }).eq("id", form.unit_id);
@@ -139,6 +144,7 @@ function LeasesPage() {
         late_fee_amount: lateFee,
         late_fee_grace_days: Number(form.late_fee_grace_days),
         special_conditions: form.special_conditions || null,
+        signed_document_url: form.signed_document_url || editingLease.signed_document_url,
       }).eq("id", editingLease.id);
       if (error) throw error;
     },
@@ -177,6 +183,7 @@ function LeasesPage() {
       late_fee_amount: String(l.late_fee_amount ?? 0),
       late_fee_grace_days: String(l.late_fee_grace_days ?? 0),
       special_conditions: l.special_conditions ?? "",
+      signed_document_url: l.signed_document_url ?? "",
     });
     setEditOpen(true);
   }
@@ -187,12 +194,18 @@ function LeasesPage() {
     setTerminateOpen(true);
   }
 
+  function parseLocation(loc: string): { village: string; parish: string; county: string; district: string } {
+    const parts = (loc ?? "").split("/");
+    return { district: parts[1] ?? "", county: parts[2] ?? "", parish: parts[3] ?? "", village: parts[4] ?? "" };
+  }
+
   function buildAgreementData(l: any): AgreementData {
     const months = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
     const startD = l.start_date ? new Date(l.start_date) : new Date();
     const endD = l.end_date ? new Date(l.end_date) : new Date(startD.getFullYear() + 1, startD.getMonth(), startD.getDate());
-    const tenant = l.profile ?? { full_name: l.tenant_email ?? "Tenant", email: l.tenant_email ?? "" };
-    const prop = l.units?.properties ?? { name: "", location: "", address: "" };
+    const t = l.profile ?? {};
+    const prop = l.units?.properties ?? {};
+    const loc = parseLocation(prop.location ?? "");
     return {
       day: String(startD.getDate()),
       month: months[startD.getMonth()],
@@ -200,27 +213,27 @@ function LeasesPage() {
       startDate: startD.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/\//g, " "),
       endDate: endD.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/\//g, " "),
       tenant: {
-        name: tenant.full_name || tenant.email?.split("@")[0] || "Tenant",
-        nationalId: "",
+        name: t.full_name || t.email?.split("@")[0] || "Tenant",
+        nationalId: t.id_number ?? "",
         dob: "",
         poBox: "",
-        contact: l.tenant_phone ?? tenant.phone ?? "",
-        email: tenant.email ?? "",
-        occupation: "",
-        workplace: "",
-        nextOfKin: "",
-        nextOfKinContact: "",
+        contact: t.phone ?? "",
+        email: t.email ?? "",
+        occupation: t.occupation ?? "",
+        workplace: t.employer ?? "",
+        nextOfKin: t.emergency_contact_name ?? "",
+        nextOfKinContact: t.emergency_contact_phone ?? "",
         relationship: "",
       },
       property: {
-        usage: "RESIDENTIAL",
+        usage: (l.units?.unit_type ?? "RESIDENTIAL").toUpperCase(),
         rooms: l.units?.bedrooms ? String(l.units.bedrooms) : "1",
         unitNo: l.units?.unit_number ?? "",
         location: prop.location ?? "",
-        village: "",
-        parish: "",
-        county: "",
-        district: "",
+        village: loc.village,
+        parish: loc.parish,
+        county: loc.county,
+        district: loc.district,
         propertyName: prop.name ?? "",
         streetName: prop.address ?? "",
       },
@@ -377,6 +390,19 @@ function LeasesPage() {
             <p className="mt-1 text-xs text-muted-foreground">Any custom terms, conditions, or clauses specific to this lease agreement.</p>
           </div>
         </div>
+        <div>
+          <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Signed Agreement</h3></div>
+          <FileUpload
+            bucket="public"
+            folder="signed-agreements"
+            accept=".pdf,image/*"
+            maxSizeMB={10}
+            value={form.signed_document_url}
+            onChange={(url) => setForm({ ...form, signed_document_url: url })}
+            label="Signed &amp; Stamped Tenancy Agreement *"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">Upload the scanned copy signed by both parties. Lease cannot be activated without this document.</p>
+        </div>
       </div>
     );
   }
@@ -395,7 +421,7 @@ function LeasesPage() {
               <DialogHeader><DialogTitle>New lease</DialogTitle></DialogHeader>
               {renderFormFields()}
               <DialogFooter>
-                <Button onClick={() => create.mutate()} disabled={!form.unit_id || !form.tenant_email || create.isPending}>Create lease</Button>
+                <Button onClick={() => create.mutate()} disabled={!form.unit_id || !form.tenant_email || !form.signed_document_url || create.isPending}>Create lease</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -430,7 +456,7 @@ function LeasesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tenant</TableHead><TableHead>Property · Unit</TableHead><TableHead>Monthly Rent</TableHead><TableHead>Arrears</TableHead><TableHead>Late Fee (5%)</TableHead><TableHead>Days Remaining</TableHead><TableHead>Deposit</TableHead><TableHead>Status</TableHead>
+                    <TableHead>Tenant</TableHead><TableHead>Property · Unit</TableHead><TableHead>Monthly Rent</TableHead><TableHead>Arrears</TableHead><TableHead>Late Fee (5%)</TableHead><TableHead>Days Remaining</TableHead><TableHead>Deposit</TableHead><TableHead>Signed Doc</TableHead><TableHead>Status</TableHead>
                   {isStaff && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -446,6 +472,7 @@ function LeasesPage() {
                     <TableCell className="text-sm">UGX {lateFee.toLocaleString()}</TableCell>
                     <DaysCell endDate={l.end_date} />
                     <TableCell>UGX {Number(l.deposit ?? 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-center">{l.signed_document_url ? <span className="text-green-600 text-xs font-medium">Uploaded</span> : <span className="text-amber-600 text-xs">Pending</span>}</TableCell>
                     <TableCell><StatusBadge status={l.status} /></TableCell>
                     {isStaff && (
                       <TableCell className="text-right">

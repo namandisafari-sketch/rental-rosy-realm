@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -135,7 +136,7 @@ function ReceiptsPage() {
                 <div>
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Image & Notes</h3></div>
                   <div className="space-y-3">
-                    <div><Label>Image URL</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://example.com/receipt.jpg" /></div>
+                    <FileUpload value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} label="Image" accept="image/*" maxSizeMB={5} />
                     <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes about this receipt" /></div>
                   </div>
                 </div>

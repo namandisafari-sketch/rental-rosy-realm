@@ -52,6 +52,7 @@ export interface AgreementData {
   property: PropertyDetails;
   payment: PaymentDetails;
   bank: BankDetails;
+  signedDocumentUrl?: string;
 }
 
 const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
@@ -72,9 +73,27 @@ function numberToWords(n: number): string {
 
 const pageStyle = `
   @media print {
-    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      margin: 0;
+      padding: 0;
+    }
     .no-print { display: none !important; }
-    @page { margin: 0.5in; size: A4; }
+    @page {
+      margin: 0.6in 0.5in;
+      size: A4 portrait;
+    }
+    .agreement-page {
+      font-size: 10pt;
+      line-height: 1.35;
+    }
+    .agreement-page table {
+      page-break-inside: avoid;
+    }
+    .agreement-page ol {
+      page-break-before: auto;
+    }
   }
 `;
 
@@ -88,7 +107,7 @@ export function TenancyAgreementDialog({ data }: { data: AgreementData }) {
       <div className="flex justify-end mb-4 no-print">
         <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Print Agreement</Button>
       </div>
-      <div ref={ref} className="bg-white text-black text-xs leading-relaxed" style={{ fontFamily: "serif" }}>
+      <div ref={ref} className="agreement-page bg-white text-black leading-relaxed" style={{ fontFamily: "serif" }}>
         <div className="text-center mb-4">
           <p className="text-lg font-bold">HABICO PROPERTY MANAGERS</p>
           <p>0756742220 | 0702239607</p>

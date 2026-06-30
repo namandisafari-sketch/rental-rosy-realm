@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -193,7 +194,7 @@ function PropertiesPage() {
                 </div>
                 <div>
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Media</h3></div>
-                  <div><Label>Image URL</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://example.com/property-image.jpg" /><p className="mt-1 text-xs text-muted-foreground">Link to a photo or rendering of the property for the listing card.</p></div>
+                  <FileUpload value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} label="Image" accept="image/*" maxSizeMB={5} />
                 </div>
               </div>
               <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.name || !form.owner_id || create.isPending}>Create Property</Button></DialogFooter>
@@ -270,7 +271,7 @@ function PropertiesPage() {
             </div>
             <div>
               <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Media</h3></div>
-              <div><Label>Image URL</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://example.com/property-image.jpg" /><p className="mt-1 text-xs text-muted-foreground">Link to a photo or rendering of the property for the listing card.</p></div>
+              <FileUpload value={form.image_url} onChange={(url) => setForm({ ...form, image_url: url })} label="Image" accept="image/*" maxSizeMB={5} />
             </div>
           </div>
           <DialogFooter><Button onClick={() => update.mutate()} disabled={!form.name || update.isPending}>Save Changes</Button></DialogFooter>

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -602,21 +603,13 @@ function MaintenancePage() {
                       </div>
                     ))}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Input type="text" placeholder="Paste image URL..." id="new-image-url" />
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        const input = document.getElementById("new-image-url") as HTMLInputElement;
-                        if (input?.value) {
-                          uploadImageMutation.mutate({ requestId: editingRequest.id, url: input.value });
-                          input.value = "";
-                        }
-                      }}
-                    >
-                      Add
-                    </Button>
-                  </div>
+                  <FileUpload
+                    value=""
+                    onChange={(url) => { if (url) uploadImageMutation.mutate({ requestId: editingRequest.id, url }); }}
+                    label="Add Photo"
+                    accept="image/*"
+                    maxSizeMB={5}
+                  />
                   <p className="mt-1 text-xs text-muted-foreground">Add photos of the issue or completed work for documentation.</p>
                 </div>
               </div>

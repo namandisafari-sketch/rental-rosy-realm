@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -27,7 +28,7 @@ function ExpensesPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [catFilter, setCatFilter] = useState("");
-  const [form, setForm] = useState({ category_id: "", employee_id: "", project_id: "", amount: "0", description: "", expense_date: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState({ category_id: "", employee_id: "", project_id: "", amount: "0", description: "", expense_date: new Date().toISOString().slice(0, 10), receipt_image_url: "" });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ["expenses", catFilter],
@@ -77,7 +78,7 @@ function ExpensesPage() {
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Expense recorded"); setOpen(false); setForm({ category_id: "", employee_id: "", project_id: "", amount: "0", description: "", expense_date: new Date().toISOString().slice(0, 10) }); qc.invalidateQueries({ queryKey: ["expenses"] }); },
+    onSuccess: () => { toast.success("Expense recorded"); setOpen(false); setForm({ category_id: "", employee_id: "", project_id: "", amount: "0", description: "", expense_date: new Date().toISOString().slice(0, 10), receipt_image_url: "" }); qc.invalidateQueries({ queryKey: ["expenses"] }); },
     onError: (e) => toast.error((e as Error).message),
   });
 
@@ -160,7 +161,7 @@ function ExpensesPage() {
                 </div>
                 <div>
                   <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Receipt</h3></div>
-                  <div><Label>Receipt image / URL</Label><Input placeholder="https://example.com/receipt.jpg" /></div>
+                  <FileUpload value={form.receipt_image_url} onChange={(url) => setForm({ ...form, receipt_image_url: url })} label="Receipt image" accept="image/*" maxSizeMB={5} />
                 </div>
               </div>
               <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.amount || Number(form.amount) <= 0 || create.isPending}>Record</Button></DialogFooter>
