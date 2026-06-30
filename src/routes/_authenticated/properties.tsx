@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Building2, MapPin, Pencil, Archive, Search, SlidersHorizontal, Home, User } from "lucide-react";
+import { Plus, Building2, MapPin, Pencil, Archive, Trash2, Search, SlidersHorizontal, Home, User } from "lucide-react";
 import { toast } from "sonner";
 import { LocationSelector } from "@/components/location-selector";
 
@@ -98,6 +98,15 @@ function PropertiesPage() {
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Property archived"); qc.invalidateQueries({ queryKey: ["properties"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("properties").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Property deleted"); qc.invalidateQueries({ queryKey: ["properties"] }); },
     onError: (e) => toast.error((e as Error).message),
   });
 
@@ -371,6 +380,13 @@ function PropertiesPage() {
                       <AlertDialogContent>
                         <AlertDialogHeader><AlertDialogTitle>Archive property?</AlertDialogTitle><AlertDialogDescription>This will hide {p.name} from the list. Units and lease history are preserved.</AlertDialogDescription></AlertDialogHeader>
                         <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => archive.mutate(p.id)} className="bg-destructive text-destructive-foreground">Archive</AlertDialogAction></AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild><Button size="icon" variant="destructive" className="h-7 w-7" onClick={(e) => e.preventDefault()}><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>Delete property?</AlertDialogTitle><AlertDialogDescription>Permanently delete {p.name} and all its units. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => remove.mutate(p.id)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction></AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
