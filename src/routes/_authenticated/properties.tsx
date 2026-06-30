@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Building2, MapPin, Pencil, Archive, Trash2, Search, SlidersHorizontal, Home, User } from "lucide-react";
+import { Plus, Building2, MapPin, Pencil, Archive, Trash2, Loader2, Search, SlidersHorizontal, Home, User } from "lucide-react";
 import { toast } from "sonner";
 import { LocationSelector } from "@/components/location-selector";
 
@@ -103,8 +103,8 @@ function PropertiesPage() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("properties").delete().eq("id", id);
-      if (error) throw error;
+      const { deleteProperty } = await import("@/lib/rent.server");
+      await deleteProperty({ data: { id } });
     },
     onSuccess: () => { toast.success("Property deleted"); qc.invalidateQueries({ queryKey: ["properties"] }); },
     onError: (e) => toast.error((e as Error).message),
@@ -386,7 +386,7 @@ function PropertiesPage() {
                       <AlertDialogTrigger asChild><Button size="icon" variant="destructive" className="h-7 w-7" onClick={(e) => e.preventDefault()}><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader><AlertDialogTitle>Delete property?</AlertDialogTitle><AlertDialogDescription>Permanently delete {p.name} and all its units. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => remove.mutate(p.id)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction></AlertDialogFooter>
+                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => remove.mutate(p.id)} disabled={remove.isPending} className="bg-destructive text-destructive-foreground">{remove.isPending ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Deleting</> : "Delete"}</AlertDialogAction></AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>

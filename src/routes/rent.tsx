@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { getRentalProperties } from "@/lib/rent.server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,21 +78,15 @@ function RentPage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const { data: properties = [], isLoading } = useQuery({
+  const { data: properties = [], isLoading, error } = useQuery({
     queryKey: ["rental-properties"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*, units(*)")
-        .or("is_active.is.null,is_active.eq.true")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      const filtered = (data as Property[]).filter(
-        (p) => p.units?.some((u) => u.status?.toLowerCase() === "vacant")
-      );
-      return filtered;
+      const result = await getRentalProperties();
+      return result as Property[];
     },
   });
+
+  if (error) console.error("[rent] failed to load properties:", error);
 
   const allUnits = properties.flatMap((p) =>
     (p.units ?? []).filter((u) => u.status === "vacant").map((u) => ({ ...u, propertyName: p.name, propertyId: p.id }))
