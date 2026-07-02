@@ -212,6 +212,12 @@ function RentPage() {
           <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading properties...
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center gap-2 py-20 text-center">
+            <Building2 className="h-12 w-12 text-destructive/60" />
+            <div className="text-lg font-medium text-destructive">Failed to load properties</div>
+            <div className="text-sm text-muted-foreground">{(error as Error).message}</div>
+          </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-20 text-center">
             <Building2 className="h-12 w-12 text-muted-foreground/40" />

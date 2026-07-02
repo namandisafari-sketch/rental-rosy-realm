@@ -9,7 +9,7 @@ export const getRentalProperties = createServerFn({ method: "GET" }).handler(asy
     .order("created_at", { ascending: false });
   if (error) throw error;
   const filtered = (data ?? []).filter(
-    (p: any) => p.units?.some((u: any) => u.status?.toLowerCase() === "vacant")
+    (p: any) => !p.units?.length || p.units.some((u: any) => u.status?.toLowerCase() === "vacant")
   );
   return filtered;
 });
