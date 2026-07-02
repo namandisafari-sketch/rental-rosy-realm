@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Building2, HardHat, Users, UserCog, ShieldCheck, CreditCard, Camera, CameraOff, Send, CheckCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Html5Qrcode } from "html5-qrcode";
+import { tenantCardLogin } from "@/lib/auth.server";
 
 const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).optional(), redirect: z.string().optional(), c: z.string().optional() });
 
@@ -40,6 +41,8 @@ function AuthPage() {
   const [cardValue, setCardValue] = useState(search.c ?? "");
   const [cardSending, setCardSending] = useState(false);
   const [cardSent, setCardSent] = useState(false);
+  const [tenantUnitNumber, setTenantUnitNumber] = useState("");
+  const [tenantPin, setTenantPin] = useState("");
 
   useEffect(() => {
     if (!loading && user) nav({ to: search.redirect ?? "/dashboard" });
@@ -155,47 +158,89 @@ function AuthPage() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or sign in with ID card</span></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Tenant sign in with ID card</span></div>
           </div>
 
-          {!cardScanOpen ? (
-            <Button variant="outline" className="w-full" onClick={() => setCardScanOpen(true)}>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Scan Your ID Card
-            </Button>
-          ) : cardSent ? (
+          {cardSent ? (
             <div className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center">
               <CheckCircle className="h-8 w-8 text-green-500" />
               <div>
-                <p className="font-medium">Login link sent</p>
-                <p className="text-sm text-muted-foreground">Check your email to sign in instantly.</p>
+                <p className="font-medium">Signing you in...</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => { setCardScanOpen(false); setCardSent(false); setCardValue(""); }}>
-                Back to sign in
-              </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Card number (e.g. HBC-PUUX-BCXT)"
-                  value={cardValue}
-                  onChange={(e) => setCardValue(e.target.value)}
-                  className="font-mono"
-                />
-                <Button onClick={() => handleCardLookup()} disabled={!cardValue.trim() || cardSending}>
-                  <Send className="mr-2 h-4 w-4" />
-                  {cardSending ? "…" : "Send Link"}
-                </Button>
+              <div>
+                <Label htmlFor="card-number">Card number</Label>
+                <div className="mt-1.5 flex gap-2">
+                  <Input
+                    id="card-number"
+                    placeholder="e.g. HBC-PUUX-BCXT"
+                    value={cardValue}
+                    onChange={(e) => setCardValue(e.target.value)}
+                    className="font-mono"
+                  />
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground text-center">
-                A one-time login link will be emailed to the address on file for this card.
-              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="unit-number">Unit number</Label>
+                  <Input
+                    id="unit-number"
+                    placeholder="e.g. A1"
+                    value={tenantUnitNumber}
+                    onChange={(e) => setTenantUnitNumber(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pin">Access PIN</Label>
+                  <Input
+                    id="pin"
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="4-digit PIN"
+                    value={tenantPin}
+                    onChange={(e) => setTenantPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  />
+                </div>
+              </div>
+              <Button
+                className="w-full"
+                onClick={async () => {
+                  if (!cardValue.trim() || !tenantUnitNumber.trim() || !tenantPin.trim()) {
+                    toast.error("Fill in all fields");
+                    return;
+                  }
+                  setCardSending(true);
+                  try {
+                    const result = await tenantCardLogin({
+                      card_number: cardValue.trim(),
+                      unit_number: tenantUnitNumber.trim(),
+                      access_pin: tenantPin.trim(),
+                    });
+                    if (result.success) {
+                      setCardSent(true);
+                      window.location.href = result.url;
+                    } else {
+                      toast.error(result.error);
+                    }
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  } finally {
+                    setCardSending(false);
+                  }
+                }}
+                disabled={cardSending}
+              >
+                <CreditCard className="mr-2 h-4 w-4" />
+                {cardSending ? "Verifying..." : "Sign in with ID Card"}
+              </Button>
               <div className="relative">
                 <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or scan with camera</span></div>
+                <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or scan QR code</span></div>
               </div>
-              <QrScanner onScan={(c) => { setCardValue(c); handleCardLookup(c); }} />
+              <QrScanner onScan={(c) => setCardValue(c)} />
             </div>
           )}
         </div>
