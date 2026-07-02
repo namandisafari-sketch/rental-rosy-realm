@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { getRentalProperties } from "@/lib/rent.server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,8 +81,15 @@ function RentPage() {
   const { data: properties = [], isLoading, error } = useQuery({
     queryKey: ["rental-properties"],
     queryFn: async () => {
-      const result = await getRentalProperties();
-      return result as Property[];
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*, units(*)")
+        .or("is_active.is.null,is_active.eq.true")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).filter(
+        (p: any) => !p.units?.length || p.units.some((u: any) => u.status?.toLowerCase() === "vacant")
+      ) as Property[];
     },
   });
 

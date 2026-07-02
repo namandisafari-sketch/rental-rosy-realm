@@ -103,8 +103,8 @@ function PropertiesPage() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { deleteProperty } = await import("@/lib/rent.server");
-      await deleteProperty({ data: { id } });
+      const { error } = await supabase.from("properties").delete().eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => { toast.success("Property deleted"); qc.invalidateQueries({ queryKey: ["properties"] }); },
     onError: (e) => toast.error((e as Error).message),
