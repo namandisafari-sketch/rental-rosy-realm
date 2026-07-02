@@ -1,6 +1,8 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer, Phone, Mail, MapPin } from "lucide-react";
+import { Download, Loader2, Phone, Mail, MapPin } from "lucide-react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import habicoLogo from "@/assets/habico-logo.jpg";
 
 interface TenantDetails {
@@ -100,15 +102,57 @@ const pageStyle = `
 
 export function TenancyAgreementDialog({ data }: { data: AgreementData }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
   const words = numberToWords(data.payment.monthlyRent);
+
+  async function handleDownload() {
+    if (!ref.current) return;
+    setExporting(true);
+    try {
+      const canvas = await html2canvas(ref.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = margin;
+      pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - margin * 2;
+
+      while (heightLeft > 0) {
+        pdf.addPage();
+        position = margin - (imgHeight - heightLeft);
+        pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - margin * 2;
+      }
+
+      const safeName = (data.tenant.name || "tenant").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+      pdf.save(`habico-tenancy-agreement-${safeName}.pdf`);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div>
       <style>{pageStyle}</style>
       <div className="flex justify-end mb-4 no-print">
-        <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Print Agreement</Button>
+        <Button onClick={handleDownload} disabled={exporting}>
+          {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+          {exporting ? "Generating PDF…" : "Download Agreement PDF"}
+        </Button>
       </div>
-      <div ref={ref} className="agreement-page bg-white text-black leading-relaxed" style={{ fontFamily: "serif" }}>
+      <div ref={ref} className="agreement-page bg-white text-black leading-relaxed p-6" style={{ fontFamily: "serif" }}>
+
         <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4 gap-4">
           <img src={habicoLogo} alt="Habico Property Managers" className="h-20 w-auto object-contain" />
           <div className="text-xs leading-snug space-y-1">
