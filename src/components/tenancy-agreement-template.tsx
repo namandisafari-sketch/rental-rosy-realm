@@ -109,12 +109,27 @@ export function TenancyAgreementDialog({ data }: { data: AgreementData }) {
         <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" />Print Agreement</Button>
       </div>
       <div ref={ref} className="agreement-page bg-white text-black leading-relaxed" style={{ fontFamily: "serif" }}>
-        <div className="text-center mb-4">
-          <p className="text-lg font-bold">HABICO PROPERTY MANAGERS</p>
-          <p>0756742220 | 0702239607</p>
-          <p>Email: habicopropertymanagers@gmail.com</p>
-          <p>BASIIMA BUILDING 2ND FLOOR ROOM C03, P.O BOX 193498 KAMPALA</p>
+        <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4 gap-4">
+          <img src={habicoLogo} alt="Habico Property Managers" className="h-20 w-auto object-contain" />
+          <div className="text-xs leading-snug space-y-1">
+            <div className="flex items-center gap-2 justify-end"><Phone className="h-3 w-3" /><span className="font-semibold">0756742220 | 0702239607</span></div>
+            <div className="flex items-start gap-2 justify-end">
+              <Mail className="h-3 w-3 mt-0.5" />
+              <div className="text-right">
+                <div className="font-semibold">Email Us Today Via:</div>
+                <div>habicopropertymanagers@gmail.com</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 justify-end">
+              <MapPin className="h-3 w-3 mt-0.5" />
+              <div className="text-right">
+                <div>BASIIMA BUILDING 2ND FLOOR ROOM C03</div>
+                <div>P.O BOX 193498 KAMPALA</div>
+              </div>
+            </div>
+          </div>
         </div>
+
 
         <div className="text-center mb-6">
           <p className="font-bold underline">THE REPUBLIC OF UGANDA</p>
