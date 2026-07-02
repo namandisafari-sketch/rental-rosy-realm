@@ -324,34 +324,58 @@ function PropertiesPage() {
               <div><Label>Monthly rent (UGX)</Label><Input type="number" value={unitForm.monthly_rent} onChange={(e) => setUnitForm({ ...unitForm, monthly_rent: e.target.value })} /></div>
               <div><Label>Deposit (UGX)</Label><Input type="number" value={unitForm.deposit_amount} onChange={(e) => setUnitForm({ ...unitForm, deposit_amount: e.target.value })} /></div>
             </div>
-            <div><Label>Photos</Label>
+            <div><Label>Photos &amp; Videos</Label>
               <div className="grid grid-cols-2 gap-3">
                 <FileUpload
-                  value={unitForm.photos?.bedroom ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bedroom: url } })}
-                  accept="image/*" maxSizeMB={5}
-                  label="Bedroom"
+                  value={unitForm.photos?.bedroom_photo ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bedroom_photo: url } })}
+                  accept="image/*,video/*" maxSizeMB={20}
+                  label="Bedroom Photo"
                 />
                 <FileUpload
-                  value={unitForm.photos?.bathroom ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bathroom: url } })}
-                  accept="image/*" maxSizeMB={5}
-                  label="Bathroom"
+                  value={unitForm.photos?.bedroom_video ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bedroom_video: url } })}
+                  accept="video/*" maxSizeMB={50}
+                  label="Bedroom Video"
                 />
                 <FileUpload
-                  value={unitForm.photos?.living_room ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, living_room: url } })}
-                  accept="image/*" maxSizeMB={5}
-                  label="Living Room"
+                  value={unitForm.photos?.bathroom_photo ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bathroom_photo: url } })}
+                  accept="image/*,video/*" maxSizeMB={20}
+                  label="Bathroom Photo"
                 />
                 <FileUpload
-                  value={unitForm.photos?.kitchen ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, kitchen: url } })}
-                  accept="image/*" maxSizeMB={5}
-                  label="Kitchen"
+                  value={unitForm.photos?.bathroom_video ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bathroom_video: url } })}
+                  accept="video/*" maxSizeMB={50}
+                  label="Bathroom Video"
+                />
+                <FileUpload
+                  value={unitForm.photos?.living_room_photo ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, living_room_photo: url } })}
+                  accept="image/*,video/*" maxSizeMB={20}
+                  label="Living Room Photo"
+                />
+                <FileUpload
+                  value={unitForm.photos?.living_room_video ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, living_room_video: url } })}
+                  accept="video/*" maxSizeMB={50}
+                  label="Living Room Video"
+                />
+                <FileUpload
+                  value={unitForm.photos?.kitchen_photo ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, kitchen_photo: url } })}
+                  accept="image/*,video/*" maxSizeMB={20}
+                  label="Kitchen Photo"
+                />
+                <FileUpload
+                  value={unitForm.photos?.kitchen_video ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, kitchen_video: url } })}
+                  accept="video/*" maxSizeMB={50}
+                  label="Kitchen Video"
                 />
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">Upload photos of each room to showcase the unit.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Upload photos and walkthrough videos of each room.</p>
             </div>
             <div><Label>Status</Label>
               <SearchableSelect
