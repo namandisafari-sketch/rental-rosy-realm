@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2, Phone, Mail, MapPin } from "lucide-react";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 import habicoLogo from "@/assets/habico-logo.jpg";
 
 interface TenantDetails {
@@ -109,19 +109,28 @@ export function TenancyAgreementDialog({ data }: { data: AgreementData }) {
     if (!ref.current) return;
     setExporting(true);
     try {
-      const canvas = await html2canvas(ref.current, {
-        scale: 2,
-        useCORS: true,
+      const node = ref.current;
+      const imgData = await toPng(node, {
+        pixelRatio: 2,
         backgroundColor: "#ffffff",
-        logging: false,
+        cacheBust: true,
+        style: { color: "#000000" },
       });
-      const imgData = canvas.toDataURL("image/png");
+
+      // Get natural dimensions from the produced image
+      const img = new Image();
+      img.src = imgData;
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load rendered image"));
+      });
+
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 10;
       const imgWidth = pageWidth - margin * 2;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgHeight = (img.height * imgWidth) / img.width;
 
       let heightLeft = imgHeight;
       let position = margin;
@@ -137,6 +146,9 @@ export function TenancyAgreementDialog({ data }: { data: AgreementData }) {
 
       const safeName = (data.tenant.name || "tenant").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
       pdf.save(`habico-tenancy-agreement-${safeName}.pdf`);
+    } catch (err) {
+      console.error("PDF export failed", err);
+      alert("Could not generate PDF: " + (err instanceof Error ? err.message : "unknown error"));
     } finally {
       setExporting(false);
     }
