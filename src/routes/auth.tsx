@@ -188,7 +188,7 @@ function AuthPage() {
                       toast.error(result.error_message);
                       return;
                     }
-                    const pin = tenantPin.trim();
+                    const pin = "Hb" + tenantPin.trim();
                     const { error: signInErr } = await supabase.auth.signInWithPassword({
                       email: result.email,
                       password: pin,
