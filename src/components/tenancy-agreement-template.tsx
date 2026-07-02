@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, Phone, Mail, MapPin } from "lucide-react";
+import habicoLogo from "@/assets/habico-logo.jpg";
 
 interface TenantDetails {
   name: string;
