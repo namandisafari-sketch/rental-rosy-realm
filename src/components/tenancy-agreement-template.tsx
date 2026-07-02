@@ -1,6 +1,8 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer, Phone, Mail, MapPin } from "lucide-react";
+import { Download, Loader2, Phone, Mail, MapPin } from "lucide-react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import habicoLogo from "@/assets/habico-logo.jpg";
 
 interface TenantDetails {
