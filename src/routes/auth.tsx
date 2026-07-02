@@ -189,19 +189,24 @@ function AuthPage() {
                       return;
                     }
                     const pin = "Hb" + tenantPin.trim();
+                    const authEmail = cardValue.trim().toLowerCase() + "@habico.portal";
                     const { error: signInErr } = await supabase.auth.signInWithPassword({
-                      email: result.email,
+                      email: authEmail,
                       password: pin,
                     });
                     if (signInErr?.message?.includes("Invalid login credentials")) {
                       const { error: signUpErr } = await supabase.auth.signUp({
-                        email: result.email,
+                        email: authEmail,
                         password: pin,
                       });
+                      if (signUpErr?.message?.includes("already registered")) {
+                        toast.error("Login failed. Contact your property manager.");
+                        return;
+                      }
                       if (signUpErr) throw signUpErr;
                       toast.success("Account created. Signing you in...");
                       const { error: retryErr } = await supabase.auth.signInWithPassword({
-                        email: result.email,
+                        email: authEmail,
                         password: pin,
                       });
                       if (retryErr) throw retryErr;
