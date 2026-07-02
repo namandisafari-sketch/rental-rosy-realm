@@ -1320,12 +1320,15 @@ export type Database = {
           late_fee_grace_days: number | null
           monthly_rent: number
           notes: string | null
+          notice_period_days: number | null
           outstanding_balance: number | null
           payment_due_day: number | null
+          signed_document_url: string | null
           special_conditions: string | null
           start_date: string
           status: string
           tenant_id: string
+          termination_date: string | null
           termination_reason: string | null
           terms_and_conditions: string | null
           unit_id: string
@@ -1342,12 +1345,15 @@ export type Database = {
           late_fee_grace_days?: number | null
           monthly_rent: number
           notes?: string | null
+          notice_period_days?: number | null
           outstanding_balance?: number | null
           payment_due_day?: number | null
+          signed_document_url?: string | null
           special_conditions?: string | null
           start_date: string
           status?: string
           tenant_id: string
+          termination_date?: string | null
           termination_reason?: string | null
           terms_and_conditions?: string | null
           unit_id: string
@@ -1364,18 +1370,28 @@ export type Database = {
           late_fee_grace_days?: number | null
           monthly_rent?: number
           notes?: string | null
+          notice_period_days?: number | null
           outstanding_balance?: number | null
           payment_due_day?: number | null
+          signed_document_url?: string | null
           special_conditions?: string | null
           start_date?: string
           status?: string
           tenant_id?: string
+          termination_date?: string | null
           termination_reason?: string | null
           terms_and_conditions?: string | null
           unit_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "leases_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leases_unit_id_fkey"
             columns: ["unit_id"]
@@ -2285,10 +2301,12 @@ export type Database = {
           amenities: string[] | null
           city: string | null
           created_at: string
+          depreciation_rate: number | null
           description: string | null
           id: string
           image_url: string | null
           is_active: boolean | null
+          last_valuation_date: string | null
           location: string | null
           name: string
           owner_id: string | null
@@ -2297,6 +2315,7 @@ export type Database = {
           total_land_area: number | null
           updated_at: string
           utilities: string[] | null
+          valuation_amount: number | null
           year_built: number | null
         }
         Insert: {
@@ -2304,10 +2323,12 @@ export type Database = {
           amenities?: string[] | null
           city?: string | null
           created_at?: string
+          depreciation_rate?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          last_valuation_date?: string | null
           location?: string | null
           name: string
           owner_id?: string | null
@@ -2316,6 +2337,7 @@ export type Database = {
           total_land_area?: number | null
           updated_at?: string
           utilities?: string[] | null
+          valuation_amount?: number | null
           year_built?: number | null
         }
         Update: {
@@ -2323,10 +2345,12 @@ export type Database = {
           amenities?: string[] | null
           city?: string | null
           created_at?: string
+          depreciation_rate?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          last_valuation_date?: string | null
           location?: string | null
           name?: string
           owner_id?: string | null
@@ -2335,6 +2359,7 @@ export type Database = {
           total_land_area?: number | null
           updated_at?: string
           utilities?: string[] | null
+          valuation_amount?: number | null
           year_built?: number | null
         }
         Relationships: []
@@ -3370,6 +3395,99 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          is_active: boolean | null
+          title: string
+        }
+        Insert: {
+          alert_type?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          title: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+        }
+        Relationships: []
+      }
+      tax_checklist_items: {
+        Row: {
+          checked: boolean
+          checked_at: string | null
+          checked_by: string | null
+          created_at: string
+          id: string
+          label: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          checked?: boolean
+          checked_at?: string | null
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          label: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          checked?: boolean
+          checked_at?: string | null
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tax_next_steps: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_completed: boolean | null
+          label: string
+          sort_order: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean | null
+          label: string
+          sort_order?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean | null
+          label?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       tenants: {
         Row: {
           access_pin: string | null
@@ -3507,6 +3625,7 @@ export type Database = {
           is_active: boolean | null
           monthly_rent: number
           notes: string | null
+          photos: Json | null
           property_id: string
           size_sqm: number | null
           status: string
@@ -3524,6 +3643,7 @@ export type Database = {
           is_active?: boolean | null
           monthly_rent?: number
           notes?: string | null
+          photos?: Json | null
           property_id: string
           size_sqm?: number | null
           status?: string
@@ -3541,6 +3661,7 @@ export type Database = {
           is_active?: boolean | null
           monthly_rent?: number
           notes?: string | null
+          photos?: Json | null
           property_id?: string
           size_sqm?: number | null
           status?: string

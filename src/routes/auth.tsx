@@ -183,7 +183,7 @@ function AuthPage() {
                   onChange={(e) => setCardValue(e.target.value)}
                   className="font-mono"
                 />
-                <Button onClick={handleCardLookup} disabled={!cardValue.trim() || cardSending}>
+                <Button onClick={() => handleCardLookup()} disabled={!cardValue.trim() || cardSending}>
                   <Send className="mr-2 h-4 w-4" />
                   {cardSending ? "…" : "Send Link"}
                 </Button>
