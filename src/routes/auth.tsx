@@ -188,13 +188,27 @@ function AuthPage() {
                       toast.error(result.error_message);
                       return;
                     }
-                    const { error: authErr } = await supabase.auth.signInWithOtp({
+                    const pin = tenantPin.trim();
+                    const { error: signInErr } = await supabase.auth.signInWithPassword({
                       email: result.email,
-                      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+                      password: pin,
                     });
-                    if (authErr) throw authErr;
+                    if (signInErr?.message?.includes("Invalid login credentials")) {
+                      const { error: signUpErr } = await supabase.auth.signUp({
+                        email: result.email,
+                        password: pin,
+                      });
+                      if (signUpErr) throw signUpErr;
+                      toast.success("Account created. Signing you in...");
+                      const { error: retryErr } = await supabase.auth.signInWithPassword({
+                        email: result.email,
+                        password: pin,
+                      });
+                      if (retryErr) throw retryErr;
+                    } else if (signInErr) {
+                      throw signInErr;
+                    }
                     setCardSent(true);
-                    toast.success(`Login link sent to ${result.email}`);
                   } catch (e) {
                     toast.error((e as Error).message);
                   } finally {
