@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/properties")({
 
 const PROPERTY_TYPE_OPTIONS = ["residential", "commercial", "industrial", "land", "mixed_use"].map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ") }));
 const UNIT_TYPE_OPTIONS = ["residential", "commercial", "retail", "office", "warehouse", "storage"].map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
-const EMPTY_UNIT = { unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant" };
+const EMPTY_UNIT = { unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant", photos: {} as Record<string, string> };
 
 function PropertiesPage() {
   const role = useHighestRole();
@@ -124,6 +124,7 @@ function PropertiesPage() {
         bathrooms: Number(unitForm.bathrooms),
         deposit_amount: Number(unitForm.deposit_amount),
         status: unitForm.status,
+        photos: unitForm.photos,
       });
       if (error) throw error;
     },
@@ -322,6 +323,35 @@ function PropertiesPage() {
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Monthly rent (UGX)</Label><Input type="number" value={unitForm.monthly_rent} onChange={(e) => setUnitForm({ ...unitForm, monthly_rent: e.target.value })} /></div>
               <div><Label>Deposit (UGX)</Label><Input type="number" value={unitForm.deposit_amount} onChange={(e) => setUnitForm({ ...unitForm, deposit_amount: e.target.value })} /></div>
+            </div>
+            <div><Label>Photos</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <FileUpload
+                  value={unitForm.photos?.bedroom ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bedroom: url } })}
+                  accept="image/*" maxSizeMB={5}
+                  label="Bedroom"
+                />
+                <FileUpload
+                  value={unitForm.photos?.bathroom ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bathroom: url } })}
+                  accept="image/*" maxSizeMB={5}
+                  label="Bathroom"
+                />
+                <FileUpload
+                  value={unitForm.photos?.living_room ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, living_room: url } })}
+                  accept="image/*" maxSizeMB={5}
+                  label="Living Room"
+                />
+                <FileUpload
+                  value={unitForm.photos?.kitchen ?? ""}
+                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, kitchen: url } })}
+                  accept="image/*" maxSizeMB={5}
+                  label="Kitchen"
+                />
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">Upload photos of each room to showcase the unit.</p>
             </div>
             <div><Label>Status</Label>
               <SearchableSelect
