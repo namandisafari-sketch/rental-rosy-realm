@@ -7,10 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Building2, HardHat, Users, UserCog, ShieldCheck, CreditCard, Camera, CameraOff, Send, CheckCircle, Mail } from "lucide-react";
+import { Building2, HardHat, Users, UserCog, ShieldCheck, CreditCard, Camera, CameraOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Html5Qrcode } from "html5-qrcode";
-import { tenantCardLogin } from "@/lib/auth.server";
 
 const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).optional(), redirect: z.string().optional(), c: z.string().optional() });
 
@@ -37,7 +36,6 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const [cardScanOpen, setCardScanOpen] = useState(!!search.c);
   const [cardValue, setCardValue] = useState(search.c ?? "");
   const [cardSending, setCardSending] = useState(false);
   const [cardSent, setCardSent] = useState(false);
@@ -69,42 +67,6 @@ function AuthPage() {
       setBusy(false);
     }
   };
-
-  async function handleCardLookup(card?: string) {
-    const value = card ?? cardValue;
-    if (!value.trim()) return;
-    setCardSending(true);
-    try {
-      const { data, error } = await supabase
-        .from("rental_id_cards")
-        .select("card_number, status, tenants!left(id, full_name, email)")
-        .eq("card_number", value.trim())
-        .single();
-      if (error || !data) {
-        toast.error("Card not found");
-        return;
-      }
-      if (data.status !== "active") {
-        toast.error(`Card is ${data.status}`);
-        return;
-      }
-      if (!data.tenants?.email) {
-        toast.error("No email on file. Contact your property manager.");
-        return;
-      }
-      const { error: authErr } = await supabase.auth.signInWithOtp({
-        email: data.tenants.email,
-        options: { emailRedirectTo: `${window.location.origin}/dashboard` },
-      });
-      if (authErr) throw authErr;
-      setCardSent(true);
-      toast.success(`Login link sent to ${data.tenants.email}`);
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setCardSending(false);
-    }
-  }
 
   return (
     <div className="grid min-h-screen md:grid-cols-2">
@@ -214,17 +176,25 @@ function AuthPage() {
                   }
                   setCardSending(true);
                   try {
-                    const result = await tenantCardLogin({
-                      card_number: cardValue.trim(),
-                      unit_number: tenantUnitNumber.trim(),
-                      access_pin: tenantPin.trim(),
+                    const { data, error } = await supabase.rpc("validate_card_login", {
+                      p_card_number: cardValue.trim(),
+                      p_unit_number: tenantUnitNumber.trim(),
+                      p_access_pin: tenantPin.trim(),
                     });
-                    if (result.success) {
-                      setCardSent(true);
-                      window.location.href = result.url;
-                    } else {
-                      toast.error(result.error);
+                    if (error) throw error;
+                    if (!data || !data[0]) throw new Error("No response from server");
+                    const result = data[0];
+                    if (!result.valid) {
+                      toast.error(result.error_message);
+                      return;
                     }
+                    const { error: authErr } = await supabase.auth.signInWithOtp({
+                      email: result.email,
+                      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+                    });
+                    if (authErr) throw authErr;
+                    setCardSent(true);
+                    toast.success(`Login link sent to ${result.email}`);
                   } catch (e) {
                     toast.error((e as Error).message);
                   } finally {
