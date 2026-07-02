@@ -46,6 +46,7 @@ type Unit = {
   size_sqm: number | null;
   status: string;
   floor_number: number | null;
+  photos?: Record<string, string>;
 };
 
 type Property = {
@@ -157,6 +158,7 @@ function RentPage() {
   }
 
   const propDetail = selectedProp;
+  const vacantUnits = propDetail ? (propDetail.units ?? []).filter((u) => u.status === "vacant") : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -320,39 +322,43 @@ function RentPage() {
 
                 <div>
                   <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Available Units</h4>
-                  <div className="mt-3 space-y-3">
-                    {(propDetail.units ?? []).filter((u) => u.status === "vacant").length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No vacant units at this time.</p>
-                    ) : (
-                      (propDetail.units ?? []).filter((u) => u.status === "vacant").map((unit) => (
-                        <div key={unit.id} className="flex items-center justify-between rounded-lg border p-4 transition hover:border-accent">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">{unit.unit_number}</span>
-                              <span className="text-xs text-muted-foreground">{unit.unit_type}</span>
+                  {vacantUnits.length === 0 ? (
+                    <p className="mt-3 text-sm text-muted-foreground">No vacant units at this time.</p>
+                  ) : (
+                    <div className="mt-3 space-y-3">
+                      {vacantUnits.map((unit) => (
+                        <div key={unit.id} className="rounded-lg border p-4 transition hover:border-accent">
+                          {unit.photos && Object.keys(unit.photos).length > 0 && (
+                            <div className="mb-3 grid grid-cols-4 gap-2">
+                              {unit.photos.bedroom_photo && <img src={unit.photos.bedroom_photo} alt="Bedroom" className="h-16 w-full rounded object-cover" title="Bedroom" />}
+                              {unit.photos.bathroom_photo && <img src={unit.photos.bathroom_photo} alt="Bathroom" className="h-16 w-full rounded object-cover" title="Bathroom" />}
+                              {unit.photos.living_room_photo && <img src={unit.photos.living_room_photo} alt="Living Room" className="h-16 w-full rounded object-cover" title="Living Room" />}
+                              {unit.photos.kitchen_photo && <img src={unit.photos.kitchen_photo} alt="Kitchen" className="h-16 w-full rounded object-cover" title="Kitchen" />}
                             </div>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              {unit.bedrooms > 0 && <span className="flex items-center gap-1"><Bed className="h-3 w-3" /> {unit.bedrooms} bed</span>}
-                              {unit.bathrooms > 0 && <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {unit.bathrooms} bath</span>}
-                              {unit.size_sqm && <span>{unit.size_sqm} sqm</span>}
-                              {unit.floor_number != null && <span>Floor {unit.floor_number}</span>}
+                          )}
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold">{unit.unit_number}</span>
+                                <span className="text-xs text-muted-foreground">{unit.unit_type}</span>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                {unit.bedrooms > 0 && <span className="flex items-center gap-1"><Bed className="h-3 w-3" /> {unit.bedrooms} bed</span>}
+                                {unit.bathrooms > 0 && <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {unit.bathrooms} bath</span>}
+                                {unit.size_sqm && <span>{unit.size_sqm} sqm</span>}
+                                {unit.floor_number != null && <span>Floor {unit.floor_number}</span>}
+                              </div>
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-bold">{formatPrice(unit.monthly_rent)}</div>
-                            <div className="text-[10px] text-muted-foreground">/month</div>
-                            <Button
-                              size="sm"
-                              className="mt-2"
-                              onClick={() => openApply(propDetail, unit)}
-                            >
-                              Apply Now
-                            </Button>
+                            <div className="text-right">
+                              <div className="text-lg font-bold">{formatPrice(unit.monthly_rent)}</div>
+                              <div className="text-[10px] text-muted-foreground">/month</div>
+                              <Button size="sm" className="mt-2" onClick={() => openApply(propDetail, unit)}>Apply Now</Button>
+                            </div>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </>

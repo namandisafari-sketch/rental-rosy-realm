@@ -13,8 +13,10 @@ import { SearchableSelect, type SearchableOption } from "@/components/ui/searcha
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Receipt, Printer, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Receipt, Printer, AlertTriangle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { StripePaymentForm } from "@/components/ui/stripe-payment-form";
+import { createPaymentIntent, recordStripePayment } from "@/lib/stripe.server";
 
 export const Route = createFileRoute("/_authenticated/payments")({
   head: () => ({ meta: [{ title: "Payments — Habico Portal" }] }),
@@ -22,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/payments")({
 });
 
 const PAYMENT_TYPE_OPTIONS = ["Rent", "Deposit", "Late Fee", "Utility", "Other"].map((t) => ({ value: t, label: t }));
-const METHOD_OPTIONS = ["cash", "bank", "mobile_money", "cheque"].map((m) => ({ value: m, label: m === "mobile_money" ? "Mobile Money" : m.charAt(0).toUpperCase() + m.slice(1) }));
+const METHOD_OPTIONS = ["cash", "bank", "mobile_money", "cheque", "stripe"].map((m) => ({ value: m, label: m === "mobile_money" ? "Mobile Money" : m === "stripe" ? "Card (Stripe)" : m.charAt(0).toUpperCase() + m.slice(1) }));
 const MONTHS_OPTIONS = [1, 2, 3, 4, 6, 12] as const;
 
 function addMonths(dateStr: string, n: number) {
@@ -43,6 +45,9 @@ function PaymentsPage() {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptPayment, setReceiptPayment] = useState<any>(null);
   const [voidId, setVoidId] = useState<string | null>(null);
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+  const [stripePaymentIntentId, setStripePaymentIntentId] = useState<string | null>(null);
+  const [stripeProcessing, setStripeProcessing] = useState(false);
 
   const [form, setForm] = useState({
     lease_id: "",
@@ -147,6 +152,8 @@ function PaymentsPage() {
         notes: "", payment_date: new Date().toISOString().slice(0, 10),
         payment_type: "Rent", months_covered: "1", period_start: "",
       });
+      setStripeClientSecret(null);
+      setStripePaymentIntentId(null);
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -170,6 +177,26 @@ function PaymentsPage() {
       setEditOpen(false);
       setEditId(null);
       qc.invalidateQueries({ queryKey: ["payments"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const makeStripePayment = useMutation({
+    mutationFn: async () => {
+      const result = await createPaymentIntent({
+        amount: Number(form.amount),
+        lease_id: form.lease_id,
+        payment_type: form.payment_type,
+        period_label: form.period_label || undefined,
+        months_covered: form.payment_type === "Rent" ? Number(form.months_covered) : undefined,
+        period_start: form.period_start || undefined,
+        period_end: form.payment_type === "Rent" && form.period_start
+          ? addMonths(form.period_start, Number(form.months_covered))
+          : undefined,
+      });
+      setStripeClientSecret(result.clientSecret);
+      setStripePaymentIntentId(result.paymentIntentId);
+      setStripeProcessing(true);
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -265,7 +292,7 @@ function PaymentsPage() {
           <h1 className="display text-3xl font-bold">Payments</h1>
         </div>
         {isStaff && (
-          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { setStripeClientSecret(null); setStripePaymentIntentId(null); setStripeProcessing(false); } }}>
             <DialogTrigger asChild>
               <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
                 <Plus className="mr-2 h-4 w-4" />Record payment
@@ -376,7 +403,11 @@ function PaymentsPage() {
                       <Label>Payment Method *</Label>
                       <SearchableSelect
                         value={form.method}
-                        onValueChange={(v) => setForm((f) => ({ ...f, method: v }))}
+                        onValueChange={(v) => {
+                          setForm((f) => ({ ...f, method: v }));
+                          setStripeClientSecret(null);
+                          setStripeProcessing(false);
+                        }}
                         placeholder="Select method"
                         options={METHOD_OPTIONS}
                       />
@@ -417,12 +448,65 @@ function PaymentsPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button
-                  onClick={() => create.mutate()}
-                  disabled={!form.lease_id || !form.amount || create.isPending}
-                >
-                  Record
-                </Button>
+                {form.method === "stripe" ? (
+                  stripeClientSecret ? (
+                    <div className="w-full space-y-4">
+                      <StripePaymentForm
+                        clientSecret={stripeClientSecret}
+                        onSuccess={async () => {
+                          const result = await recordStripePayment({
+                            paymentIntentId: stripePaymentIntentId ?? "",
+                            amount: Number(form.amount),
+                            lease_id: form.lease_id,
+                            payment_type: form.payment_type,
+                            method: "stripe",
+                            period_label: form.period_label || undefined,
+                            months_covered: form.payment_type === "Rent" ? Number(form.months_covered) : undefined,
+                            period_start: form.period_start || undefined,
+                            period_end: form.payment_type === "Rent" && form.period_start
+                              ? addMonths(form.period_start, Number(form.months_covered))
+                              : undefined,
+                            recorded_by: user?.id ?? "",
+                          });
+                          if (result.success) {
+                            toast.success("Payment recorded");
+                            setCreateOpen(false);
+                            qc.invalidateQueries({ queryKey: ["payments"] });
+                            setForm({
+                              lease_id: "", amount: "", method: "cash", reference: "", period_label: "",
+                              notes: "", payment_date: new Date().toISOString().slice(0, 10),
+                              payment_type: "Rent", months_covered: "1", period_start: "",
+                            });
+                            setStripeClientSecret(null);
+                            setStripeProcessing(false);
+                          } else {
+                            toast.error(result.error ?? "Failed to record payment");
+                          }
+                        }}
+                        onCancel={() => {
+                          setStripeClientSecret(null);
+                          setStripePaymentIntentId(null);
+                          setStripeProcessing(false);
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => makeStripePayment.mutate()}
+                      disabled={!form.lease_id || !form.amount || makeStripePayment.isPending}
+                    >
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      {makeStripePayment.isPending ? "Preparing..." : "Pay with Card"}
+                    </Button>
+                  )
+                ) : (
+                  <Button
+                    onClick={() => create.mutate()}
+                    disabled={!form.lease_id || !form.amount || create.isPending}
+                  >
+                    Record
+                  </Button>
+                )}
               </DialogFooter>
             </DialogContent>
           </Dialog>
