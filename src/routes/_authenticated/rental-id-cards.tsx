@@ -165,7 +165,7 @@ function RentalIdCardsPage() {
     if (selectedUnit) {
       const tid = leaseUnitMap.get(selectedUnit);
       if (tid && tenants.some((t: any) => t.id === tid)) {
-        setSelectedTenant(tid);
+        setSelectedTenant(tid as string);
       }
     } else {
       setSelectedTenant("");
