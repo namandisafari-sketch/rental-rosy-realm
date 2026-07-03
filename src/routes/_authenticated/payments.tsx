@@ -23,7 +23,13 @@ export const Route = createFileRoute("/_authenticated/payments")({
   component: PaymentsPage,
 });
 
-const PAYMENT_TYPE_OPTIONS = ["Rent", "Deposit", "Late Fee", "Utility", "Other"].map((t) => ({ value: t, label: t }));
+const PAYMENT_TYPE_OPTIONS = [
+  { value: "rent", label: "Rent" },
+  { value: "deposit", label: "Deposit" },
+  { value: "late_fee", label: "Late Fee" },
+  { value: "utility", label: "Utility" },
+  { value: "other", label: "Other" },
+];
 const METHOD_OPTIONS = ["cash", "bank", "mobile_money", "cheque", "stripe"].map((m) => ({ value: m, label: m === "mobile_money" ? "Mobile Money" : m === "stripe" ? "Card (Stripe)" : m.charAt(0).toUpperCase() + m.slice(1) }));
 const MONTHS_OPTIONS = [1, 2, 3, 4, 6, 12] as const;
 
@@ -57,7 +63,7 @@ function PaymentsPage() {
     period_label: "",
     notes: "",
     payment_date: new Date().toISOString().slice(0, 10),
-    payment_type: "Rent",
+    payment_type: "rent",
     months_covered: "1",
     period_start: "",
   });
@@ -135,7 +141,7 @@ function PaymentsPage() {
         payment_type: form.payment_type,
         recorded_by: user?.id,
       };
-      if (form.payment_type === "Rent") {
+      if (form.payment_type === "rent") {
         payload.months_covered = Number(form.months_covered);
         payload.period_start = form.period_start || null;
         payload.period_end = form.period_start ? addMonths(form.period_start, Number(form.months_covered)) : null;
@@ -150,7 +156,7 @@ function PaymentsPage() {
       setForm({
         lease_id: "", amount: "", method: "cash", reference: "", period_label: "",
         notes: "", payment_date: new Date().toISOString().slice(0, 10),
-        payment_type: "Rent", months_covered: "1", period_start: "",
+        payment_type: "rent", months_covered: "1", period_start: "",
       });
       setStripeClientSecret(null);
       setStripePaymentIntentId(null);
@@ -188,9 +194,9 @@ function PaymentsPage() {
         lease_id: form.lease_id,
         payment_type: form.payment_type,
         period_label: form.period_label || undefined,
-        months_covered: form.payment_type === "Rent" ? Number(form.months_covered) : undefined,
+        months_covered: form.payment_type === "rent" ? Number(form.months_covered) : undefined,
         period_start: form.period_start || undefined,
-        period_end: form.payment_type === "Rent" && form.period_start
+        period_end: form.payment_type === "rent" && form.period_start
           ? addMonths(form.period_start, Number(form.months_covered))
           : undefined,
       });
@@ -222,10 +228,10 @@ function PaymentsPage() {
   );
   const thisMonthTotal = thisMonthPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
   const rentCollected = thisMonthPayments
-    .filter((p: any) => p.payment_type === "Rent" || !p.payment_type)
+    .filter((p: any) => p.payment_type === "rent" || !p.payment_type)
     .reduce((s: number, p: any) => s + Number(p.amount), 0);
   const rentCount = thisMonthPayments.filter(
-    (p: any) => p.payment_type === "Rent" || !p.payment_type,
+    (p: any) => p.payment_type === "rent" || !p.payment_type,
   ).length;
 
   function openEdit(p: any) {
@@ -247,7 +253,7 @@ function PaymentsPage() {
 
   const selectedLease = leases.find((l: any) => l.id === form.lease_id) as any;
   const monthsCovered = Number(form.months_covered);
-  const periodEnd = form.payment_type === "Rent" && form.period_start
+  const periodEnd = form.payment_type === "rent" && form.period_start
     ? addMonths(form.period_start, monthsCovered)
     : "";
 
@@ -265,7 +271,7 @@ function PaymentsPage() {
       const m = Number(val);
       const base = selectedLease?.monthly_rent ?? 0;
       const next = { ...f, months_covered: val };
-      if (f.payment_type === "Rent" && base) {
+      if (f.payment_type === "rent" && base) {
         next.amount = String(base * m);
       }
       return next;
@@ -276,7 +282,7 @@ function PaymentsPage() {
     setForm((f) => ({
       ...f,
       payment_type: val,
-      amount: val === "Rent" && selectedLease?.monthly_rent
+      amount: val === "rent" && selectedLease?.monthly_rent
         ? String(selectedLease.monthly_rent * Number(f.months_covered))
         : f.amount,
       months_covered: "1",
@@ -335,7 +341,7 @@ function PaymentsPage() {
                     </div>
                   </div>
                 </div>
-                {form.payment_type === "Rent" && (
+                {form.payment_type === "rent" && (
                   <div>
                     <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Period</h3></div>
                     <div className="grid grid-cols-3 gap-3">
@@ -461,9 +467,9 @@ function PaymentsPage() {
                             payment_type: form.payment_type,
                             method: "stripe",
                             period_label: form.period_label || undefined,
-                            months_covered: form.payment_type === "Rent" ? Number(form.months_covered) : undefined,
+                            months_covered: form.payment_type === "rent" ? Number(form.months_covered) : undefined,
                             period_start: form.period_start || undefined,
-                            period_end: form.payment_type === "Rent" && form.period_start
+                            period_end: form.payment_type === "rent" && form.period_start
                               ? addMonths(form.period_start, Number(form.months_covered))
                               : undefined,
                             recorded_by: user?.id ?? "",
@@ -475,7 +481,7 @@ function PaymentsPage() {
                             setForm({
                               lease_id: "", amount: "", method: "cash", reference: "", period_label: "",
                               notes: "", payment_date: new Date().toISOString().slice(0, 10),
-                              payment_type: "Rent", months_covered: "1", period_start: "",
+                              payment_type: "rent", months_covered: "1", period_start: "",
                             });
                             setStripeClientSecret(null);
                             setStripeProcessing(false);
@@ -572,7 +578,7 @@ function PaymentsPage() {
                       <TableCell>{p.leases?.units?.properties?.name} · {p.leases?.units?.unit_number}</TableCell>
                       <TableCell>
                         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
-                          {p.payment_type ?? "Rent"}
+                          {{ rent: "Rent", deposit: "Deposit", late_fee: "Late Fee", utility: "Utility", other: "Other" }[p.payment_type] ?? "Rent"}
                         </span>
                       </TableCell>
                       <TableCell>{p.period_label ?? "—"}</TableCell>
@@ -685,7 +691,7 @@ function PaymentsPage() {
                 <span className="text-muted-foreground">Period</span>
                 <span className="font-medium">{receiptPayment.period_label ?? "—"}</span>
                 <span className="text-muted-foreground">Payment type</span>
-                <span className="font-medium">{receiptPayment.payment_type ?? "Rent"}</span>
+                <span className="font-medium">{{ rent: "Rent", deposit: "Deposit", late_fee: "Late Fee", utility: "Utility", other: "Other" }[receiptPayment.payment_type] ?? "Rent"}</span>
                 <span className="text-muted-foreground">Method</span>
                 <span className="font-medium capitalize">{receiptPayment.method.replace("_", " ")}</span>
               </div>
