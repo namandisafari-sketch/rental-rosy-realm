@@ -201,16 +201,16 @@ function FinancialReportsPage() {
 
   const incomeBreakdown = {
     Rent: filteredPayments
-      .filter((p: any) => p.payment_type === "Rent" || !p.payment_type)
+      .filter((p: any) => !p.payment_type || ["rent", "Rent"].includes(p.payment_type))
       .reduce((s: number, p: any) => s + Number(p.amount), 0),
     "Late Fees": filteredPayments
-      .filter((p: any) => p.payment_type === "Late Fee")
+      .filter((p: any) => ["late_fee", "Late Fee"].includes(p.payment_type))
       .reduce((s: number, p: any) => s + Number(p.amount), 0),
     Deposits: filteredPayments
-      .filter((p: any) => p.payment_type === "Deposit")
+      .filter((p: any) => ["deposit", "Deposit"].includes(p.payment_type))
       .reduce((s: number, p: any) => s + Number(p.amount), 0),
     Other: filteredPayments
-      .filter((p: any) => !["Rent", "Late Fee", "Deposit"].includes(p.payment_type) && p.payment_type)
+      .filter((p: any) => p.payment_type && !["rent", "Rent", "late_fee", "Late Fee", "deposit", "Deposit"].includes(p.payment_type))
       .reduce((s: number, p: any) => s + Number(p.amount), 0),
   };
 
@@ -220,14 +220,14 @@ function FinancialReportsPage() {
 
   const expectedRent = activeLeases.reduce((s: number, l: any) => s + Number(l.monthly_rent), 0);
   const collected = filteredPayments
-    .filter((p: any) => p.payment_type === "Rent" || !p.payment_type)
+    .filter((p: any) => !p.payment_type || ["rent", "Rent"].includes(p.payment_type))
     .reduce((s: number, p: any) => s + Number(p.amount), 0);
   const outstanding = Math.max(0, expectedRent - collected);
   const collectionRate = expectedRent > 0 ? Math.round((collected / expectedRent) * 100) : 0;
 
   const tenantBreakdown = activeLeases.map((l: any) => {
     const paid = filteredPayments
-      .filter((p: any) => p.lease_id === l.id && (p.payment_type === "Rent" || !p.payment_type))
+      .filter((p: any) => p.lease_id === l.id && (!p.payment_type || ["rent", "Rent"].includes(p.payment_type)))
       .reduce((s: number, p: any) => s + Number(p.amount), 0);
     const balance = Math.max(0, Number(l.monthly_rent) - paid);
     let status: string;
@@ -540,7 +540,7 @@ function FinancialReportsPage() {
             <CardContent>
               {(() => {
                 const collected = filteredPayments
-                  .filter((p: any) => p.payment_type === "Rent" || !p.payment_type)
+                  .filter((p: any) => !p.payment_type || ["rent", "Rent"].includes(p.payment_type))
                   .reduce((s: number, p: any) => s + Number(p.amount), 0);
                 const landlordShare = Math.round(collected * 0.66);
                 const companyFee = Math.round(collected * 0.09);
@@ -589,7 +589,7 @@ function FinancialReportsPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredPayments.filter((p: any) => p.payment_type === "Rent" || !p.payment_type).map((p: any) => {
+                        {filteredPayments.filter((p: any) => !p.payment_type || ["rent", "Rent"].includes(p.payment_type)).map((p: any) => {
                           const amt = Number(p.amount);
                           return (
                             <TableRow key={p.id}>
@@ -601,7 +601,7 @@ function FinancialReportsPage() {
                             </TableRow>
                           );
                         })}
-                        {filteredPayments.filter((p: any) => p.payment_type === "Rent" || !p.payment_type).length === 0 && (
+                        {filteredPayments.filter((p: any) => !p.payment_type || ["rent", "Rent"].includes(p.payment_type)).length === 0 && (
                           <TableRow><TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">No rent payments for this period.</TableCell></TableRow>
                         )}
                       </TableBody>

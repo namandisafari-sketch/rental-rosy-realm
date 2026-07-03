@@ -213,7 +213,7 @@ function ReportsPage() {
                     <TableCell>{p.leases?.units?.unit_number ?? "—"}</TableCell>
                     <TableCell>
                       <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
-                        {p.payment_type ?? "Rent"}
+                        {{ rent: "Rent", deposit: "Deposit", late_fee: "Late Fee", utility: "Utility", other: "Other" }[p.payment_type] ?? "Rent"}
                       </span>
                     </TableCell>
                     <TableCell className="capitalize">{p.method}</TableCell>
