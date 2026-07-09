@@ -9,3 +9,5 @@ Disallow: /maintenance
 Disallow: /reports
 Disallow: /settings
 Disallow: /auth
+
+Sitemap: https://www.habico.ug/sitemap.xml

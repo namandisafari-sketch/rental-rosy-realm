@@ -17,6 +17,7 @@ export const Route = createFileRoute("/contact")({
       { property: "og:title", content: "Contact Habico" },
       { property: "og:description", content: "Get in touch with the Habico team." },
     ],
+    links: [{ rel: "canonical", href: "https://www.habico.ug/contact" }],
   }),
   component: ContactPage,
 });

@@ -11,6 +11,7 @@ export const Route = createFileRoute("/about")({
       { property: "og:title", content: "About Habico" },
       { property: "og:description", content: "Our mission, vision, and core values." },
     ],
+    links: [{ rel: "canonical", href: "https://www.habico.ug/about" }],
   }),
   component: AboutPage,
 });
@@ -22,7 +23,7 @@ function AboutPage() {
       <section className="bg-gradient-hero py-20 text-primary-foreground">
         <div className="mx-auto max-w-7xl px-4">
           <div className="text-xs font-bold uppercase tracking-widest text-accent">About Habico</div>
-          <h1 className="mt-3 display text-5xl font-bold md:text-6xl max-w-3xl">A property partner that treats your investment like its own.</h1>
+          <h1 className="mt-3 display text-5xl font-bold md:text-6xl max-w-3xl">Habico — A property partner that treats your investment like its own.</h1>
         </div>
       </section>
       <section className="mx-auto grid max-w-7xl gap-6 px-4 py-20 md:grid-cols-3">

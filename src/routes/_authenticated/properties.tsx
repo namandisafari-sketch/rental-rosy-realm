@@ -103,6 +103,16 @@ function PropertiesPage() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      const { data: unitsToDelete } = await supabase.from("units").select("id").eq("property_id", id);
+      if (unitsToDelete && unitsToDelete.length > 0) {
+        const unitIds = unitsToDelete.map((u: any) => u.id);
+        await supabase.from("leases").delete().in("unit_id", unitIds);
+        await supabase.from("maintenance_requests").delete().in("unit_id", unitIds);
+        await supabase.from("rental_id_cards").delete().in("unit_id", unitIds);
+        const { error: unitErr } = await supabase.from("units").delete().eq("property_id", id);
+        if (unitErr) throw unitErr;
+      }
+      await supabase.from("rental_listing_banners").delete().eq("property_id", id);
       const { error } = await supabase.from("properties").delete().eq("id", id);
       if (error) throw error;
     },
@@ -430,14 +440,14 @@ function PropertiesPage() {
                     <Button size="icon" variant="secondary" className="h-7 w-7" title="Add unit" onClick={(e) => { e.preventDefault(); openAddUnit(p.id); }}><Plus className="h-3.5 w-3.5" /></Button>
                     <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => { e.preventDefault(); openEdit(p); }}><Pencil className="h-3.5 w-3.5" /></Button>
                     <AlertDialog>
-                      <AlertDialogTrigger asChild><Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => e.preventDefault()}><Archive className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
+                      <AlertDialogTrigger asChild><Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => e.stopPropagation()}><Archive className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader><AlertDialogTitle>Archive property?</AlertDialogTitle><AlertDialogDescription>This will hide {p.name} from the list. Units and lease history are preserved.</AlertDialogDescription></AlertDialogHeader>
                         <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => archive.mutate(p.id)} className="bg-destructive text-destructive-foreground">Archive</AlertDialogAction></AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                     <AlertDialog>
-                      <AlertDialogTrigger asChild><Button size="icon" variant="destructive" className="h-7 w-7" onClick={(e) => e.preventDefault()}><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
+                      <AlertDialogTrigger asChild><Button size="icon" variant="destructive" className="h-7 w-7" onClick={(e) => e.stopPropagation()}><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader><AlertDialogTitle>Delete property?</AlertDialogTitle><AlertDialogDescription>Permanently delete {p.name} and all its units. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
                         <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => remove.mutate(p.id)} disabled={remove.isPending} className="bg-destructive text-destructive-foreground">{remove.isPending ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Deleting</> : "Delete"}</AlertDialogAction></AlertDialogFooter>

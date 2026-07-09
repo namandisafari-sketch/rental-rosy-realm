@@ -25,6 +25,7 @@ export const Route = createFileRoute("/rent")({
       { title: "Find Your Next Home — Habico Rentals" },
       { name: "description", content: "Browse available rental properties in Kampala and across Uganda. Submit your rental application online." },
     ],
+    links: [{ rel: "canonical", href: "https://www.habico.ug/rent" }],
   }),
   component: RentPage,
 });

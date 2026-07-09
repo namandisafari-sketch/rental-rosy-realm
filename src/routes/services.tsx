@@ -11,6 +11,7 @@ export const Route = createFileRoute("/services")({
       { property: "og:title", content: "Services — Habico" },
       { property: "og:description", content: "Full-service property management in Uganda." },
     ],
+    links: [{ rel: "canonical", href: "https://www.habico.ug/services" }],
   }),
   component: ServicesPage,
 });

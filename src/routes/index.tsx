@@ -13,6 +13,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Habico Property Managers" },
       { property: "og:description", content: "Maximize ROI on your residences with Habico." },
     ],
+    links: [{ rel: "canonical", href: "https://www.habico.ug" }],
   }),
   component: HomePage,
 });
@@ -42,7 +43,7 @@ function HomePage() {
               <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Kampala · Uganda
             </div>
             <h1 className="mt-6 display text-5xl font-bold leading-[0.95] text-primary-foreground md:text-7xl">
-              ELEVATE THE<br/>VALUE OF YOUR<br/><span className="text-accent">RESIDENCES.</span>
+              HABICO — ELEVATE THE<br/>VALUE OF YOUR<br/><span className="text-accent">RESIDENCES.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-primary-foreground/85">
               We increase the value of your property while maximizing return on investment for the owner — through professional management, transparent reporting, and dedicated tenant care.
