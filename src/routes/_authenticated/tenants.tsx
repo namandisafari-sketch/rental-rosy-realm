@@ -90,7 +90,20 @@ function TenantsPage() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      const tenantList = (data ?? []) as any[];
+      let tenantList = (data ?? []) as any[];
+
+      // Exclude tenants whose linked auth user has owner/admin/manager role
+      const authUserIds = tenantList.map((t: any) => t.auth_user_id).filter(Boolean);
+      if (authUserIds.length > 0) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .in("user_id", authUserIds)
+          .in("role", ["owner", "admin", "manager"]);
+        const excludeIds = new Set((roles ?? []).map((r: any) => r.user_id));
+        tenantList = tenantList.filter((t: any) => !t.auth_user_id || !excludeIds.has(t.auth_user_id));
+      }
+
       if (tenantList.length === 0) return tenantList;
       const { data: leases } = await supabase
         .from("leases")
