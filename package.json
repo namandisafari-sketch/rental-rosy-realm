@@ -1,6 +1,9 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "habico-portal",
   "private": true,
+  "version": "1.0.0",
+  "description": "Habico Property Managers Portal",
+  "author": "Habico Property Managers",
   "sideEffects": false,
   "type": "module",
   "scripts": {
@@ -9,7 +12,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "electron:dev": "cd desktop && npx electron .",
+    "electron:build": "cd desktop && npx electron-builder --win"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
@@ -86,6 +91,8 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",

@@ -38,3 +38,9 @@ android/.gradle/
 android/**/build/
 android/build/
 .vercel
+
+# Electron build output
+dist-electron/
+release/
+desktop/dist/
+desktop/node_modules/
