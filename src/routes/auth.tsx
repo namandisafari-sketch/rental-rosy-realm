@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Building2, HardHat, Users, UserCog, ShieldCheck, CreditCard, Camera, CameraOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Html5Qrcode } from "html5-qrcode";
+import { validateLicenseKey, activateLicenseKey } from "@/lib/license.server";
 
 const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).optional(), redirect: z.string().optional(), c: z.string().optional() });
 
@@ -41,6 +42,17 @@ function AuthPage() {
   const [cardSent, setCardSent] = useState(false);
   const [tenantUnitNumber, setTenantUnitNumber] = useState("");
   const [tenantPin, setTenantPin] = useState("");
+
+  // License key activation
+  const [licenseKey, setLicenseKey] = useState("");
+  const [licensing, setLicensing] = useState(false);
+  const [licenseResult, setLicenseResult] = useState<{ valid: boolean; companyName?: string; companyId?: string; hasAdmin?: boolean; message?: string } | null>(null);
+  const [activateName, setActivateName] = useState("");
+  const [activateEmail, setActivateEmail] = useState("");
+  const [activatePassword, setActivatePassword] = useState("");
+  const [activatePhone, setActivatePhone] = useState("");
+  const [activating, setActivating] = useState(false);
+  const [activated, setActivated] = useState(false);
 
   useEffect(() => {
     if (!loading && user) nav({ to: search.redirect ?? "/dashboard" });
@@ -117,6 +129,130 @@ function AuthPage() {
               </p>
             </div>
           </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Activate company license</span></div>
+          </div>
+
+          {activated ? (
+            <div className="flex flex-col items-center gap-3 rounded-lg border p-6 text-center">
+              <CheckCircle className="h-8 w-8 text-green-500" />
+              <div>
+                <p className="font-medium">Account created!</p>
+                <p className="text-sm text-muted-foreground">You can now sign in with your email.</p>
+              </div>
+              <Button size="sm" onClick={() => { setMode("signin"); setLicenseKey(""); setLicenseResult(null); setActivated(false); }}>
+                Go to Sign In
+              </Button>
+            </div>
+          ) : licenseResult?.valid && !licenseResult.hasAdmin ? (
+            <div className="rounded-lg border p-4 space-y-4">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">{licenseResult.companyName}</p>
+                  <p className="text-xs text-muted-foreground">Create your admin account to activate</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div><Label>Full name *</Label><Input value={activateName} onChange={(e) => setActivateName(e.target.value)} className="mt-1.5" /></div>
+                <div><Label>Email *</Label><Input type="email" value={activateEmail} onChange={(e) => setActivateEmail(e.target.value)} className="mt-1.5" /></div>
+                <div><Label>Phone</Label><Input value={activatePhone} onChange={(e) => setActivatePhone(e.target.value)} className="mt-1.5" /></div>
+                <div><Label>Password *</Label><Input type="password" value={activatePassword} onChange={(e) => setActivatePassword(e.target.value)} minLength={8} className="mt-1.5" /></div>
+                <Button
+                  className="w-full"
+                  disabled={activating}
+                  onClick={async () => {
+                    if (!activateName || !activateEmail || !activatePassword) { toast.error("Fill in all required fields"); return; }
+                    if (activatePassword.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+                    setActivating(true);
+                    try {
+                      const result = await activateLicenseKey({ licenseKey, adminName: activateName, adminEmail: activateEmail, adminPassword: activatePassword, adminPhone: activatePhone });
+                      if (!result.success) { toast.error(result.message); return; }
+                      setActivated(true);
+                      toast.success("Admin account created! You can now sign in.");
+                    } catch (e) {
+                      toast.error((e as Error).message);
+                    } finally {
+                      setActivating(false);
+                    }
+                  }}
+                >
+                  {activating ? "Creating account..." : "Create Admin Account"}
+                </Button>
+                <button
+                  type="button"
+                  className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+                  onClick={() => { setLicenseKey(""); setLicenseResult(null); }}
+                >
+                  Use a different license key
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="license-key">License Key</Label>
+                <div className="mt-1.5 flex gap-2">
+                  <Input
+                    id="license-key"
+                    placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
+                    value={licenseKey}
+                    onChange={(e) => setLicenseKey(e.target.value)}
+                    className="font-mono"
+                  />
+                </div>
+              </div>
+              {licenseResult?.valid === false && (
+                <p className="text-sm text-destructive">{licenseResult.message}</p>
+              )}
+              {licenseResult?.valid && licenseResult.hasAdmin && (
+                <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm">
+                  <p className="font-medium text-green-800">{licenseResult.companyName}</p>
+                  <p className="mt-1 text-green-700">This license is already activated. Sign in with your email.</p>
+                  <Button size="sm" variant="outline" className="mt-2" onClick={() => setMode("signin")}>
+                    Go to Sign In
+                  </Button>
+                </div>
+              )}
+              <Button
+                className="w-full"
+                variant="outline"
+                disabled={licensing || !licenseKey.trim()}
+                onClick={async () => {
+                  setLicensing(true);
+                  setLicenseResult(null);
+                  try {
+                    const result = await validateLicenseKey({ licenseKey: licenseKey.trim() });
+                    if (!result.valid) {
+                      setLicenseResult({ valid: false, message: result.message });
+                      return;
+                    }
+                    setLicenseResult({
+                      valid: true,
+                      companyName: result.companyName,
+                      companyId: result.companyId,
+                      hasAdmin: result.hasAdmin,
+                    });
+                    if (!result.hasAdmin) {
+                      setActivateName("");
+                      setActivateEmail("");
+                      setActivatePassword("");
+                      setActivatePhone("");
+                    }
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  } finally {
+                    setLicensing(false);
+                  }
+                }}
+              >
+                <UserCog className="mr-2 h-4 w-4" />
+                {licensing ? "Validating..." : "Validate License Key"}
+              </Button>
+            </div>
+          )}
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
