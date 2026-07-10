@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import Stripe from "stripe";
+import { sendLicenseKeyEmail } from "./email.server";
 
 const getStripe = () => {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -117,6 +118,22 @@ export const completeRegistration = createServerFn({ method: "POST" })
       });
 
     if (paymentError) console.error("Failed to record registration payment", paymentError);
+
+    // 6. Send license key email
+    const { data: plan } = await supabaseAdmin
+      .from("subscription_plans")
+      .select("name")
+      .eq("id", data.planId)
+      .single();
+
+    sendLicenseKeyEmail({
+      to: data.adminEmail,
+      companyName: data.companyName,
+      licenseKey,
+      adminName: data.adminName,
+      adminEmail: data.adminEmail,
+      planName: plan?.name ?? "Unknown",
+    }).catch((e) => console.error("Failed to send license email", e));
 
     return {
       success: true,

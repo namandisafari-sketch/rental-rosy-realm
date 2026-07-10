@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { sendLicenseKeyEmail } from "./email.server";
 
 export const validateLicenseKey = createServerFn({ method: "POST" })
   .inputValidator((input: { licenseKey: string }) => input)
@@ -126,6 +127,16 @@ export const activateLicenseKey = createServerFn({ method: "POST" })
       await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
       return { success: false as const, message: roleError.message };
     }
+
+    // Send welcome email
+    sendLicenseKeyEmail({
+      to: data.adminEmail,
+      companyName: company.name,
+      licenseKey: data.licenseKey.trim(),
+      adminName: data.adminName,
+      adminEmail: data.adminEmail,
+      planName: "your selected plan",
+    }).catch((e) => console.error("Failed to send license activation email", e));
 
     return { success: true as const, companyId: company.id, companyName: company.name };
   });
