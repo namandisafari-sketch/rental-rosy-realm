@@ -7,8 +7,8 @@ function getResend() {
   return new Resend(key);
 }
 
-const HABICO_ADDRESS = "Plot 123, Acacia Avenue, Kololo, Kampala, Uganda";
-const HABICO_PHONE = "+256 700 000 000";
+const HABICO_ADDRESS = "Basiima Buildings, 2nd Floor Room C03, Kampala";
+const HABICO_PHONE = "0702 239 607 / 0756 742 220";
 const HABICO_TAX_ID = "URA-TIN-123456789";
 
 const APP_URL = process.env.VERCEL_URL
