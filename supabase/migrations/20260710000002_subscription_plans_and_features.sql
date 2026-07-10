@@ -52,20 +52,36 @@ ALTER TABLE public.companies
 -- 4. Feature access RPC
 CREATE OR REPLACE FUNCTION public.company_has_feature(p_feature_key TEXT)
 RETURNS BOOLEAN
-LANGUAGE sql STABLE
+LANGUAGE plpgsql STABLE
 SECURITY DEFINER SET search_path = public
 AS $$
-  SELECT COALESCE(
-    (SELECT pf.is_enabled
-     FROM public.companies c
-     JOIN public.subscription_plans sp ON sp.id = c.plan_id
-     JOIN public.plan_features pf ON pf.plan_id = sp.id
-     WHERE c.id = (SELECT company_id FROM public.profiles WHERE id = auth.uid())
-       AND pf.feature_key = p_feature_key
-       AND sp.is_active = true
-       AND c.is_active = true),
-    false
-  );
+DECLARE
+  v_company_id UUID;
+  v_is_staff BOOLEAN;
+  v_result BOOLEAN;
+BEGIN
+  SELECT p.company_id, public.is_staff(auth.uid())
+  INTO v_company_id, v_is_staff
+  FROM public.profiles p
+  WHERE p.id = auth.uid();
+
+  -- System staff with no company see everything
+  IF v_is_staff AND v_company_id IS NULL THEN
+    RETURN true;
+  END IF;
+
+  -- Check feature access via company's plan
+  SELECT COALESCE(pf.is_enabled, false) INTO v_result
+  FROM public.companies c
+  JOIN public.subscription_plans sp ON sp.id = c.plan_id
+  JOIN public.plan_features pf ON pf.plan_id = sp.id
+  WHERE c.id = v_company_id
+    AND pf.feature_key = p_feature_key
+    AND sp.is_active = true
+    AND c.is_active = true;
+
+  RETURN COALESCE(v_result, false);
+END;
 $$;
 
 -- 5. Seed default plans

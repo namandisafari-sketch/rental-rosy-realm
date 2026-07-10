@@ -71,9 +71,10 @@ function CompaniesPage() {
     queryKey: ["subscription-plans"],
     queryFn: async () => {
       const { data, error } = await supabase.from("subscription_plans").select("*").order("sort_order");
-      if (error) throw error;
+      if (error && error.code !== "PGRST116" && !error.message?.includes("does not exist")) throw error;
       return (data ?? []) as SubscriptionPlan[];
     },
+    retry: false,
   });
 
   const { data: companies = [], isLoading } = useQuery({
