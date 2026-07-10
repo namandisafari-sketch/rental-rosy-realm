@@ -8,7 +8,7 @@ import {
   PiggyBank, Landmark, FileCheck, ClipboardCheck, Hash,
   ReceiptText, ScrollText, Gauge, CalendarRange, NotebookPen,
   ListTodo, TriangleAlert, FolderKanban, Image, Banknote,
-  type LucideIcon, Crown, UserCog, User, Shield, BookOpen
+  type LucideIcon, Crown, UserCog, User, Shield, BookOpen, Building
 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 
@@ -126,11 +126,12 @@ const fullNav: WorkspaceNav = {
     { label: "Reports", items: reportItems },
   ],
   extraItems: [
+    { title: "Companies", url: "/companies", icon: Building },
     { title: "Settings", url: "/settings", icon: Settings },
   ],
 };
 
-const allowedAll = [ ...rentalItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
+const allowedAll = [ ...rentalItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Companies", url: "/companies", icon: Building }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 const allowedConstruction = [...constructionItems, ...constructionFinancialItems, ...sopItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 const allowedRental = [...rentalItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 

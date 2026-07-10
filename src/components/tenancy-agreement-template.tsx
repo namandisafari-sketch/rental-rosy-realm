@@ -4,6 +4,9 @@ import { Download, Loader2, Phone, Mail, MapPin } from "lucide-react";
 import jsPDF from "jspdf";
 import { toPng } from "html-to-image";
 import habicoLogo from "@/assets/habico-logo.jpg";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { CompanyBranding } from "@/hooks/use-company-branding";
 
 interface TenantDetails {
   name: string;
@@ -45,6 +48,16 @@ interface BankDetails {
   accountName: string;
 }
 
+export interface BrandingConfig {
+  logoUrl: string | null;
+  primaryColor: string;
+  companyName: string;
+  documentFooter: string | null;
+  phone: string;
+  email: string;
+  address: string;
+}
+
 export interface AgreementData {
   day: string;
   month: string;
@@ -56,6 +69,7 @@ export interface AgreementData {
   payment: PaymentDetails;
   bank: BankDetails;
   signedDocumentUrl?: string;
+  branding?: BrandingConfig;
 }
 
 const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
@@ -100,9 +114,33 @@ const pageStyle = `
   }
 `;
 
-export function TenancyAgreementDialog({ data }: { data: AgreementData }) {
+export function TenancyAgreementDialog({ data: initialData }: { data: AgreementData }) {
   const ref = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
+  const { data: branding } = useQuery({
+    queryKey: ["agreement-company-branding"],
+    queryFn: async () => {
+      const { data: brandingData, error } = await supabase.rpc("get_company_branding").single();
+      if (error && error.code !== "PGRST116") throw error;
+      return brandingData as CompanyBranding | null;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+  const mergedData: AgreementData = branding
+    ? {
+        ...initialData,
+        branding: {
+          logoUrl: branding.logo_url,
+          primaryColor: branding.primary_color,
+          companyName: branding.company_name_override ?? "",
+          documentFooter: branding.document_footer,
+          phone: "0756742220 | 0702239607",
+          email: "habicopropertymanagers@gmail.com",
+          address: "BASIIMA BUILDING 2ND FLOOR ROOM C03\nP.O BOX 193498 KAMPALA",
+        },
+      }
+    : initialData;
+  const data = mergedData;
   const words = numberToWords(data.payment.monthlyRent);
 
   async function handleDownload() {
@@ -165,24 +203,45 @@ export function TenancyAgreementDialog({ data }: { data: AgreementData }) {
       </div>
       <div ref={ref} className="agreement-page bg-white text-black leading-relaxed p-6" style={{ fontFamily: "serif" }}>
 
-        <div className="flex items-center justify-between border-b-2 border-black pb-3 mb-4 gap-4">
-          <img src={habicoLogo} alt="Habico Property Managers" className="h-20 w-auto object-contain" />
+        <div className="flex items-center justify-between border-b-2 pb-3 mb-4 gap-4" style={{ borderColor: data.branding?.primaryColor ?? "#000" }}>
+          <img src={data.branding?.logoUrl ?? habicoLogo} alt={data.branding?.companyName ?? "Habico Property Managers"} className="h-20 w-auto object-contain" />
           <div className="text-xs leading-snug space-y-1">
-            <div className="flex items-center gap-2 justify-end"><Phone className="h-3 w-3" /><span className="font-semibold">0756742220 | 0702239607</span></div>
-            <div className="flex items-start gap-2 justify-end">
-              <Mail className="h-3 w-3 mt-0.5" />
-              <div className="text-right">
-                <div className="font-semibold">Email Us Today Via:</div>
-                <div>habicopropertymanagers@gmail.com</div>
-              </div>
-            </div>
-            <div className="flex items-start gap-2 justify-end">
-              <MapPin className="h-3 w-3 mt-0.5" />
-              <div className="text-right">
-                <div>BASIIMA BUILDING 2ND FLOOR ROOM C03</div>
-                <div>P.O BOX 193498 KAMPALA</div>
-              </div>
-            </div>
+            {data.branding ? (
+              <>
+                <div className="flex items-center gap-2 justify-end"><Phone className="h-3 w-3" /><span className="font-semibold">{data.branding.phone}</span></div>
+                <div className="flex items-start gap-2 justify-end">
+                  <Mail className="h-3 w-3 mt-0.5" />
+                  <div className="text-right">
+                    <div className="font-semibold">Email:</div>
+                    <div>{data.branding.email}</div>
+                  </div>
+                </div>
+                {data.branding.address && (
+                  <div className="flex items-start gap-2 justify-end">
+                    <MapPin className="h-3 w-3 mt-0.5" />
+                    <div className="text-right"><div>{data.branding.address}</div></div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 justify-end"><Phone className="h-3 w-3" /><span className="font-semibold">0756742220 | 0702239607</span></div>
+                <div className="flex items-start gap-2 justify-end">
+                  <Mail className="h-3 w-3 mt-0.5" />
+                  <div className="text-right">
+                    <div className="font-semibold">Email Us Today Via:</div>
+                    <div>habicopropertymanagers@gmail.com</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 justify-end">
+                  <MapPin className="h-3 w-3 mt-0.5" />
+                  <div className="text-right">
+                    <div>BASIIMA BUILDING 2ND FLOOR ROOM C03</div>
+                    <div>P.O BOX 193498 KAMPALA</div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -403,7 +462,13 @@ export function TenancyAgreementDialog({ data }: { data: AgreementData }) {
           </div>
         </div>
 
-        <div className="mt-8 text-center text-xs text-gray-500">
+        {data.branding?.documentFooter && (
+          <div className="mt-6 text-center text-xs" style={{ color: data.branding.primaryColor }}>
+            <p>{data.branding.documentFooter}</p>
+          </div>
+        )}
+
+        <div className="mt-4 text-center text-xs text-gray-500">
           <p>Scanned with CS CamScanner</p>
         </div>
       </div>

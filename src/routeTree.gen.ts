@@ -69,6 +69,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDailyLogsRouteImport } from './routes/_authenticated/daily-logs'
 import { Route as AuthenticatedCostCodesRouteImport } from './routes/_authenticated/cost-codes'
 import { Route as AuthenticatedConstructionInvoicesRouteImport } from './routes/_authenticated/construction-invoices'
+import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedCommitmentLogRouteImport } from './routes/_authenticated/commitment-log'
 import { Route as AuthenticatedChangeOrdersRouteImport } from './routes/_authenticated/change-orders'
 import { Route as AuthenticatedBillsRouteImport } from './routes/_authenticated/bills'
@@ -400,6 +401,11 @@ const AuthenticatedConstructionInvoicesRoute =
     path: '/construction-invoices',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCompaniesRoute = AuthenticatedCompaniesRouteImport.update({
+  id: '/companies',
+  path: '/companies',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedCommitmentLogRoute =
   AuthenticatedCommitmentLogRouteImport.update({
     id: '/commitment-log',
@@ -455,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/bills': typeof AuthenticatedBillsRoute
   '/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/commitment-log': typeof AuthenticatedCommitmentLogRoute
+  '/companies': typeof AuthenticatedCompaniesRoute
   '/construction-invoices': typeof AuthenticatedConstructionInvoicesRoute
   '/cost-codes': typeof AuthenticatedCostCodesRoute
   '/daily-logs': typeof AuthenticatedDailyLogsRoute
@@ -523,6 +530,7 @@ export interface FileRoutesByTo {
   '/bills': typeof AuthenticatedBillsRoute
   '/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/commitment-log': typeof AuthenticatedCommitmentLogRoute
+  '/companies': typeof AuthenticatedCompaniesRoute
   '/construction-invoices': typeof AuthenticatedConstructionInvoicesRoute
   '/cost-codes': typeof AuthenticatedCostCodesRoute
   '/daily-logs': typeof AuthenticatedDailyLogsRoute
@@ -593,6 +601,7 @@ export interface FileRoutesById {
   '/_authenticated/bills': typeof AuthenticatedBillsRoute
   '/_authenticated/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/_authenticated/commitment-log': typeof AuthenticatedCommitmentLogRoute
+  '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
   '/_authenticated/construction-invoices': typeof AuthenticatedConstructionInvoicesRoute
   '/_authenticated/cost-codes': typeof AuthenticatedCostCodesRoute
   '/_authenticated/daily-logs': typeof AuthenticatedDailyLogsRoute
@@ -663,6 +672,7 @@ export interface FileRouteTypes {
     | '/bills'
     | '/change-orders'
     | '/commitment-log'
+    | '/companies'
     | '/construction-invoices'
     | '/cost-codes'
     | '/daily-logs'
@@ -731,6 +741,7 @@ export interface FileRouteTypes {
     | '/bills'
     | '/change-orders'
     | '/commitment-log'
+    | '/companies'
     | '/construction-invoices'
     | '/cost-codes'
     | '/daily-logs'
@@ -800,6 +811,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bills'
     | '/_authenticated/change-orders'
     | '/_authenticated/commitment-log'
+    | '/_authenticated/companies'
     | '/_authenticated/construction-invoices'
     | '/_authenticated/cost-codes'
     | '/_authenticated/daily-logs'
@@ -1288,6 +1300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConstructionInvoicesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/companies': {
+      id: '/_authenticated/companies'
+      path: '/companies'
+      fullPath: '/companies'
+      preLoaderRoute: typeof AuthenticatedCompaniesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/commitment-log': {
       id: '/_authenticated/commitment-log'
       path: '/commitment-log'
@@ -1361,6 +1380,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBillsRoute: typeof AuthenticatedBillsRoute
   AuthenticatedChangeOrdersRoute: typeof AuthenticatedChangeOrdersRoute
   AuthenticatedCommitmentLogRoute: typeof AuthenticatedCommitmentLogRoute
+  AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
   AuthenticatedConstructionInvoicesRoute: typeof AuthenticatedConstructionInvoicesRoute
   AuthenticatedCostCodesRoute: typeof AuthenticatedCostCodesRoute
   AuthenticatedDailyLogsRoute: typeof AuthenticatedDailyLogsRoute
@@ -1421,6 +1441,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBillsRoute: AuthenticatedBillsRoute,
   AuthenticatedChangeOrdersRoute: AuthenticatedChangeOrdersRoute,
   AuthenticatedCommitmentLogRoute: AuthenticatedCommitmentLogRoute,
+  AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
   AuthenticatedConstructionInvoicesRoute:
     AuthenticatedConstructionInvoicesRoute,
   AuthenticatedCostCodesRoute: AuthenticatedCostCodesRoute,
