@@ -6,7 +6,8 @@ import {
   SidebarMenuItem, SidebarFooter, SidebarHeader,
 } from "@/components/ui/sidebar";
 import { useAuth, useHighestRole } from "@/hooks/use-auth";
-import { getWorkspace } from "@/lib/workspace-config";
+import { getWorkspace, type NavGroup } from "@/lib/workspace-config";
+import { useAllFeatureAccess } from "@/hooks/use-feature-access";
 import { Button } from "./ui/button";
 
 function NavGroup({ label, items }: { label: string; items: { title: string; url: string; icon: any }[] }) {
@@ -37,9 +38,20 @@ export function AppSidebar() {
   const role = useHighestRole();
   const { user, signOut } = useAuth();
   const ws = getWorkspace(role);
+  const features = useAllFeatureAccess();
   const WsIcon = ws.icon;
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (url: string) => path === url || (url !== "/dashboard" && path.startsWith(url));
+
+  function groupVisible(g: NavGroup) {
+    if (!g.feature) return true;
+    return features[g.feature] === true;
+  }
+
+  function itemVisible(it: { feature?: string }) {
+    if (!it.feature) return true;
+    return features[it.feature] === true;
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -67,10 +79,10 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {ws.nav.groups.map((g) => (
+        {ws.nav.groups.filter(groupVisible).map((g) => (
           <NavGroup key={g.label} label={g.label} items={g.items} />
         ))}
-        {ws.nav.extraItems?.map((it) => (
+        {ws.nav.extraItems?.filter(itemVisible).map((it) => (
           <SidebarGroup key={it.url}>
             <SidebarGroupContent>
               <SidebarMenu>

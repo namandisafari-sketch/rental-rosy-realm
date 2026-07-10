@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, Plus, Pencil, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -20,6 +21,16 @@ export const Route = createFileRoute("/_authenticated/companies")({
   component: CompaniesPage,
 });
 
+type SubscriptionPlan = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  monthly_price: number;
+  yearly_price: number;
+  is_active: boolean;
+};
+
 type Company = {
   id: string;
   name: string;
@@ -28,6 +39,7 @@ type Company = {
   address: string | null;
   license_key: string | null;
   is_active: boolean;
+  plan_id: string | null;
   created_at: string;
 };
 
@@ -54,6 +66,15 @@ function CompaniesPage() {
   const [brandingDialogOpen, setBrandingDialogOpen] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ["subscription-plans"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("subscription_plans").select("*").order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as SubscriptionPlan[];
+    },
+  });
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ["companies"],
@@ -118,16 +139,16 @@ function CompaniesPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to save branding"),
   });
 
-  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", license_key: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", license_key: "", plan_id: "" });
 
   function openNew() {
-    setForm({ name: "", email: "", phone: "", address: "", license_key: "" });
+    setForm({ name: "", email: "", phone: "", address: "", license_key: "", plan_id: "" });
     setEditCompany(null);
     setDialogOpen(true);
   }
 
   function openEdit(c: Company) {
-    setForm({ name: c.name, email: c.email ?? "", phone: c.phone ?? "", address: c.address ?? "", license_key: c.license_key ?? "" });
+    setForm({ name: c.name, email: c.email ?? "", phone: c.phone ?? "", address: c.address ?? "", license_key: c.license_key ?? "", plan_id: c.plan_id ?? "" });
     setEditCompany(c);
     setDialogOpen(true);
   }
@@ -163,6 +184,7 @@ function CompaniesPage() {
                 <TableRow>
                   <TableHead>Company</TableHead>
                   <TableHead>Contact</TableHead>
+                  <TableHead>Plan</TableHead>
                   <TableHead>License</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -175,6 +197,9 @@ function CompaniesPage() {
                     <TableCell>
                       <div className="text-sm">{c.email}</div>
                       <div className="text-xs text-muted-foreground">{c.phone}</div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{plans.find((p) => p.id === c.plan_id)?.name ?? "—"}</span>
                     </TableCell>
                     <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{c.license_key ?? "—"}</code></TableCell>
                     <TableCell>
@@ -222,12 +247,23 @@ function CompaniesPage() {
               <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
             </div>
             <div>
+              <Label>Subscription Plan</Label>
+              <Select value={form.plan_id} onValueChange={(v) => setForm({ ...form, plan_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select a plan..." /></SelectTrigger>
+                <SelectContent>
+                  {plans.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>License Key</Label>
               <Input value={form.license_key} onChange={(e) => setForm({ ...form, license_key: e.target.value })} />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button onClick={() => saveCompanyMutation.mutate({ id: editCompany?.id, ...form, is_active: editCompany?.is_active ?? true })} disabled={!form.name || saveCompanyMutation.isPending}>
+              <Button onClick={() => saveCompanyMutation.mutate({ id: editCompany?.id, ...form, plan_id: form.plan_id || null, is_active: editCompany?.is_active ?? true })} disabled={!form.name || saveCompanyMutation.isPending}>
                 {saveCompanyMutation.isPending ? "Saving..." : "Save"}
               </Button>
             </div>

@@ -21,6 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedTimesheetsRouteImport } from './routes/_authenticated/timesheets'
 import { Route as AuthenticatedTenantsRouteImport } from './routes/_authenticated/tenants'
 import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
+import { Route as AuthenticatedSubscriptionPlansRouteImport } from './routes/_authenticated/subscription-plans'
 import { Route as AuthenticatedSubmittalsRouteImport } from './routes/_authenticated/submittals'
 import { Route as AuthenticatedSubcontractsRouteImport } from './routes/_authenticated/subcontracts'
 import { Route as AuthenticatedSopFormsRouteImport } from './routes/_authenticated/sop-forms'
@@ -137,6 +138,12 @@ const AuthenticatedSuppliersRoute = AuthenticatedSuppliersRouteImport.update({
   path: '/suppliers',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSubscriptionPlansRoute =
+  AuthenticatedSubscriptionPlansRouteImport.update({
+    id: '/subscription-plans',
+    path: '/subscription-plans',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSubmittalsRoute = AuthenticatedSubmittalsRouteImport.update({
   id: '/submittals',
   path: '/submittals',
@@ -510,6 +517,7 @@ export interface FileRoutesByFullPath {
   '/sop-forms': typeof AuthenticatedSopFormsRoute
   '/subcontracts': typeof AuthenticatedSubcontractsRoute
   '/submittals': typeof AuthenticatedSubmittalsRoute
+  '/subscription-plans': typeof AuthenticatedSubscriptionPlansRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tenants': typeof AuthenticatedTenantsRoute
   '/timesheets': typeof AuthenticatedTimesheetsRoute
@@ -579,6 +587,7 @@ export interface FileRoutesByTo {
   '/sop-forms': typeof AuthenticatedSopFormsRoute
   '/subcontracts': typeof AuthenticatedSubcontractsRoute
   '/submittals': typeof AuthenticatedSubmittalsRoute
+  '/subscription-plans': typeof AuthenticatedSubscriptionPlansRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tenants': typeof AuthenticatedTenantsRoute
   '/timesheets': typeof AuthenticatedTimesheetsRoute
@@ -650,6 +659,7 @@ export interface FileRoutesById {
   '/_authenticated/sop-forms': typeof AuthenticatedSopFormsRoute
   '/_authenticated/subcontracts': typeof AuthenticatedSubcontractsRoute
   '/_authenticated/submittals': typeof AuthenticatedSubmittalsRoute
+  '/_authenticated/subscription-plans': typeof AuthenticatedSubscriptionPlansRoute
   '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
   '/_authenticated/tenants': typeof AuthenticatedTenantsRoute
   '/_authenticated/timesheets': typeof AuthenticatedTimesheetsRoute
@@ -721,6 +731,7 @@ export interface FileRouteTypes {
     | '/sop-forms'
     | '/subcontracts'
     | '/submittals'
+    | '/subscription-plans'
     | '/suppliers'
     | '/tenants'
     | '/timesheets'
@@ -790,6 +801,7 @@ export interface FileRouteTypes {
     | '/sop-forms'
     | '/subcontracts'
     | '/submittals'
+    | '/subscription-plans'
     | '/suppliers'
     | '/tenants'
     | '/timesheets'
@@ -860,6 +872,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sop-forms'
     | '/_authenticated/subcontracts'
     | '/_authenticated/submittals'
+    | '/_authenticated/subscription-plans'
     | '/_authenticated/suppliers'
     | '/_authenticated/tenants'
     | '/_authenticated/timesheets'
@@ -962,6 +975,13 @@ declare module '@tanstack/react-router' {
       path: '/suppliers'
       fullPath: '/suppliers'
       preLoaderRoute: typeof AuthenticatedSuppliersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/subscription-plans': {
+      id: '/_authenticated/subscription-plans'
+      path: '/subscription-plans'
+      fullPath: '/subscription-plans'
+      preLoaderRoute: typeof AuthenticatedSubscriptionPlansRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/submittals': {
@@ -1429,6 +1449,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSopFormsRoute: typeof AuthenticatedSopFormsRoute
   AuthenticatedSubcontractsRoute: typeof AuthenticatedSubcontractsRoute
   AuthenticatedSubmittalsRoute: typeof AuthenticatedSubmittalsRoute
+  AuthenticatedSubscriptionPlansRoute: typeof AuthenticatedSubscriptionPlansRoute
   AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
   AuthenticatedTenantsRoute: typeof AuthenticatedTenantsRoute
   AuthenticatedTimesheetsRoute: typeof AuthenticatedTimesheetsRoute
@@ -1492,6 +1513,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSopFormsRoute: AuthenticatedSopFormsRoute,
   AuthenticatedSubcontractsRoute: AuthenticatedSubcontractsRoute,
   AuthenticatedSubmittalsRoute: AuthenticatedSubmittalsRoute,
+  AuthenticatedSubscriptionPlansRoute: AuthenticatedSubscriptionPlansRoute,
   AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,
   AuthenticatedTenantsRoute: AuthenticatedTenantsRoute,
   AuthenticatedTimesheetsRoute: AuthenticatedTimesheetsRoute,

@@ -16,10 +16,17 @@ export interface NavItem {
   title: string;
   url: string;
   icon: LucideIcon;
+  feature?: string;
+}
+
+export interface NavGroup {
+  label: string;
+  items: NavItem[];
+  feature?: string;
 }
 
 export interface WorkspaceNav {
-  groups: { label: string; items: NavItem[] }[];
+  groups: NavGroup[];
   extraItems?: NavItem[];
 }
 
@@ -119,19 +126,20 @@ const reportItems: NavItem[] = [
 const fullNav: WorkspaceNav = {
   groups: [
     { label: "Overview", items: [{ title: "Dashboard", url: "/dashboard", icon: Home }] },
-    { label: "Rental Management", items: rentalItems },
-    { label: "Construction", items: constructionItems },
-    { label: "Construction Financial", items: constructionFinancialItems },
-    { label: "SOP & Quality", items: sopItems },
-    { label: "Reports", items: reportItems },
+    { label: "Rental Management", items: rentalItems, feature: "rental" },
+    { label: "Construction", items: constructionItems, feature: "construction" },
+    { label: "Construction Financial", items: constructionFinancialItems, feature: "construction_financial" },
+    { label: "SOP & Quality", items: sopItems, feature: "sop" },
+    { label: "Reports", items: reportItems, feature: "reports" },
   ],
   extraItems: [
-    { title: "Companies", url: "/companies", icon: Building },
+    { title: "Companies", url: "/companies", icon: Building, feature: "companies" },
+    { title: "Subscription Plans", url: "/subscription-plans", icon: Crown, feature: "companies" },
     { title: "Settings", url: "/settings", icon: Settings },
   ],
 };
 
-const allowedAll = [ ...rentalItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Companies", url: "/companies", icon: Building }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
+const allowedAll = [ ...rentalItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Companies", url: "/companies", icon: Building }, { title: "Subscription Plans", url: "/subscription-plans", icon: Crown }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 const allowedConstruction = [...constructionItems, ...constructionFinancialItems, ...sopItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 const allowedRental = [...rentalItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 
@@ -175,10 +183,10 @@ export const workspaceConfigs: Record<AppRole, WorkspaceConfig> = {
     nav: {
       groups: [
         { label: "Overview", items: [{ title: "Dashboard", url: "/dashboard", icon: Home }] },
-        { label: "Construction", items: constructionItems },
-        { label: "Construction Financial", items: constructionFinancialItems },
-        { label: "SOP & Quality", items: sopItems },
-        { label: "Reports", items: reportItems },
+        { label: "Construction", items: constructionItems, feature: "construction" },
+        { label: "Construction Financial", items: constructionFinancialItems, feature: "construction_financial" },
+        { label: "SOP & Quality", items: sopItems, feature: "sop" },
+        { label: "Reports", items: reportItems, feature: "reports" },
       ],
       extraItems: [
         { title: "Settings", url: "/settings", icon: Settings },
