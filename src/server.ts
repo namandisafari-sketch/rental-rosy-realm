@@ -37,9 +37,19 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   });
 }
 
+const SUBDOMAIN_REDIRECTS: Record<string, string> = {
+  "register.habico.ug": "/register",
+};
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      const redirectTo = SUBDOMAIN_REDIRECTS[url.hostname];
+      if (redirectTo && !url.pathname.startsWith(redirectTo)) {
+        return Response.redirect(new URL(redirectTo, request.url).toString(), 308);
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
