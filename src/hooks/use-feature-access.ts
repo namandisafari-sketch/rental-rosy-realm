@@ -8,8 +8,8 @@ export function useFeatureAccess(featureKey: string) {
       const { data, error } = await supabase
         .rpc("company_has_feature", { p_feature_key: featureKey })
         .single();
-      if (error) throw error;
-      return (data ?? false) as boolean;
+      if (error) return false;
+      return (data?.has_access ?? false) as boolean;
     },
     staleTime: 1000 * 60 * 5,
   });
@@ -26,7 +26,7 @@ export function useAllFeatureAccess() {
           const { data, error } = await supabase
             .rpc("company_has_feature", { p_feature_key: key })
             .single();
-          return [key, error ? false : (data ?? false)] as const;
+          return [key, error ? false : (data?.has_access ?? false)] as const;
         })
       );
       return Object.fromEntries(results) as Record<string, boolean>;

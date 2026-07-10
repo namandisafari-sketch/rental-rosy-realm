@@ -51,14 +51,13 @@ ALTER TABLE public.companies
 
 -- 4. Feature access RPC
 CREATE OR REPLACE FUNCTION public.company_has_feature(p_feature_key TEXT)
-RETURNS BOOLEAN
+RETURNS TABLE (has_access BOOLEAN)
 LANGUAGE plpgsql STABLE
 SECURITY DEFINER SET search_path = public
 AS $$
 DECLARE
   v_company_id UUID;
   v_is_staff BOOLEAN;
-  v_result BOOLEAN;
 BEGIN
   SELECT p.company_id, public.is_staff(auth.uid())
   INTO v_company_id, v_is_staff
@@ -67,11 +66,13 @@ BEGIN
 
   -- System staff with no company see everything
   IF v_is_staff AND v_company_id IS NULL THEN
-    RETURN true;
+    has_access := true;
+    RETURN NEXT;
+    RETURN;
   END IF;
 
   -- Check feature access via company's plan
-  SELECT COALESCE(pf.is_enabled, false) INTO v_result
+  SELECT COALESCE(pf.is_enabled, false) INTO has_access
   FROM public.companies c
   JOIN public.subscription_plans sp ON sp.id = c.plan_id
   JOIN public.plan_features pf ON pf.plan_id = sp.id
@@ -80,7 +81,7 @@ BEGIN
     AND sp.is_active = true
     AND c.is_active = true;
 
-  RETURN COALESCE(v_result, false);
+  RETURN NEXT;
 END;
 $$;
 
