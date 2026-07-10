@@ -140,7 +140,10 @@ CROSS JOIN (VALUES
 WHERE p.slug = 'full-suite'
 ON CONFLICT (plan_id, feature_key) DO NOTHING;
 
--- 6. Auto-set updated_at
+-- 6. Grant execute permission
+GRANT EXECUTE ON FUNCTION public.company_has_feature TO authenticated;
+
+-- 7. Auto-set updated_at
 CREATE TRIGGER subscription_plans_touch_updated_at
   BEFORE UPDATE ON public.subscription_plans
   FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();

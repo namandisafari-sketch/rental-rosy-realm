@@ -23,10 +23,10 @@ export function useAllFeatureAccess() {
       const keys = ["rental", "construction", "construction_financial", "sop", "reports", "companies", "branding"];
       const results = await Promise.all(
         keys.map(async (key) => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .rpc("company_has_feature", { p_feature_key: key })
             .single();
-          return [key, data ?? false] as const;
+          return [key, error ? false : (data ?? false)] as const;
         })
       );
       return Object.fromEntries(results) as Record<string, boolean>;
