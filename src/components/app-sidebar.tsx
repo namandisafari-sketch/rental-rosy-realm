@@ -42,14 +42,17 @@ export function AppSidebar() {
   const WsIcon = ws.icon;
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (url: string) => path === url || (url !== "/dashboard" && path.startsWith(url));
+  const isStaff = role === "admin" || role === "manager";
 
   function groupVisible(g: NavGroup) {
     if (!g.feature) return true;
+    if (isStaff) return true;
     return features[g.feature] === true;
   }
 
   function itemVisible(it: { feature?: string }) {
     if (!it.feature) return true;
+    if (isStaff) return true;
     return features[it.feature] === true;
   }
 

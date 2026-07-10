@@ -26,10 +26,13 @@ export function useAllFeatureAccess() {
           const { data, error } = await supabase
             .rpc("company_has_feature", { p_feature_key: key })
             .single();
+          if (error) console.error("feature check error for", key, error);
           return [key, error ? false : (data?.has_access ?? false)] as const;
         })
       );
-      return Object.fromEntries(results) as Record<string, boolean>;
+      const map = Object.fromEntries(results) as Record<string, boolean>;
+      console.log("feature access map", map);
+      return map;
     },
     staleTime: 1000 * 60 * 5,
   });

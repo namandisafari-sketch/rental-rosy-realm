@@ -50,6 +50,7 @@ ALTER TABLE public.companies
   ADD COLUMN IF NOT EXISTS plan_id UUID REFERENCES public.subscription_plans(id) ON DELETE SET NULL;
 
 -- 4. Feature access RPC
+DROP FUNCTION IF EXISTS public.company_has_feature;
 CREATE OR REPLACE FUNCTION public.company_has_feature(p_feature_key TEXT)
 RETURNS TABLE (has_access BOOLEAN)
 LANGUAGE plpgsql STABLE
