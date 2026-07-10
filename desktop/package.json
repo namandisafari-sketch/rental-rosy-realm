@@ -25,6 +25,7 @@
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "icon": "buildResources/icon.ico"
     },
+
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
