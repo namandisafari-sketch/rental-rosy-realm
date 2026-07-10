@@ -47,7 +47,8 @@ export const completeRegistration = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Create the company
-    const licenseKey = crypto.randomUUID();
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const licenseKey = Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
     const { data: company, error: companyError } = await supabaseAdmin
       .from("companies")
       .insert({

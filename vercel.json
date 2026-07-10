@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "register.habico.ug" }],
+      "destination": "/register"
+    }
+  ]
+}
