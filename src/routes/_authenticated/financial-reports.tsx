@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { Download, TrendingUp, TrendingDown, DollarSign, Building2, Landmark, ScrollText } from "lucide-react";
+import { Download, TrendingUp, TrendingDown, DollarSign, Building2, Landmark, ScrollText, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import { toPng } from "html-to-image";
 import { HabicoFinancialReport, buildPropertyReportData } from "@/components/habico-financial-report";
 import type { FinancialReportData } from "@/components/habico-financial-report";
 
@@ -111,6 +113,35 @@ function FinancialReportsPage() {
   const ownerMap = new Map(ownerProfiles.map((p: any) => [p.id, p]));
 
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
+  const pnlRef = useRef<HTMLDivElement>(null);
+  const collectionRef = useRef<HTMLDivElement>(null);
+  const commissionRef = useRef<HTMLDivElement>(null);
+
+  async function downloadPdf(el: HTMLDivElement | null, filename: string) {
+    if (!el) return;
+    try {
+      const imgData = await toPng(el, { backgroundColor: "#fff" });
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const imgW = pageW - margin * 2;
+      const imgH = (el.scrollHeight * imgW) / el.scrollWidth;
+      let left = imgH;
+      let pos = margin;
+      pdf.addImage(imgData, "PNG", margin, pos, imgW, imgH);
+      left -= pageH - margin * 2;
+      while (left > 0) {
+        pdf.addPage();
+        pos = margin - (imgH - left);
+        pdf.addImage(imgData, "PNG", margin, pos, imgW, imgH);
+        left -= pageH - margin * 2;
+      }
+      pdf.save(filename);
+    } catch (err) {
+      console.error("PDF export failed", err);
+    }
+  }
 
   const { data: propertyLeases = [] } = useQuery({
     queryKey: ["financial-reports-property-leases", selectedPropertyId],
@@ -377,11 +408,17 @@ function FinancialReportsPage() {
                   {new Date(0, selectedMonth - 1).toLocaleString("default", { month: "long" })} {selectedYear}
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={downloadPLStatement}>
-                <Download className="mr-2 h-4 w-4" />CSV
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => downloadPdf(pnlRef.current, `pnl-${selectedYear}-${String(selectedMonth).padStart(2, "0")}.pdf`)}>
+                  <FileText className="mr-2 h-4 w-4" />PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={downloadPLStatement}>
+                  <Download className="mr-2 h-4 w-4" />CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
+              <div ref={pnlRef}>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -412,6 +449,7 @@ function FinancialReportsPage() {
                   </TableRow>
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -425,11 +463,17 @@ function FinancialReportsPage() {
                   {new Date(0, selectedMonth - 1).toLocaleString("default", { month: "long" })} {selectedYear}
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={downloadCollectionReport}>
-                <Download className="mr-2 h-4 w-4" />CSV
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => downloadPdf(collectionRef.current, `collection-${selectedYear}-${String(selectedMonth).padStart(2, "0")}.pdf`)}>
+                  <FileText className="mr-2 h-4 w-4" />PDF
+                </Button>
+                <Button variant="outline" size="sm" onClick={downloadCollectionReport}>
+                  <Download className="mr-2 h-4 w-4" />CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div ref={collectionRef}>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Expected Rent</p>
@@ -523,6 +567,7 @@ function FinancialReportsPage() {
                   </TableBody>
                 </Table>
               </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -536,8 +581,12 @@ function FinancialReportsPage() {
                   {new Date(0, selectedMonth - 1).toLocaleString("default", { month: "long" })} {selectedYear} — per Habico fee structure
                 </CardDescription>
               </div>
+              <Button variant="outline" size="sm" onClick={() => downloadPdf(commissionRef.current, `commission-${selectedYear}-${String(selectedMonth).padStart(2, "0")}.pdf`)}>
+                <FileText className="mr-2 h-4 w-4" />PDF
+              </Button>
             </CardHeader>
             <CardContent>
+              <div ref={commissionRef}>
               {(() => {
                 const collected = filteredPayments
                   .filter((p: any) => !p.payment_type || ["rent", "Rent"].includes(p.payment_type))
@@ -609,6 +658,7 @@ function FinancialReportsPage() {
                   </div>
                 );
               })()}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

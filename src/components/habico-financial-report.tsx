@@ -1,6 +1,8 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Download, Printer } from "lucide-react";
+import jsPDF from "jspdf";
+import { toPng } from "html-to-image";
 
 interface PaymentRecord {
   date: string;
@@ -48,6 +50,33 @@ function formatNum(n: number) {
 export function HabicoFinancialReport({ data }: { data: FinancialReportData }) {
   const printRef = useRef<HTMLDivElement>(null);
 
+  async function handleDownloadPdf() {
+    if (!printRef.current) return;
+    try {
+      const imgData = await toPng(printRef.current, { backgroundColor: "#fff" });
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const imgW = pageW - margin * 2;
+      const imgH = (printRef.current.scrollHeight * imgW) / printRef.current.scrollWidth;
+      let left = imgH;
+      let pos = margin;
+      pdf.addImage(imgData, "PNG", margin, pos, imgW, imgH);
+      left -= pageH - margin * 2;
+      while (left > 0) {
+        pdf.addPage();
+        pos = margin - (imgH - left);
+        pdf.addImage(imgData, "PNG", margin, pos, imgW, imgH);
+        left -= pageH - margin * 2;
+      }
+      const safeName = (data.landlordName || "landlord").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+      pdf.save(`habico-financial-report-${safeName}.pdf`);
+    } catch (err) {
+      console.error("PDF export failed", err);
+    }
+  }
+
   function handlePrint() {
     const win = window.open("", "_blank");
     if (!win) return;
@@ -92,7 +121,10 @@ export function HabicoFinancialReport({ data }: { data: FinancialReportData }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button onClick={handleDownloadPdf} variant="outline" size="sm">
+          <Download className="mr-2 h-4 w-4" />PDF
+        </Button>
         <Button onClick={handlePrint} variant="outline" size="sm">
           <Printer className="mr-2 h-4 w-4" />Print Report
         </Button>
