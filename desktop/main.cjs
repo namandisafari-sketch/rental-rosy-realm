@@ -8,7 +8,7 @@ const APP_NAME = "Habico Portal";
 let mainWindow = null;
 let tray = null;
 
-const iconPath = path.join(__dirname, "buildResources", "icon.png");
+const iconPath = path.join(__dirname, "buildResources", "icon.ico");
 
 app.setAppUserModelId(APP_ID);
 
@@ -19,6 +19,7 @@ if (!gotLock) {
   app.on("second-instance", () => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
       mainWindow.focus();
     }
   });
@@ -51,6 +52,16 @@ function createWindow() {
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
   });
+
+  mainWindow.webContents.on("did-fail-load", (_e, code, desc) => {
+    console.error(`Failed to load ${APP_URL}: ${code} ${desc}`);
+  });
+
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible()) {
+      mainWindow.show();
+    }
+  }, 15000);
 
   mainWindow.on("close", (e) => {
     if (!app.isQuitting) {

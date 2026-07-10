@@ -15,12 +15,6 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/payment-proofs")({
   component: PaymentProofs,
-  beforeLoad: ({ context }) => {
-    const role = useHighestRole(context.auth?.user);
-    if (role !== "staff" && role !== "admin") {
-      throw new Error("Access denied. Staff only.");
-    }
-  },
 });
 
 type PaymentProof = {
@@ -87,8 +81,18 @@ const formatDate = (dateStr: string) =>
 
 function PaymentProofs() {
   const queryClient = useQueryClient();
-  const user = useAuth();
+  const { user } = useAuth();
+  const role = useHighestRole();
+  const isStaff = role === "admin" || role === "manager";
   const [tab, setTab] = useState<"pending" | "verified" | "rejected">("pending");
+  if (!isStaff) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <p className="text-muted-foreground">You do not have permission to view this page.</p>
+      </div>
+    );
+  }
+
   const [detailProof, setDetailProof] = useState<PaymentProof | null>(null);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectId, setRejectId] = useState<string | null>(null);
