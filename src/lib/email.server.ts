@@ -11,6 +11,10 @@ const HABICO_ADDRESS = "Plot 123, Acacia Avenue, Kololo, Kampala, Uganda";
 const HABICO_PHONE = "+256 700 000 000";
 const HABICO_TAX_ID = "URA-TIN-123456789";
 
+const APP_URL = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : "https://www.habico.ug";
+
 function brandedWrapper(title: string, body: string) {
   return `<!DOCTYPE html>
 <html>
@@ -23,12 +27,11 @@ function brandedWrapper(title: string, body: string) {
 
           <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);padding:36px 40px 28px;">
+            <td style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);padding:28px 40px;">
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
-                    <div style="display:inline-block;width:40px;height:40px;background:#fff;border-radius:8px;text-align:center;line-height:40px;font-size:20px;font-weight:800;color:#1e293b;vertical-align:middle;">H</div>
-                    <span style="margin-left:10px;font-size:20px;font-weight:700;color:#fff;letter-spacing:2px;vertical-align:middle;">HABICO</span>
+                    <img src="${APP_URL}/habico-logo.jpg" alt="Habico" width="160" height="90" style="display:block;border:0;outline:none;border-radius:4px;" />
                   </td>
                   <td align="right" style="font-size:11px;color:#94a3b8;vertical-align:middle;">PROPERTY<br/>MANAGERS</td>
                 </tr>
