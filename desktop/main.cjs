@@ -8,6 +8,8 @@ const APP_NAME = "Habico Portal";
 let mainWindow = null;
 let tray = null;
 
+const iconPath = path.join(__dirname, "buildResources", "icon.png");
+
 app.setAppUserModelId(APP_ID);
 
 const gotLock = app.requestSingleInstanceLock();
@@ -24,13 +26,15 @@ if (!gotLock) {
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const icon = nativeImage.createFromPath(iconPath);
+  const iconArg = !icon.isEmpty() ? icon : undefined;
 
   mainWindow = new BrowserWindow({
     width: Math.min(1280, width),
     height: Math.min(800, height),
     minWidth: 900,
     minHeight: 600,
-    icon: path.join(__dirname, "..", "buildResources", "icon.png"),
+    icon: iconArg,
     title: APP_NAME,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -61,30 +65,35 @@ function createWindow() {
 }
 
 function createTray() {
-  const iconPath = path.join(__dirname, "..", "buildResources", "icon.png");
-  const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
-  tray = new Tray(trayIcon);
-  tray.setToolTip(APP_NAME);
+  try {
+    const trayIconImg = nativeImage.createFromPath(iconPath);
+    if (trayIconImg.isEmpty()) return;
+    const trayIcon = trayIconImg.resize({ width: 16, height: 16 });
+    tray = new Tray(trayIcon);
+    tray.setToolTip(APP_NAME);
 
-  const contextMenu = Menu.buildFromTemplate([
-    { label: "Show", click: () => { mainWindow.show(); mainWindow.focus(); } },
-    { label: "Quit", click: () => { app.isQuitting = true; app.quit(); } },
-  ]);
-  tray.setContextMenu(contextMenu);
+    const contextMenu = Menu.buildFromTemplate([
+      { label: "Show", click: () => { mainWindow.show(); mainWindow.focus(); } },
+      { label: "Quit", click: () => { app.isQuitting = true; app.quit(); } },
+    ]);
+    tray.setContextMenu(contextMenu);
 
-  tray.on("click", () => {
-    if (mainWindow) {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  });
+    tray.on("click", () => {
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+  } catch (_) { /* tray not critical */ }
 }
 
 app.whenReady().then(() => {
-  app.setLoginItemSettings({
-    openAtLogin: true,
-    path: app.getPath("exe"),
-  });
+  try {
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      path: app.getPath("exe"),
+    });
+  } catch (_) { /* auto-start not critical */ }
 
   createWindow();
   createTray();
