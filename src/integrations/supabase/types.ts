@@ -432,6 +432,103 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          license_key: string | null
+          name: string
+          phone: string | null
+          plan_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          license_key?: string | null
+          name: string
+          phone?: string | null
+          plan_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          license_key?: string | null
+          name?: string
+          phone?: string | null
+          plan_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_branding: {
+        Row: {
+          accent_color: string
+          company_id: string
+          company_name_override: string | null
+          created_at: string
+          document_footer: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string
+          receipt_footer: string | null
+          secondary_color: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string
+          company_id: string
+          company_name_override?: string | null
+          created_at?: string
+          document_footer?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          receipt_footer?: string | null
+          secondary_color?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string
+          company_id?: string
+          company_name_override?: string | null
+          created_at?: string
+          document_footer?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          receipt_footer?: string | null
+          secondary_color?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_branding_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_codes: {
         Row: {
           category: string | null
@@ -1861,9 +1958,39 @@ export type Database = {
           },
         ]
       }
+      plan_features: {
+        Row: {
+          feature_key: string
+          id: string
+          is_enabled: boolean
+          plan_id: string
+        }
+        Insert: {
+          feature_key: string
+          id?: string
+          is_enabled?: boolean
+          plan_id: string
+        }
+        Update: {
+          feature_key?: string
+          id?: string
+          is_enabled?: boolean
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_features_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          company_id: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -1873,6 +2000,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          company_id?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -1882,6 +2010,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          company_id?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -1889,7 +2018,15 @@ export type Database = {
           phone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       progress_payments: {
         Row: {
@@ -3347,6 +3484,45 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          monthly_price: number
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+          yearly_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          monthly_price?: number
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+          yearly_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          monthly_price?: number
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+          yearly_price?: number
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -3705,6 +3881,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      company_has_feature: {
+        Args: { p_feature_key: string }
+        Returns: {
+          has_access: boolean
+        }[]
+      }
+      get_company_branding: {
+        Args: never
+        Returns: {
+          accent_color: string
+          company_id: string
+          company_name_override: string | null
+          created_at: string
+          document_footer: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string
+          receipt_footer: string | null
+          secondary_color: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "company_branding"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3715,6 +3919,18 @@ export type Database = {
       is_staff:
         | { Args: never; Returns: boolean }
         | { Args: { _user_id: string }; Returns: boolean }
+      validate_card_login: {
+        Args: {
+          p_access_pin: string
+          p_card_number: string
+          p_unit_number: string
+        }
+        Returns: {
+          email: string
+          error_message: string
+          valid: boolean
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "owner" | "tenant"
