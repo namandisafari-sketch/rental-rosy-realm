@@ -186,7 +186,7 @@ export function TenancyAgreementDialog({ data: initialData }: { data: AgreementD
       pdf.save(`habico-tenancy-agreement-${safeName}.pdf`);
     } catch (err) {
       console.error("PDF export failed", err);
-      alert("Could not generate PDF: " + (err instanceof Error ? err.message : "unknown error"));
+      alert("Could not generate PDF: " + ((err as any)?.message || "unknown error"));
     } finally {
       setExporting(false);
     }

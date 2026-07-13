@@ -140,7 +140,7 @@ function PaymentProofs() {
       toast.success("Payment proof verified");
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Failed to verify");
+      toast.error((err as any)?.message || "Failed to verify");
     },
   });
 
@@ -165,7 +165,7 @@ function PaymentProofs() {
       setRejectReason("");
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Failed to reject");
+      toast.error((err as any)?.message || "Failed to reject");
     },
   });
 

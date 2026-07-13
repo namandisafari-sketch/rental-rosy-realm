@@ -111,7 +111,7 @@ function CompaniesPage() {
       setEditDialogOpen(false);
       setEditCompany(null);
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to save"),
+    onError: (err) => toast.error((err as any)?.message || "Failed to save"),
   });
 
   const saveBrandingMutation = useMutation({
@@ -130,7 +130,7 @@ function CompaniesPage() {
       toast.success("Branding saved");
       setBrandingDialogOpen(false);
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to save branding"),
+    onError: (err) => toast.error((err as any)?.message || "Failed to save branding"),
   });
 
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", address: "", license_key: "", plan_id: "" });

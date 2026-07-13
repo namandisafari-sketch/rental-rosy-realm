@@ -90,7 +90,7 @@ export function RegisterPage() {
       setPaymentIntentId(data.paymentIntentId);
       setStep(3);
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to create payment"),
+    onError: (err) => toast.error((err as any)?.message || "Failed to create payment"),
   });
 
   const finishFreeRegistration = useMutation({
@@ -106,7 +106,7 @@ export function RegisterPage() {
       setStep(4);
       toast.success("Registration complete!");
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to register"),
+    onError: (err) => toast.error((err as any)?.message || "Failed to register"),
   });
 
   function handleContinueToPlan() {

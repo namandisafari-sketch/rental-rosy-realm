@@ -88,7 +88,7 @@ function SubscriptionPlansPage() {
       setDialogOpen(false);
       setEditPlan(null);
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to save"),
+    onError: (err) => toast.error((err as any)?.message || "Failed to save"),
   });
 
   const toggleFeature = useMutation({
@@ -105,7 +105,7 @@ function SubscriptionPlansPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plan-features"] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to update feature"),
+    onError: (err) => toast.error((err as any)?.message || "Failed to update feature"),
   });
 
   const isAdmin = role === "admin" || role === "manager";
