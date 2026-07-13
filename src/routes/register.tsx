@@ -1,19 +1,25 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Check, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { Building2, Check, Copy, ExternalLink, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { createRegistrationIntent, completeRegistration } from "@/lib/register.server";
 import AppStoreBadges from "@/components/app-store-badges";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "");
+const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+let stripePromise: Promise<Stripe | null> | null = null;
+function getStripe() {
+  if (!STRIPE_KEY) return null;
+  if (!stripePromise) stripePromise = loadStripe(STRIPE_KEY);
+  return stripePromise;
+}
 
 export type Plan = {
   id: string;
