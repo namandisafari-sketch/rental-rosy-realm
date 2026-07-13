@@ -73,7 +73,7 @@ function SubscriptionPlansPage() {
   });
 
   const savePlan = useMutation({
-    mutationFn: async (vals: Partial<Plan> & { id?: string }) => {
+    mutationFn: async (vals: Partial<Plan> & { id?: string; name: string; slug: string }) => {
       if (vals.id) {
         const { error } = await supabase.from("subscription_plans").update(vals).eq("id", vals.id);
         if (error) throw error;

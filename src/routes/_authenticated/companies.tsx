@@ -103,7 +103,7 @@ function CompaniesPage() {
   });
 
   const saveCompanyMutation = useMutation({
-    mutationFn: async (vals: Partial<Company> & { id?: string }) => {
+    mutationFn: async (vals: Partial<Company> & { id?: string; name: string }) => {
       if (vals.id) {
         const { error } = await supabase.from("companies").update(vals).eq("id", vals.id);
         if (error) throw error;

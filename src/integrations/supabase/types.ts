@@ -1907,7 +1907,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
-          lease_id: string
+          lease_id: string | null
           method: string
           months_covered: number | null
           notes: string | null
@@ -1915,14 +1915,17 @@ export type Database = {
           payment_type: string | null
           period_end: string | null
           period_label: string | null
+          period_start: string | null
           recorded_by: string | null
           reference: string | null
+          stripe_payment_intent_id: string | null
+          stripe_payment_status: string | null
         }
         Insert: {
           amount: number
           created_at?: string
           id?: string
-          lease_id: string
+          lease_id?: string | null
           method?: string
           months_covered?: number | null
           notes?: string | null
@@ -1930,14 +1933,17 @@ export type Database = {
           payment_type?: string | null
           period_end?: string | null
           period_label?: string | null
+          period_start?: string | null
           recorded_by?: string | null
           reference?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_payment_status?: string | null
         }
         Update: {
           amount?: number
           created_at?: string
           id?: string
-          lease_id?: string
+          lease_id?: string | null
           method?: string
           months_covered?: number | null
           notes?: string | null
@@ -1945,8 +1951,11 @@ export type Database = {
           payment_type?: string | null
           period_end?: string | null
           period_label?: string | null
+          period_start?: string | null
           recorded_by?: string | null
           reference?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_payment_status?: string | null
         }
         Relationships: [
           {

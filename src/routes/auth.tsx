@@ -168,7 +168,7 @@ function AuthPage() {
                     if (activatePassword.length < 8) { toast.error("Password must be at least 8 characters"); return; }
                     setActivating(true);
                     try {
-                      const result = await activateLicenseKey({ licenseKey, adminName: activateName, adminEmail: activateEmail, adminPassword: activatePassword, adminPhone: activatePhone });
+                      const result = await activateLicenseKey({ data: { licenseKey, adminName: activateName, adminEmail: activateEmail, adminPassword: activatePassword, adminPhone: activatePhone } });
                       if (!result.success) { toast.error(result.message); return; }
                       setActivated(true);
                       toast.success("Admin account created! You can now sign in.");
@@ -224,7 +224,7 @@ function AuthPage() {
                   setLicensing(true);
                   setLicenseResult(null);
                   try {
-                    const result = await validateLicenseKey({ licenseKey: licenseKey.trim() });
+                    const result = await validateLicenseKey({ data: { licenseKey: licenseKey.trim() } });
                     if (!result.valid) {
                       setLicenseResult({ valid: false, message: result.message });
                       return;
