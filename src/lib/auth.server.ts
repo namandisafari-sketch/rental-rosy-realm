@@ -33,7 +33,7 @@ export const tenantCardLogin = createServerFn({ method: "POST" })
     if (linkError) {
       if (linkError.message?.includes("User not found")) {
         const { data: signupData, error: signupError } = await supabaseAdmin.auth.admin.generateLink({
-          type: "signup",
+          type: "invite",
           email,
           options: { redirectTo },
         });
