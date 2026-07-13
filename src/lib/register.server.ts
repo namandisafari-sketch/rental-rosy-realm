@@ -39,13 +39,30 @@ export const completeRegistration = createServerFn({ method: "POST" })
     adminPhone: string;
   }) => input)
   .handler(async ({ data }) => {
-    const stripe = getStripe();
-    const pi = await stripe.paymentIntents.retrieve(data.paymentIntentId);
-    if (pi.status !== "succeeded") {
-      return { success: false as const, error: "Payment not completed" };
-    }
-
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Verify the plan and decide whether payment is required
+    const { data: planRow } = await supabaseAdmin
+      .from("subscription_plans")
+      .select("id, name, monthly_price")
+      .eq("id", data.planId)
+      .single();
+    const requiresPayment = Number(planRow?.monthly_price ?? 0) > 0;
+
+    let paidAmount = 0;
+    let stripeStatus: string | null = null;
+    if (requiresPayment) {
+      if (!data.paymentIntentId) {
+        return { success: false as const, error: "Payment required for this plan" };
+      }
+      const stripe = getStripe();
+      const pi = await stripe.paymentIntents.retrieve(data.paymentIntentId);
+      if (pi.status !== "succeeded") {
+        return { success: false as const, error: "Payment not completed" };
+      }
+      paidAmount = pi.amount_received ? pi.amount_received / 100 : 0;
+      stripeStatus = pi.status;
+    }
 
     // 1. Create the company
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
