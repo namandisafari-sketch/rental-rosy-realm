@@ -67,8 +67,12 @@ export function StripePaymentForm({
   onSuccess: () => void;
   onCancel: () => void;
 }) {
+  const stripe = getStripe();
+  if (!stripe) {
+    return <div className="text-sm text-muted-foreground">Online payment isn't configured yet. Please contact support.</div>;
+  }
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret }}>
+    <Elements stripe={stripe} options={{ clientSecret }}>
       <PaymentFormInner onSuccess={onSuccess} onCancel={onCancel} />
     </Elements>
   );
