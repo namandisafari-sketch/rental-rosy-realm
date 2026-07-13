@@ -224,7 +224,7 @@ function AuthPage() {
                   setLicensing(true);
                   setLicenseResult(null);
                   try {
-                    const result = await validateLicenseKey({ licenseKey: licenseKey.trim() });
+                    const result = await validateLicenseKey({ data: { licenseKey: licenseKey.trim() } });
                     if (!result.valid) {
                       setLicenseResult({ valid: false, message: result.message });
                       return;
