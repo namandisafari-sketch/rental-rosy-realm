@@ -234,7 +234,7 @@ function PricingPage() {
                 <Link to="/contact">Talk to sales</Link>
               </Button>
               <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                <a href="https://register.habico.ug">Register now <ArrowRight className="ml-2 h-4 w-4" /></a>
+                <Link to="/register">Register now <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </div>
             <div className="mt-6 flex justify-center md:justify-end">
