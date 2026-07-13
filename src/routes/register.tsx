@@ -67,12 +67,19 @@ export function RegisterPage() {
     retry: false,
   });
 
+  // Preselect plan from ?plan=slug or ?plan=id
+  const preselect = useMemo(() => search.plan, [search.plan]);
+  useEffect(() => {
+    if (!preselect || selectedPlan) return;
+    const p = plans.find((x) => x.slug === preselect || x.id === preselect);
+    if (p) setSelectedPlan(p);
+  }, [preselect, plans, selectedPlan]);
+
   const createIntent = useMutation({
-    mutationFn: async () => {
-      if (!selectedPlan) throw new Error("No plan selected");
+    mutationFn: async (plan: Plan) => {
       return createRegistrationIntent({ data: {
-        planId: selectedPlan.id,
-        amount: selectedPlan.monthly_price,
+        planId: plan.id,
+        amount: plan.monthly_price,
         companyName,
         adminEmail,
       }});
@@ -85,6 +92,22 @@ export function RegisterPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to create payment"),
   });
 
+  const finishFreeRegistration = useMutation({
+    mutationFn: async () => completeRegistration({ data: {
+      paymentIntentId: "",
+      planId: selectedPlan?.id ?? "",
+      companyName, companyEmail, companyPhone, companyAddress,
+      adminName, adminEmail, adminPassword, adminPhone,
+    }}),
+    onSuccess: (result) => {
+      if (!result.success) { toast.error(result.error); return; }
+      setLicenseKey(result.licenseKey);
+      setStep(4);
+      toast.success("Registration complete!");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to register"),
+  });
+
   function handleContinueToPlan() {
     if (!companyName || !adminName || !adminEmail || !adminPassword) {
       toast.error("Please fill in all required fields");
@@ -95,11 +118,22 @@ export function RegisterPage() {
       return;
     }
     setStep(2);
+    // Auto-advance if a plan is preselected
+    if (selectedPlan) handleSelectPlan(selectedPlan);
   }
 
   function handleSelectPlan(plan: Plan) {
     setSelectedPlan(plan);
-    createIntent.mutate();
+    if (Number(plan.monthly_price) <= 0) {
+      // Free plan — skip payment
+      finishFreeRegistration.mutate();
+      return;
+    }
+    if (!STRIPE_KEY) {
+      toast.error("Online payment isn't configured yet. Please contact sales to activate this plan.");
+      return;
+    }
+    createIntent.mutate(plan);
   }
 
   function handleComplete(licenseKey: string) {
