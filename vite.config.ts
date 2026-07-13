@@ -1,7 +1,18 @@
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from '@lovable.dev/vite-tanstack-config'
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
 
 export default defineConfig({
-  tanstackStart: {
-    server: { entry: "server" },
+  nitro: {
+    preset: 'vercel',
+    renderer: false,
   },
-});
+  vite: {
+    build: {
+      outDir: '.output/public',
+      emptyOutDir: true,
+    },
+  },
+  plugins: [
+    tanstackRouter(),
+  ],
+})

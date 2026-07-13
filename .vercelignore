@@ -1,3 +1,8 @@
-desktop/dist
-desktop/habico-cert.p12
-desktop/node_modules
+*.apk
+*.aab
+*.exe
+public/*.exe
+android/
+ios/
+desktop/
+desktop/dist/

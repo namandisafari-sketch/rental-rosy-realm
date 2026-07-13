@@ -16,7 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Pencil, Trash2, Receipt, Printer, AlertTriangle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { StripePaymentForm } from "@/components/ui/stripe-payment-form";
-import { createPaymentIntent, recordStripePayment } from "@/lib/stripe.server";
+import { createPaymentIntent } from "@/lib/createPaymentIntent.functions";
+import { recordStripePayment } from "@/lib/recordStripePayment.functions";
 
 export const Route = createFileRoute("/_authenticated/payments")({
   head: () => ({ meta: [{ title: "Payments — Habico Portal" }] }),

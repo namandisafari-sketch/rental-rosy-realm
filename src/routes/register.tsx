@@ -10,7 +10,8 @@ import { Building2, Check, Copy, ExternalLink, Loader2, ArrowLeft } from "lucide
 import { toast } from "sonner";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { createRegistrationIntent, completeRegistration } from "@/lib/register.server";
+import { createRegistrationIntent } from "@/lib/createRegistrationIntent.functions";
+import { completeRegistration } from "@/lib/completeRegistration.functions";
 import AppStoreBadges from "@/components/app-store-badges";
 
 const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;

@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Building2, Mail, Phone, User, Plus, Trash2, Landmark, KeyRound, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { createLandlord, resetLandlordPassword } from "@/lib/landlord.server";
+import { createLandlord } from "@/lib/createLandlord.functions";
+import { resetLandlordPassword } from "@/lib/resetLandlordPassword.functions";
 
 export const Route = createFileRoute("/_authenticated/landlords")({
   head: () => ({ meta: [{ title: "Landlords — Habico Portal" }] }),

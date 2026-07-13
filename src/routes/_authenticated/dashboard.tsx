@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { StripePaymentForm } from "@/components/ui/stripe-payment-form";
-import { createPaymentIntent, recordStripePayment } from "@/lib/stripe.server";
+import { createPaymentIntent } from "@/lib/createPaymentIntent.functions";
+import { recordStripePayment } from "@/lib/recordStripePayment.functions";
 import {
   Building2, Users, Receipt, Wrench, TrendingUp, AlertTriangle,
   ArrowRight, Home, FileText, Calendar, DollarSign, MapPin, Landmark, Link2, CreditCard, Loader2,

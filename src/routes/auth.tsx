@@ -10,7 +10,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Building2, HardHat, Users, UserCog, ShieldCheck, CreditCard, Camera, CameraOff, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Html5Qrcode } from "html5-qrcode";
-import { validateLicenseKey, activateLicenseKey } from "@/lib/license.server";
+import { validateLicenseKey } from "@/lib/validateLicenseKey.functions";
+import { activateLicenseKey } from "@/lib/activateLicenseKey.functions";
 
 const searchSchema = z.object({ mode: z.enum(["signin", "signup"]).optional(), redirect: z.string().optional(), c: z.string().optional() });
 
