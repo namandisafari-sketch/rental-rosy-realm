@@ -36,15 +36,11 @@ export const Route = createFileRoute("/register")({
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { plan?: string };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      document.title = "Register — Habico Portal";
-      if (window.location.hostname !== "register.habico.ug") {
-        navigate({ to: "/pricing", replace: true });
-      }
-    }
-  }, [navigate]);
+    if (typeof document !== "undefined") document.title = "Register — Habico Portal";
+  }, []);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
