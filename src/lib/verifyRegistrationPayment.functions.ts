@@ -15,6 +15,13 @@ export const verifyRegistrationPayment = createServerFn({ method: "POST" })
     if (fetchError || !pending) return { success: false as const, error: "Pending registration not found" };
     if (pending.status !== "pending") return { success: false as const, error: "Registration already verified or rejected" };
 
+    // Fetch plan name
+    let planName = "";
+    if (pending.plan_id) {
+      const { data: plan } = await (supabaseAdmin as any).from("subscription_plans").select("name").eq("id", pending.plan_id).single();
+      if (plan) planName = plan.name;
+    }
+
     // Match the TID
     if (pending.transaction_id !== data.transactionId.trim()) {
       return { success: false as const, error: "Transaction ID does not match. Double-check the TID from your payment confirmation." };
@@ -103,7 +110,9 @@ export const verifyRegistrationPayment = createServerFn({ method: "POST" })
       licenseKey,
       adminName: pending.admin_name,
       adminEmail: pending.admin_email,
-      planName: "",
+      planName,
+      amount: Number(pending.amount),
+      paymentDate: new Date().toLocaleDateString("en-UG", { year: "numeric", month: "long", day: "numeric" }),
     }).catch((e) => console.error("Failed to send license email", e));
 
     return { success: true as const, licenseKey, companyId: company.id, userId };
