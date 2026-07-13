@@ -350,7 +350,7 @@ function PaymentForm({
       return;
     }
 
-    const result = await completeRegistration({
+    const result = await completeRegistration({ data: {
       paymentIntentId,
       planId,
       companyName,
@@ -361,7 +361,7 @@ function PaymentForm({
       adminEmail,
       adminPassword,
       adminPhone,
-    });
+    }});
 
     if (!result.success) {
       toast.error(result.error);
