@@ -7,7 +7,7 @@ import {
   MessageSquareQuote, FileUp, Handshake, GitCompareArrows, Clock,
   PiggyBank, Landmark, FileCheck, ClipboardCheck, Hash,
   ReceiptText, ScrollText, Gauge, CalendarRange, NotebookPen,
-  ListTodo, TriangleAlert, FolderKanban, Image, Banknote, Bell,
+  ListTodo, TriangleAlert, FolderKanban, Image, Banknote, Bell, Smartphone,
   type LucideIcon, Crown, UserCog, User, Shield, BookOpen, Building
 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
@@ -135,11 +135,13 @@ const fullNav: WorkspaceNav = {
   extraItems: [
     { title: "Companies", url: "/companies", icon: Building, feature: "companies" },
     { title: "Subscription Plans", url: "/subscription-plans", icon: Crown, feature: "companies" },
+    { title: "Pending Registrations", url: "/pending-registrations", icon: Clock },
+    { title: "Payment Settings", url: "/payment-settings", icon: Smartphone },
     { title: "Settings", url: "/settings", icon: Settings },
   ],
 };
 
-const allowedAll = [ ...rentalItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Companies", url: "/companies", icon: Building }, { title: "Subscription Plans", url: "/subscription-plans", icon: Crown }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
+const allowedAll = [ ...rentalItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Companies", url: "/companies", icon: Building }, { title: "Subscription Plans", url: "/subscription-plans", icon: Crown }, { title: "Pending Registrations", url: "/pending-registrations", icon: Clock }, { title: "Payment Settings", url: "/payment-settings", icon: Smartphone }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 const allowedConstruction = [...constructionItems, ...constructionFinancialItems, ...sopItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 const allowedRental = [...rentalItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 

@@ -52,7 +52,9 @@ import { Route as AuthenticatedProjectDashboardRouteImport } from './routes/_aut
 import { Route as AuthenticatedProjectBudgetRouteImport } from './routes/_authenticated/project-budget'
 import { Route as AuthenticatedProgressPaymentsRouteImport } from './routes/_authenticated/progress-payments'
 import { Route as AuthenticatedPreventativeMaintenanceRouteImport } from './routes/_authenticated/preventative-maintenance'
+import { Route as AuthenticatedPendingRegistrationsRouteImport } from './routes/_authenticated/pending-registrations'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
+import { Route as AuthenticatedPaymentSettingsRouteImport } from './routes/_authenticated/payment-settings'
 import { Route as AuthenticatedPaymentProofsRouteImport } from './routes/_authenticated/payment-proofs'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMyIdCardRouteImport } from './routes/_authenticated/my-id-card'
@@ -315,11 +317,23 @@ const AuthenticatedPreventativeMaintenanceRoute =
     path: '/preventative-maintenance',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPendingRegistrationsRoute =
+  AuthenticatedPendingRegistrationsRouteImport.update({
+    id: '/pending-registrations',
+    path: '/pending-registrations',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPaymentsRoute = AuthenticatedPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPaymentSettingsRoute =
+  AuthenticatedPaymentSettingsRouteImport.update({
+    id: '/payment-settings',
+    path: '/payment-settings',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPaymentProofsRoute =
   AuthenticatedPaymentProofsRouteImport.update({
     id: '/payment-proofs',
@@ -526,7 +540,9 @@ export interface FileRoutesByFullPath {
   '/my-id-card': typeof AuthenticatedMyIdCardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
+  '/payment-settings': typeof AuthenticatedPaymentSettingsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
+  '/pending-registrations': typeof AuthenticatedPendingRegistrationsRoute
   '/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
   '/progress-payments': typeof AuthenticatedProgressPaymentsRoute
   '/project-budget': typeof AuthenticatedProjectBudgetRoute
@@ -601,7 +617,9 @@ export interface FileRoutesByTo {
   '/my-id-card': typeof AuthenticatedMyIdCardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
+  '/payment-settings': typeof AuthenticatedPaymentSettingsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
+  '/pending-registrations': typeof AuthenticatedPendingRegistrationsRoute
   '/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
   '/progress-payments': typeof AuthenticatedProgressPaymentsRoute
   '/project-budget': typeof AuthenticatedProjectBudgetRoute
@@ -678,7 +696,9 @@ export interface FileRoutesById {
   '/_authenticated/my-id-card': typeof AuthenticatedMyIdCardRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/payment-proofs': typeof AuthenticatedPaymentProofsRoute
+  '/_authenticated/payment-settings': typeof AuthenticatedPaymentSettingsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
+  '/_authenticated/pending-registrations': typeof AuthenticatedPendingRegistrationsRoute
   '/_authenticated/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
   '/_authenticated/progress-payments': typeof AuthenticatedProgressPaymentsRoute
   '/_authenticated/project-budget': typeof AuthenticatedProjectBudgetRoute
@@ -755,7 +775,9 @@ export interface FileRouteTypes {
     | '/my-id-card'
     | '/notifications'
     | '/payment-proofs'
+    | '/payment-settings'
     | '/payments'
+    | '/pending-registrations'
     | '/preventative-maintenance'
     | '/progress-payments'
     | '/project-budget'
@@ -830,7 +852,9 @@ export interface FileRouteTypes {
     | '/my-id-card'
     | '/notifications'
     | '/payment-proofs'
+    | '/payment-settings'
     | '/payments'
+    | '/pending-registrations'
     | '/preventative-maintenance'
     | '/progress-payments'
     | '/project-budget'
@@ -906,7 +930,9 @@ export interface FileRouteTypes {
     | '/_authenticated/my-id-card'
     | '/_authenticated/notifications'
     | '/_authenticated/payment-proofs'
+    | '/_authenticated/payment-settings'
     | '/_authenticated/payments'
+    | '/_authenticated/pending-registrations'
     | '/_authenticated/preventative-maintenance'
     | '/_authenticated/progress-payments'
     | '/_authenticated/project-budget'
@@ -1259,11 +1285,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPreventativeMaintenanceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/pending-registrations': {
+      id: '/_authenticated/pending-registrations'
+      path: '/pending-registrations'
+      fullPath: '/pending-registrations'
+      preLoaderRoute: typeof AuthenticatedPendingRegistrationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/payments': {
       id: '/_authenticated/payments'
       path: '/payments'
       fullPath: '/payments'
       preLoaderRoute: typeof AuthenticatedPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/payment-settings': {
+      id: '/_authenticated/payment-settings'
+      path: '/payment-settings'
+      fullPath: '/payment-settings'
+      preLoaderRoute: typeof AuthenticatedPaymentSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/payment-proofs': {
@@ -1523,7 +1563,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMyIdCardRoute: typeof AuthenticatedMyIdCardRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPaymentProofsRoute: typeof AuthenticatedPaymentProofsRoute
+  AuthenticatedPaymentSettingsRoute: typeof AuthenticatedPaymentSettingsRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
+  AuthenticatedPendingRegistrationsRoute: typeof AuthenticatedPendingRegistrationsRoute
   AuthenticatedPreventativeMaintenanceRoute: typeof AuthenticatedPreventativeMaintenanceRoute
   AuthenticatedProgressPaymentsRoute: typeof AuthenticatedProgressPaymentsRoute
   AuthenticatedProjectBudgetRoute: typeof AuthenticatedProjectBudgetRoute
@@ -1588,7 +1630,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMyIdCardRoute: AuthenticatedMyIdCardRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPaymentProofsRoute: AuthenticatedPaymentProofsRoute,
+  AuthenticatedPaymentSettingsRoute: AuthenticatedPaymentSettingsRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
+  AuthenticatedPendingRegistrationsRoute:
+    AuthenticatedPendingRegistrationsRoute,
   AuthenticatedPreventativeMaintenanceRoute:
     AuthenticatedPreventativeMaintenanceRoute,
   AuthenticatedProgressPaymentsRoute: AuthenticatedProgressPaymentsRoute,
@@ -1644,13 +1689,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

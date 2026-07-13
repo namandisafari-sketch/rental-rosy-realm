@@ -6,21 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Check, Copy, ExternalLink, Loader2, ArrowLeft } from "lucide-react";
+import { Building2, Check, Copy, ExternalLink, Loader2, ArrowLeft, Phone, User, Smartphone } from "lucide-react";
 import { toast } from "sonner";
-import { loadStripe, type Stripe } from "@stripe/stripe-js";
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { createRegistrationIntent } from "@/lib/createRegistrationIntent.functions";
+import { submitRegistration } from "@/lib/submitRegistration.functions";
 import { completeRegistration } from "@/lib/completeRegistration.functions";
 import AppStoreBadges from "@/components/app-store-badges";
-
-const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
-let stripePromise: Promise<Stripe | null> | null = null;
-function getStripe() {
-  if (!STRIPE_KEY) return null;
-  if (!stripePromise) stripePromise = loadStripe(STRIPE_KEY);
-  return stripePromise;
-}
 
 export type Plan = {
   id: string;
@@ -28,6 +18,26 @@ export type Plan = {
   slug: string;
   description: string | null;
   monthly_price: number;
+};
+
+type PaymentSetting = {
+  id: string;
+  provider: string;
+  phone_number: string;
+  account_name: string;
+  instructions: string | null;
+  is_active: boolean;
+};
+
+const PROVIDER_LABELS: Record<string, string> = {
+  mtn_momo: "MTN MoMo",
+  airtel_money: "Airtel Money",
+  bank_transfer: "Bank Transfer",
+};
+
+const PROVIDER_ICONS: Record<string, typeof Smartphone> = {
+  mtn_momo: Smartphone,
+  airtel_money: Smartphone,
 };
 
 export const Route = createFileRoute("/register")({
@@ -53,8 +63,7 @@ export function RegisterPage() {
   const [adminPhone, setAdminPhone] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [paymentIntentId, setPaymentIntentId] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
+  const [transactionId, setTransactionId] = useState("");
   const [licenseKey, setLicenseKey] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -68,6 +77,16 @@ export function RegisterPage() {
     retry: false,
   });
 
+  const { data: paymentSetting } = useQuery({
+    queryKey: ["payment-setting"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("payment_settings" as any).select("*").eq("is_active", true).maybeSingle();
+      if (error) throw error;
+      return data as PaymentSetting | null;
+    },
+    retry: false,
+  });
+
   // Preselect plan from ?plan=slug or ?plan=id
   const preselect = useMemo(() => search.plan, [search.plan]);
   useEffect(() => {
@@ -76,21 +95,29 @@ export function RegisterPage() {
     if (p) setSelectedPlan(p);
   }, [preselect, plans, selectedPlan]);
 
-  const createIntent = useMutation({
-    mutationFn: async (plan: Plan) => {
-      return createRegistrationIntent({ data: {
-        planId: plan.id,
-        amount: plan.monthly_price,
+  const submitPayment = useMutation({
+    mutationFn: async () => {
+      if (!selectedPlan) throw new Error("No plan selected");
+      return submitRegistration({ data: {
+        planId: selectedPlan.id,
+        amount: selectedPlan.monthly_price,
+        transactionId,
         companyName,
+        companyEmail,
+        companyPhone,
+        companyAddress,
+        adminName,
         adminEmail,
+        adminPassword,
+        adminPhone,
       }});
     },
-    onSuccess: (data) => {
-      setClientSecret(data.clientSecret ?? "");
-      setPaymentIntentId(data.paymentIntentId);
-      setStep(3);
+    onSuccess: (result) => {
+      if (!result.success) { toast.error(result.error); return; }
+      toast.success("Payment submitted! An admin will verify your transaction shortly.");
+      setStep(4);
     },
-    onError: (err) => toast.error((err as any)?.message || "Failed to create payment"),
+    onError: (err) => toast.error((err as any)?.message || "Failed to submit payment"),
   });
 
   const finishFreeRegistration = useMutation({
@@ -119,27 +146,24 @@ export function RegisterPage() {
       return;
     }
     setStep(2);
-    // Auto-advance if a plan is preselected
     if (selectedPlan) handleSelectPlan(selectedPlan);
   }
 
   function handleSelectPlan(plan: Plan) {
     setSelectedPlan(plan);
     if (Number(plan.monthly_price) <= 0) {
-      // Free plan — skip payment
       finishFreeRegistration.mutate();
       return;
     }
-    if (!STRIPE_KEY) {
-      toast.error("Online payment isn't configured yet. Please contact sales to activate this plan.");
-      return;
-    }
-    createIntent.mutate(plan);
+    setStep(3);
   }
 
-  function handleComplete(licenseKey: string) {
-    setLicenseKey(licenseKey);
-    setStep(4);
+  function handleSubmitPayment() {
+    if (!transactionId || transactionId.trim().length < 3) {
+      toast.error("Please enter the transaction ID from your payment message");
+      return;
+    }
+    submitPayment.mutate();
   }
 
   return (
@@ -234,7 +258,7 @@ export function RegisterPage() {
                     <button
                       key={plan.id}
                       onClick={() => handleSelectPlan(plan)}
-                      disabled={createIntent.isPending}
+                      disabled={finishFreeRegistration.isPending}
                       className={`flex items-center gap-4 rounded-lg border p-4 text-left transition-all hover:border-primary ${
                         selectedPlan?.id === plan.id ? "border-primary ring-2 ring-primary" : ""
                       }`}
@@ -258,9 +282,9 @@ export function RegisterPage() {
                   ))}
                 </div>
 
-                {createIntent.isPending && (
+                {finishFreeRegistration.isPending && (
                   <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Preparing payment...
+                    <Loader2 className="h-4 w-4 animate-spin" /> Registering...
                   </div>
                 )}
               </CardContent>
@@ -268,28 +292,80 @@ export function RegisterPage() {
           </div>
         )}
 
-        {step === 3 && clientSecret && getStripe() && (
-          <Card>
-            <CardHeader><CardTitle>Payment</CardTitle><CardDescription>Complete your payment to activate your subscription</CardDescription></CardHeader>
-            <CardContent>
-              <Elements stripe={getStripe()!} options={{ clientSecret }}>
-                <PaymentForm
-                  onSuccess={handleComplete}
-                  companyName={companyName}
-                  companyEmail={companyEmail}
-                  companyPhone={companyPhone}
-                  companyAddress={companyAddress}
-                  adminName={adminName}
-                  adminEmail={adminEmail}
-                  adminPhone={adminPhone}
-                  adminPassword={adminPassword}
-                  planId={selectedPlan?.id ?? ""}
-                  paymentIntentId={paymentIntentId}
-                  amount={selectedPlan?.monthly_price ?? 0}
-                />
-              </Elements>
-            </CardContent>
-          </Card>
+        {step === 3 && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader><CardTitle>Payment Instructions</CardTitle><CardDescription>Send your payment to complete registration</CardDescription></CardHeader>
+              <CardContent className="space-y-6">
+                {paymentSetting ? (
+                  <>
+                    <div className="rounded-lg border bg-blue-50 p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                          <Phone className="h-5 w-5 text-blue-700" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Send to</p>
+                          <p className="font-semibold text-lg">{paymentSetting.phone_number}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                          <User className="h-5 w-5 text-blue-700" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Account Name</p>
+                          <p className="font-semibold">{paymentSetting.account_name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                          <Building2 className="h-5 w-5 text-blue-700" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Amount</p>
+                          <p className="font-semibold text-lg">UGX {Number(selectedPlan?.monthly_price ?? 0).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      {paymentSetting.instructions && (
+                        <p className="text-xs text-muted-foreground mt-2">{paymentSetting.instructions}</p>
+                      )}
+                    </div>
+
+                    <div className="border-t pt-4">
+                      <h3 className="font-medium mb-2">After sending payment, enter the transaction ID below:</h3>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Look for <strong>TID</strong> in your mobile money confirmation message — it's a 12-digit number.
+                      </p>
+                      <div>
+                        <Label>Transaction ID (TID)</Label>
+                        <Input
+                          value={transactionId}
+                          onChange={(e) => setTransactionId(e.target.value)}
+                          placeholder="e.g. 123456789012"
+                          className="mt-1.5 font-mono"
+                          maxLength={20}
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      className="w-full"
+                      onClick={handleSubmitPayment}
+                      disabled={!transactionId || submitPayment.isPending}
+                    >
+                      {submitPayment.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {submitPayment.isPending ? "Submitting..." : `Submit Payment — UGX ${Number(selectedPlan?.monthly_price ?? 0).toLocaleString()}`}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground">Payment details are not configured yet. Please contact sales to activate this plan.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {step === 4 && (
@@ -300,26 +376,43 @@ export function RegisterPage() {
                   <Check className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <CardTitle>Registration Complete!</CardTitle>
-                  <CardDescription>Your company has been registered successfully</CardDescription>
+                  <CardTitle>{licenseKey ? "Registration Complete!" : "Payment Submitted"}</CardTitle>
+                  <CardDescription>
+                    {licenseKey
+                      ? "Your company has been registered successfully"
+                      : "Your payment has been submitted for verification"}
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="rounded-lg border bg-amber-50 p-4">
-                <Label className="text-amber-800 font-semibold">Your License Key</Label>
-                <div className="mt-2 flex gap-2">
-                  <code className="flex-1 rounded bg-amber-100 px-3 py-2 text-sm font-mono break-all">{licenseKey}</code>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => { navigator.clipboard.writeText(licenseKey); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                  >
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
+              {licenseKey && (
+                <div className="rounded-lg border bg-amber-50 p-4">
+                  <Label className="text-amber-800 font-semibold">Your License Key</Label>
+                  <div className="mt-2 flex gap-2">
+                    <code className="flex-1 rounded bg-amber-100 px-3 py-2 text-sm font-mono break-all">{licenseKey}</code>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => { navigator.clipboard.writeText(licenseKey); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                    >
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-xs text-amber-700">Save this key — you'll need it to activate your company's access</p>
                 </div>
-                <p className="mt-2 text-xs text-amber-700">Save this key — you'll need it to activate your company's access</p>
-              </div>
+              )}
+
+              {!licenseKey && (
+                <div className="rounded-lg border bg-blue-50 p-4 text-sm">
+                  <p className="font-medium mb-1">What happens next?</p>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                    <li>Your payment will be reviewed by an admin</li>
+                    <li>Once verified, your company will be activated</li>
+                    <li>You'll receive your license key and login credentials via email</li>
+                  </ol>
+                </div>
+              )}
 
               <div className="space-y-2 text-sm">
                 <p><strong>Email:</strong> {adminEmail}</p>
@@ -327,15 +420,17 @@ export function RegisterPage() {
                 <p><strong>Plan:</strong> {selectedPlan?.name}</p>
               </div>
 
-              <div className="rounded-lg border p-4 text-sm">
-                <p className="font-medium mb-1">What's next?</p>
-                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                  <li>Check your email for login credentials</li>
-                  <li>Log in at <a href="https://www.habico.ug" className="text-primary underline">habico.ug</a></li>
-                  <li>Configure your company branding in Settings</li>
-                  <li>Invite your team members</li>
-                </ol>
-              </div>
+              {licenseKey && (
+                <div className="rounded-lg border p-4 text-sm">
+                  <p className="font-medium mb-1">What's next?</p>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                    <li>Check your email for login credentials</li>
+                    <li>Log in at <a href="https://www.habico.ug" className="text-primary underline">habico.ug</a></li>
+                    <li>Configure your company branding in Settings</li>
+                    <li>Invite your team members</li>
+                  </ol>
+                </div>
+              )}
 
               <Button className="w-full" onClick={() => navigate({ to: "/auth", search: { mode: "signin" } })}>
                 Go to Login <ExternalLink className="ml-2 h-4 w-4" />
@@ -353,79 +448,5 @@ export function RegisterPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function PaymentForm({
-  onSuccess,
-  companyName, companyEmail, companyPhone, companyAddress,
-  adminName, adminEmail, adminPhone, adminPassword, planId, paymentIntentId, amount,
-}: {
-  onSuccess: (licenseKey: string) => void;
-  companyName: string;
-  companyEmail: string;
-  companyPhone: string;
-  companyAddress: string;
-  adminName: string;
-  adminEmail: string;
-  adminPhone: string;
-  adminPassword: string;
-  planId: string;
-  paymentIntentId: string;
-  amount: number;
-}) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-    setLoading(true);
-
-    const { error: submitError } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: window.location.href },
-      redirect: "if_required",
-    });
-
-    if (submitError) {
-      toast.error(submitError.message ?? "Payment failed");
-      setLoading(false);
-      return;
-    }
-
-    const result = await completeRegistration({ data: {
-      paymentIntentId,
-      planId,
-      companyName,
-      companyEmail,
-      companyPhone,
-      companyAddress,
-      adminName,
-      adminEmail,
-      adminPassword,
-      adminPhone,
-    }});
-
-    if (!result.success) {
-      toast.error(result.error);
-      setLoading(false);
-      return;
-    }
-
-    onSuccess(result.licenseKey);
-    toast.success("Registration complete!");
-    setLoading(false);
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
-      <Button type="submit" disabled={!stripe || loading} className="w-full">
-        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-        {loading ? "Processing..." : `Pay Now — UGX ${Number(amount).toLocaleString()}`}
-      </Button>
-    </form>
   );
 }
