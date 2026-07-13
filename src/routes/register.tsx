@@ -67,15 +67,15 @@ export function RegisterPage() {
   const createIntent = useMutation({
     mutationFn: async () => {
       if (!selectedPlan) throw new Error("No plan selected");
-      return createRegistrationIntent({
+      return createRegistrationIntent({ data: {
         planId: selectedPlan.id,
         amount: selectedPlan.monthly_price,
         companyName,
         adminEmail,
-      });
+      }});
     },
     onSuccess: (data) => {
-      setClientSecret(data.clientSecret);
+      setClientSecret(data.clientSecret ?? "");
       setPaymentIntentId(data.paymentIntentId);
       setStep(3);
     },
