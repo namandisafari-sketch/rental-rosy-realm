@@ -8,7 +8,8 @@ import {
   PiggyBank, Landmark, FileCheck, ClipboardCheck, Hash,
   ReceiptText, ScrollText, Gauge, CalendarRange, NotebookPen,
   ListTodo, TriangleAlert, FolderKanban, Image, Banknote, Bell, Smartphone,
-  type LucideIcon, Crown, UserCog, User, Shield, BookOpen, Building
+  type LucideIcon, Crown, UserCog, User, Shield, BookOpen, Building, ArrowLeftRight,
+  Palette
 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 
@@ -71,6 +72,11 @@ const rentalItems: NavItem[] = [
   { title: "Tax Dashboard", url: "/rental-tax-dashboard", icon: Calculator },
 ];
 
+const servicesItems: NavItem[] = [
+  { title: "Move In/Out", url: "/move-service", icon: ArrowLeftRight, feature: "move_service" },
+  { title: "Move Bookings", url: "/move-bookings", icon: CalendarCheck, feature: "move_service" },
+];
+
 const constructionItems: NavItem[] = [
   { title: "Projects", url: "/projects", icon: HardHat },
   { title: "Project Dashboard", url: "/project-dashboard", icon: Gauge },
@@ -127,6 +133,7 @@ const fullNav: WorkspaceNav = {
   groups: [
     { label: "Overview", items: [{ title: "Dashboard", url: "/dashboard", icon: Home }] },
     { label: "Rental Management", items: rentalItems, feature: "rental" },
+    { label: "Services", items: servicesItems, feature: "move_service" },
     { label: "Construction", items: constructionItems, feature: "construction" },
     { label: "Construction Financial", items: constructionFinancialItems, feature: "construction_financial" },
     { label: "SOP & Quality", items: sopItems, feature: "sop" },
@@ -135,15 +142,16 @@ const fullNav: WorkspaceNav = {
   extraItems: [
     { title: "Companies", url: "/companies", icon: Building, feature: "companies" },
     { title: "Subscription Plans", url: "/subscription-plans", icon: Crown, feature: "companies" },
-    { title: "Pending Registrations", url: "/pending-registrations", icon: Clock },
-    { title: "Payment Settings", url: "/payment-settings", icon: Smartphone },
-    { title: "Settings", url: "/settings", icon: Settings },
+    { title: "Pending Registrations", url: "/pending-registrations", icon: Clock, feature: "system" },
+    { title: "Payment Settings", url: "/payment-settings", icon: Smartphone, feature: "system" },
+    { title: "Dev Tools", url: "/dev-tools", icon: Settings, feature: "system" },
+    { title: "Settings", url: "/settings", icon: Settings, feature: "settings" },
   ],
 };
 
-const allowedAll = [ ...rentalItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Companies", url: "/companies", icon: Building }, { title: "Subscription Plans", url: "/subscription-plans", icon: Crown }, { title: "Pending Registrations", url: "/pending-registrations", icon: Clock }, { title: "Payment Settings", url: "/payment-settings", icon: Smartphone }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
+const allowedAll = [ ...rentalItems, ...servicesItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Companies", url: "/companies", icon: Building }, { title: "Subscription Plans", url: "/subscription-plans", icon: Crown }, { title: "Pending Registrations", url: "/pending-registrations", icon: Clock }, { title: "Payment Settings", url: "/payment-settings", icon: Smartphone }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 const allowedConstruction = [...constructionItems, ...constructionFinancialItems, ...sopItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
-const allowedRental = [...rentalItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
+const allowedRental = [...rentalItems, ...servicesItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 
 export const workspaceConfigs: Record<AppRole, WorkspaceConfig> = {
   admin: {
@@ -251,6 +259,7 @@ export const workspaceConfigs: Record<AppRole, WorkspaceConfig> = {
         ]},
         { label: "Services", items: [
           { title: "Maintenance", url: "/maintenance", icon: Wrench },
+          { title: "Book a Move", url: "/book-move", icon: ArrowLeftRight },
           { title: "Notifications", url: "/notifications", icon: Bell },
         ]},
       ],
@@ -261,7 +270,7 @@ export const workspaceConfigs: Record<AppRole, WorkspaceConfig> = {
     allowedRoutes: [
       ...rentalItems.map(i => i.url),
       "/dashboard", "/my-id-card", "/settings",
-      "/my-documents", "/notifications",
+      "/my-documents", "/notifications", "/book-move",
     ],
   },
 };

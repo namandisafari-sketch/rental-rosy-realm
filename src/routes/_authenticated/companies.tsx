@@ -2,16 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useHighestRole } from "@/hooks/use-auth";
+import { useAuth, useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { GridDataCards, type GridCardField } from "@/components/data-grid-cards";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Pencil } from "lucide-react";
+import { Building2, Pencil, Mail, Phone, MapPin, Key, CreditCard, Globe } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { toPng } from "html-to-image";
@@ -57,6 +57,7 @@ type CompanyBranding = {
 
 function CompaniesPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const role = useHighestRole();
   const isAdmin = role === "admin" || role === "manager";
   const [editCompany, setEditCompany] = useState<Company | null>(null);
@@ -64,6 +65,16 @@ function CompaniesPage() {
   const [brandingDialogOpen, setBrandingDialogOpen] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  const { data: currentProfile } = useQuery({
+    queryKey: ["current-profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from("profiles").select("company_id").eq("id", user.id).single();
+      return data ?? null;
+    },
+    enabled: !!user?.id,
+  });
 
   const { data: plans = [] } = useQuery({
     queryKey: ["subscription-plans"],
@@ -76,9 +87,13 @@ function CompaniesPage() {
   });
 
   const { data: companies = [], isLoading } = useQuery({
-    queryKey: ["companies"],
+    queryKey: ["companies", currentProfile?.company_id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("companies").select("*").order("name");
+      let query = supabase.from("companies").select("*").order("name");
+      if (currentProfile?.company_id) {
+        query = query.eq("id", currentProfile.company_id);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Company[];
     },
@@ -146,6 +161,65 @@ function CompaniesPage() {
     setBrandingDialogOpen(true);
   }
 
+  const fields: GridCardField<Company>[] = [
+    {
+      render: (c) => (
+        <div className="flex items-start justify-between">
+          <h3 className="text-lg font-bold">{c.name}</h3>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${c.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+            {c.is_active ? "Active" : "Inactive"}
+          </span>
+        </div>
+      ),
+    },
+    {
+      label: "Contact",
+      render: (c) => (
+        <div className="space-y-1 text-sm">
+          {c.email && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Mail className="h-3.5 w-3.5" />
+              {c.email}
+            </div>
+          )}
+          {c.phone && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Phone className="h-3.5 w-3.5" />
+              {c.phone}
+            </div>
+          )}
+          {c.address && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5" />
+              {c.address}
+            </div>
+          )}
+          {!c.email && !c.phone && !c.address && (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      label: "Plan",
+      render: (c) => (
+        <div className="flex items-center gap-1.5 text-sm">
+          <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+          {plans.find((p) => p.id === c.plan_id)?.name ?? <span className="text-muted-foreground">—</span>}
+        </div>
+      ),
+    },
+    {
+      label: "License Key",
+      render: (c) => (
+        <div className="flex items-center gap-1.5">
+          <Key className="h-3.5 w-3.5 text-muted-foreground" />
+          <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{c.license_key ?? "—"}</code>
+        </div>
+      ),
+    },
+  ];
+
   if (!isAdmin) {
     return <div className="flex h-96 items-center justify-center"><p className="text-muted-foreground">Access denied.</p></div>;
   }
@@ -157,58 +231,24 @@ function CompaniesPage() {
         <p className="text-sm text-muted-foreground">Property management companies licensed to use Habico Portal</p>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          {isLoading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
-          ) : companies.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">No companies yet.</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>License</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {companies.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.name}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">{c.email}</div>
-                      <div className="text-xs text-muted-foreground">{c.phone}</div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">{plans.find((p) => p.id === c.plan_id)?.name ?? "—"}</span>
-                    </TableCell>
-                    <TableCell><code className="rounded bg-muted px-1.5 py-0.5 text-xs">{c.license_key ?? "—"}</code></TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${c.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                        {c.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openBranding(c.id)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
-                          <Building2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <GridDataCards
+        data={companies}
+        fields={fields}
+        keyExtractor={(c) => c.id}
+        isLoading={isLoading}
+        emptyMessage="No companies yet."
+        emptyIcon={<Building2 className="h-10 w-10 text-muted-foreground" />}
+        actions={(c) => (
+          <>
+            <Button variant="ghost" size="sm" onClick={() => openBranding(c.id)}>
+              <Globe className="h-4 w-4 mr-1" /> Branding
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
+              <Pencil className="h-4 w-4 mr-1" /> Edit
+            </Button>
+          </>
+        )}
+      />
 
       {/* Company Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

@@ -8,6 +8,8 @@ import {
 import { useAuth, useHighestRole } from "@/hooks/use-auth";
 import { getWorkspace, type NavGroup } from "@/lib/workspace-config";
 import { useAllFeatureAccess } from "@/hooks/use-feature-access";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { useState } from "react";
@@ -57,16 +59,26 @@ export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (url: string) => path === url || (url !== "/dashboard" && path.startsWith(url));
   const isStaff = role === "admin" || role === "manager";
+  const { data: profile } = useQuery({
+    queryKey: ["current-profile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from("profiles").select("company_id").eq("id", user.id).single();
+      return data ?? null;
+    },
+    enabled: !!user?.id,
+  });
+  const hasCompany = !!profile?.company_id;
 
   function groupVisible(g: NavGroup) {
     if (!g.feature) return true;
-    if (isStaff) return true;
+    if (isStaff && !hasCompany) return true;
     return features[g.feature] === true;
   }
 
   function itemVisible(it: { feature?: string }) {
     if (!it.feature) return true;
-    if (isStaff) return true;
+    if (isStaff && !hasCompany) return true;
     return features[it.feature] === true;
   }
 

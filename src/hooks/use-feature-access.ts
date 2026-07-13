@@ -20,7 +20,7 @@ export function useAllFeatureAccess() {
   const { data: features } = useQuery({
     queryKey: ["all-feature-access"],
     queryFn: async () => {
-      const keys = ["rental", "construction", "construction_financial", "sop", "reports", "companies", "branding"];
+      const keys = ["rental", "construction", "construction_financial", "sop", "reports", "companies", "branding", "system", "settings", "move_service"];
       const results = await Promise.all(
         keys.map(async (key) => {
           const { data, error } = await supabase

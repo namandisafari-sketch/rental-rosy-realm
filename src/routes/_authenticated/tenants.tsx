@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useHighestRole } from "@/hooks/use-auth";
+import { useAuth, useHighestRole } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Search, Users, Phone, Mail, Eye, EyeOff, Copy, Key, ShieldAlert, Check, RefreshCw, Building2, Home, Layers } from "lucide-react";
+import { GridDataCards, type GridCardField } from "@/components/data-grid-cards";
+import { Plus, Pencil, Search, Users, Phone, Mail, Eye, EyeOff, Copy, Key, ShieldAlert, Check, RefreshCw, Building2, Home, Layers, MapPin, CreditCard, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const ID_TYPE_OPTIONS = ["national_id", "passport", "drivers_license"].map((t) => ({ value: t, label: t === "drivers_license" ? "Driver's License" : t === "national_id" ? "National ID" : "Passport" }));
@@ -44,6 +44,7 @@ export const Route = createFileRoute("/_authenticated/tenants")({
 });
 
 function TenantsPage() {
+  const { user } = useAuth();
   const role = useHighestRole();
   const isStaff = role === "admin" || role === "manager";
   const qc = useQueryClient();
@@ -57,12 +58,25 @@ function TenantsPage() {
   const [pinVisible, setPinVisible] = useState(false);
   const [formTab, setFormTab] = useState("basic");
 
-  const { data: properties = [] } = useQuery({
-    queryKey: ["tenant-properties"],
+  const { data: currentProfile } = useQuery({
+    queryKey: ["current-profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("properties").select("id, name, location").order("name");
+      if (!user?.id) return null;
+      const { data } = await supabase.from("profiles").select("company_id").eq("id", user.id).single();
+      return data ?? null;
+    },
+    enabled: !!user?.id,
+  });
+
+  const { data: properties = [] } = useQuery({
+    queryKey: ["tenant-properties", currentProfile?.company_id],
+    queryFn: async () => {
+      let q = supabase.from("properties" as any).select("id, name, location").order("name");
+      if (currentProfile?.company_id) q = q.eq("company_id", currentProfile.company_id);
+      const { data }: any = await q;
       return data ?? [];
     },
+    enabled: !!currentProfile,
   });
 
   const [formPropertyId, setFormPropertyId] = useState("");
@@ -83,16 +97,17 @@ function TenantsPage() {
   });
 
   const { data: tenants = [], isLoading } = useQuery({
-    queryKey: ["tenants"],
+    queryKey: ["tenants", currentProfile?.company_id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenants")
+      let q = supabase
+        .from("tenants" as any)
         .select("*")
         .order("created_at", { ascending: false });
+      if (currentProfile?.company_id) q = q.eq("company_id", currentProfile.company_id);
+      const { data, error } = await q;
       if (error) throw error;
       let tenantList = (data ?? []) as any[];
 
-      // Exclude tenants whose linked auth user has owner/admin/manager role
       const authUserIds = tenantList.map((t: any) => t.auth_user_id).filter(Boolean);
       if (authUserIds.length > 0) {
         const { data: roles } = await supabase
@@ -113,6 +128,7 @@ function TenantsPage() {
       const leaseMap = new Map((leases ?? []).map((l: any) => [l.tenant_id, l]));
       return tenantList.map((t: any) => ({ ...t, lease: leaseMap.get(t.id) }));
     },
+    enabled: !!currentProfile,
   });
 
   const total = tenants.length;
@@ -130,6 +146,8 @@ function TenantsPage() {
     const matchStatus = statusFilter === "all" || t.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const displayed = statusFilter === "all" ? filtered : filtered.filter((t: any) => t.status === statusFilter);
 
   function openEdit(t: any) {
     setSelectedTenant(t);
@@ -321,6 +339,61 @@ function TenantsPage() {
       </div>
     );
   }
+
+  const fields: GridCardField<any>[] = [
+    {
+      render: (t) => (
+        <div className="flex items-start justify-between">
+          <h3 className="text-base font-bold">{t.full_name || "—"}</h3>
+          {statusBadge(t.status)}
+        </div>
+      ),
+    },
+    {
+      label: "Contact",
+      render: (t) => (
+        <div className="space-y-1 text-sm">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Phone className="h-3.5 w-3.5 shrink-0" />
+            {t.phone || "—"}
+          </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Mail className="h-3.5 w-3.5 shrink-0" />
+            {t.email || "—"}
+          </div>
+        </div>
+      ),
+    },
+    {
+      label: "Property / Unit",
+      render: (t) => t.lease ? (
+        <div className="space-y-1 text-sm">
+          <div className="font-medium">{t.lease.units?.properties?.name ?? "—"}</div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Home className="h-3 w-3" />
+            Unit {t.lease.units?.unit_number ?? "—"}
+            {t.lease.units?.floor_number != null && (
+              <><Layers className="ml-1 h-3 w-3" /> Fl {t.lease.units?.floor_number}</>
+            )}
+          </div>
+          <div className="text-xs">UGX {Number(t.lease.monthly_rent).toLocaleString()}/mo</div>
+        </div>
+      ) : (
+        <span className="text-sm text-muted-foreground">No active lease</span>
+      ),
+    },
+    {
+      label: "Balance",
+      render: (t) => t.lease && Number(t.lease.outstanding_balance) > 0 ? (
+        <div className="flex items-center gap-1.5 text-sm font-medium text-red-500">
+          <AlertTriangle className="h-3.5 w-3.5" />
+          UGX {Number(t.lease.outstanding_balance).toLocaleString()}
+        </div>
+      ) : (
+        <span className="text-sm text-green-600">—</span>
+      ),
+    },
+  ];
 
   const dialogForm = (
     <Tabs value={formTab} onValueChange={setFormTab} className="w-full">
@@ -631,107 +704,38 @@ function TenantsPage() {
         </TabsList>
       </Tabs>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>ID Type / Number</TableHead>
-                <TableHead>Property / Unit</TableHead>
-                <TableHead>Arrears</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Emergency Contact</TableHead>
-                <TableHead>Remarks</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="py-8 text-center">Loading...</TableCell>
-                </TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">No tenants found</TableCell>
-                </TableRow>
-              ) : (
-                filtered.map((t: any) => (
-                  <TableRow key={t.id}>
-                    <TableCell className="font-medium">{t.full_name || "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1"><Phone className="h-3 w-3" />{t.phone || "—"}</div>
-                      <div className="flex items-center gap-1"><Mail className="h-3 w-3" />{t.email || "—"}</div>
-                    </TableCell>
-                    <TableCell>
-                      {t.id_type ? <><span className="text-xs text-muted-foreground">{formatIdType(t.id_type)}</span><br />{t.id_number || "—"}</> : "—"}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {t.lease ? (
-                        <>
-                          <div className="font-medium text-foreground">
-                            {t.lease.units?.properties?.name ?? ""}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Home className="h-3 w-3" />
-                            Unit {t.lease.units?.unit_number ?? "—"}
-                            {t.lease.units?.floor_number != null && (
-                              <>
-                                <Layers className="ml-1 h-3 w-3" />
-                                Fl {t.lease.units?.floor_number}
-                              </>
-                            )}
-                          </div>
-                          <span className="text-xs">UGX {Number(t.lease.monthly_rent).toLocaleString()}/mo</span>
-                        </>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-red-500 font-medium">
-                      {t.lease && Number(t.lease.outstanding_balance) > 0 ? `UGX ${Number(t.lease.outstanding_balance).toLocaleString()}` : "—"}
-                    </TableCell>
-                    <TableCell>{statusBadge(t.status)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {t.emergency_contact_name ? (
-                        <><div className="font-medium text-foreground">{t.emergency_contact_name}</div>{t.emergency_contact_phone || "—"}</>
-                      ) : "—"}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[150px] truncate">{t.notes || "—"}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(t)} title="Edit">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        {t.status === "blacklisted" ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => statusMutation.mutate({ id: t.id, status: "active" })}
-                            title="Reactivate"
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => statusMutation.mutate({ id: t.id, status: "blacklisted" })}
-                            title="Blacklist"
-                          >
-                            <ShieldAlert className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <GridDataCards
+        data={displayed}
+        fields={fields}
+        keyExtractor={(t) => t.id}
+        isLoading={isLoading}
+        emptyMessage={search || statusFilter !== "all" ? "No matching tenants" : "No tenants yet"}
+        emptyIcon={<Users className="h-10 w-10 text-muted-foreground" />}
+        actions={(t) => (
+          <div className="flex w-full items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={() => openEdit(t)}>
+              <Pencil className="h-4 w-4 mr-1" /> Edit
+            </Button>
+            {t.status === "blacklisted" ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => statusMutation.mutate({ id: t.id, status: "active" })}
+              >
+                <RefreshCw className="h-4 w-4 mr-1" /> Reactivate
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => statusMutation.mutate({ id: t.id, status: "blacklisted" })}
+              >
+                <ShieldAlert className="h-4 w-4 mr-1" /> Blacklist
+              </Button>
+            )}
+          </div>
+        )}
+      />
 
       <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) { setSelectedTenant(null); resetForm(); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

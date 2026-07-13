@@ -426,7 +426,7 @@ function PropertiesPage() {
                         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{p.property_type ?? "—"}</span>
                       </div>
                       <h3 className="mt-4 display text-lg font-bold">{p.name}</h3>
-                      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" />{p.city ?? p.location ?? p.address ?? "—"}</div>
+                      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" />{p.city || p.location || p.address || "—"}</div>
                       <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><User className="h-3 w-3" />{p.owner_id ? ownerMap.get(p.owner_id) ?? "Unknown" : "No landlord linked"}</div>
                       <div className="mt-4 flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Units</span>

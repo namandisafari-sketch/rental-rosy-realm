@@ -52,7 +52,6 @@ import { Route as AuthenticatedProjectDashboardRouteImport } from './routes/_aut
 import { Route as AuthenticatedProjectBudgetRouteImport } from './routes/_authenticated/project-budget'
 import { Route as AuthenticatedProgressPaymentsRouteImport } from './routes/_authenticated/progress-payments'
 import { Route as AuthenticatedPreventativeMaintenanceRouteImport } from './routes/_authenticated/preventative-maintenance'
-import { Route as AuthenticatedDevToolsRouteImport } from './routes/_authenticated/dev-tools'
 import { Route as AuthenticatedPendingRegistrationsRouteImport } from './routes/_authenticated/pending-registrations'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedPaymentSettingsRouteImport } from './routes/_authenticated/payment-settings'
@@ -60,6 +59,8 @@ import { Route as AuthenticatedPaymentProofsRouteImport } from './routes/_authen
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMyIdCardRouteImport } from './routes/_authenticated/my-id-card'
 import { Route as AuthenticatedMyDocumentsRouteImport } from './routes/_authenticated/my-documents'
+import { Route as AuthenticatedMoveServiceRouteImport } from './routes/_authenticated/move-service'
+import { Route as AuthenticatedMoveBookingsRouteImport } from './routes/_authenticated/move-bookings'
 import { Route as AuthenticatedMeetingMinutesRouteImport } from './routes/_authenticated/meeting-minutes'
 import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
 import { Route as AuthenticatedListingBannersRouteImport } from './routes/_authenticated/listing-banners'
@@ -74,6 +75,7 @@ import { Route as AuthenticatedEstimatesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedEquipmentRentalsRouteImport } from './routes/_authenticated/equipment-rentals'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
 import { Route as AuthenticatedELeasingRouteImport } from './routes/_authenticated/e-leasing'
+import { Route as AuthenticatedDevToolsRouteImport } from './routes/_authenticated/dev-tools'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDailyLogsRouteImport } from './routes/_authenticated/daily-logs'
 import { Route as AuthenticatedCostCodesRouteImport } from './routes/_authenticated/cost-codes'
@@ -81,6 +83,7 @@ import { Route as AuthenticatedConstructionInvoicesRouteImport } from './routes/
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedCommitmentLogRouteImport } from './routes/_authenticated/commitment-log'
 import { Route as AuthenticatedChangeOrdersRouteImport } from './routes/_authenticated/change-orders'
+import { Route as AuthenticatedBookMoveRouteImport } from './routes/_authenticated/book-move'
 import { Route as AuthenticatedBillsRouteImport } from './routes/_authenticated/bills'
 import { Route as AuthenticatedBidPackagesRouteImport } from './routes/_authenticated/bid-packages'
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
@@ -318,11 +321,6 @@ const AuthenticatedPreventativeMaintenanceRoute =
     path: '/preventative-maintenance',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedDevToolsRoute = AuthenticatedDevToolsRouteImport.update({
-  id: '/dev-tools',
-  path: '/dev-tools',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedPendingRegistrationsRoute =
   AuthenticatedPendingRegistrationsRouteImport.update({
     id: '/pending-registrations',
@@ -361,6 +359,18 @@ const AuthenticatedMyDocumentsRoute =
   AuthenticatedMyDocumentsRouteImport.update({
     id: '/my-documents',
     path: '/my-documents',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedMoveServiceRoute =
+  AuthenticatedMoveServiceRouteImport.update({
+    id: '/move-service',
+    path: '/move-service',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedMoveBookingsRoute =
+  AuthenticatedMoveBookingsRouteImport.update({
+    id: '/move-bookings',
+    path: '/move-bookings',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMeetingMinutesRoute =
@@ -439,6 +449,11 @@ const AuthenticatedELeasingRoute = AuthenticatedELeasingRouteImport.update({
   path: '/e-leasing',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDevToolsRoute = AuthenticatedDevToolsRouteImport.update({
+  id: '/dev-tools',
+  path: '/dev-tools',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -477,6 +492,11 @@ const AuthenticatedChangeOrdersRoute =
     path: '/change-orders',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedBookMoveRoute = AuthenticatedBookMoveRouteImport.update({
+  id: '/book-move',
+  path: '/book-move',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedBillsRoute = AuthenticatedBillsRouteImport.update({
   id: '/bills',
   path: '/bills',
@@ -521,6 +541,7 @@ export interface FileRoutesByFullPath {
   '/assets': typeof AuthenticatedAssetsRoute
   '/bid-packages': typeof AuthenticatedBidPackagesRoute
   '/bills': typeof AuthenticatedBillsRoute
+  '/book-move': typeof AuthenticatedBookMoveRoute
   '/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/commitment-log': typeof AuthenticatedCommitmentLogRoute
   '/companies': typeof AuthenticatedCompaniesRoute
@@ -543,6 +564,8 @@ export interface FileRoutesByFullPath {
   '/listing-banners': typeof AuthenticatedListingBannersRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/meeting-minutes': typeof AuthenticatedMeetingMinutesRoute
+  '/move-bookings': typeof AuthenticatedMoveBookingsRoute
+  '/move-service': typeof AuthenticatedMoveServiceRoute
   '/my-documents': typeof AuthenticatedMyDocumentsRoute
   '/my-id-card': typeof AuthenticatedMyIdCardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -599,6 +622,7 @@ export interface FileRoutesByTo {
   '/assets': typeof AuthenticatedAssetsRoute
   '/bid-packages': typeof AuthenticatedBidPackagesRoute
   '/bills': typeof AuthenticatedBillsRoute
+  '/book-move': typeof AuthenticatedBookMoveRoute
   '/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/commitment-log': typeof AuthenticatedCommitmentLogRoute
   '/companies': typeof AuthenticatedCompaniesRoute
@@ -621,6 +645,8 @@ export interface FileRoutesByTo {
   '/listing-banners': typeof AuthenticatedListingBannersRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/meeting-minutes': typeof AuthenticatedMeetingMinutesRoute
+  '/move-bookings': typeof AuthenticatedMoveBookingsRoute
+  '/move-service': typeof AuthenticatedMoveServiceRoute
   '/my-documents': typeof AuthenticatedMyDocumentsRoute
   '/my-id-card': typeof AuthenticatedMyIdCardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -679,6 +705,7 @@ export interface FileRoutesById {
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/bid-packages': typeof AuthenticatedBidPackagesRoute
   '/_authenticated/bills': typeof AuthenticatedBillsRoute
+  '/_authenticated/book-move': typeof AuthenticatedBookMoveRoute
   '/_authenticated/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/_authenticated/commitment-log': typeof AuthenticatedCommitmentLogRoute
   '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
@@ -701,6 +728,8 @@ export interface FileRoutesById {
   '/_authenticated/listing-banners': typeof AuthenticatedListingBannersRoute
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
   '/_authenticated/meeting-minutes': typeof AuthenticatedMeetingMinutesRoute
+  '/_authenticated/move-bookings': typeof AuthenticatedMoveBookingsRoute
+  '/_authenticated/move-service': typeof AuthenticatedMoveServiceRoute
   '/_authenticated/my-documents': typeof AuthenticatedMyDocumentsRoute
   '/_authenticated/my-id-card': typeof AuthenticatedMyIdCardRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -759,6 +788,7 @@ export interface FileRouteTypes {
     | '/assets'
     | '/bid-packages'
     | '/bills'
+    | '/book-move'
     | '/change-orders'
     | '/commitment-log'
     | '/companies'
@@ -781,6 +811,8 @@ export interface FileRouteTypes {
     | '/listing-banners'
     | '/maintenance'
     | '/meeting-minutes'
+    | '/move-bookings'
+    | '/move-service'
     | '/my-documents'
     | '/my-id-card'
     | '/notifications'
@@ -837,6 +869,7 @@ export interface FileRouteTypes {
     | '/assets'
     | '/bid-packages'
     | '/bills'
+    | '/book-move'
     | '/change-orders'
     | '/commitment-log'
     | '/companies'
@@ -859,6 +892,8 @@ export interface FileRouteTypes {
     | '/listing-banners'
     | '/maintenance'
     | '/meeting-minutes'
+    | '/move-bookings'
+    | '/move-service'
     | '/my-documents'
     | '/my-id-card'
     | '/notifications'
@@ -916,6 +951,7 @@ export interface FileRouteTypes {
     | '/_authenticated/assets'
     | '/_authenticated/bid-packages'
     | '/_authenticated/bills'
+    | '/_authenticated/book-move'
     | '/_authenticated/change-orders'
     | '/_authenticated/commitment-log'
     | '/_authenticated/companies'
@@ -923,6 +959,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cost-codes'
     | '/_authenticated/daily-logs'
     | '/_authenticated/dashboard'
+    | '/_authenticated/dev-tools'
     | '/_authenticated/e-leasing'
     | '/_authenticated/employees'
     | '/_authenticated/equipment-rentals'
@@ -937,6 +974,8 @@ export interface FileRouteTypes {
     | '/_authenticated/listing-banners'
     | '/_authenticated/maintenance'
     | '/_authenticated/meeting-minutes'
+    | '/_authenticated/move-bookings'
+    | '/_authenticated/move-service'
     | '/_authenticated/my-documents'
     | '/_authenticated/my-id-card'
     | '/_authenticated/notifications'
@@ -1345,6 +1384,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMyDocumentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/move-service': {
+      id: '/_authenticated/move-service'
+      path: '/move-service'
+      fullPath: '/move-service'
+      preLoaderRoute: typeof AuthenticatedMoveServiceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/move-bookings': {
+      id: '/_authenticated/move-bookings'
+      path: '/move-bookings'
+      fullPath: '/move-bookings'
+      preLoaderRoute: typeof AuthenticatedMoveBookingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/meeting-minutes': {
       id: '/_authenticated/meeting-minutes'
       path: '/meeting-minutes'
@@ -1443,18 +1496,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedELeasingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/dev-tools': {
       id: '/_authenticated/dev-tools'
       path: '/dev-tools'
       fullPath: '/dev-tools'
       preLoaderRoute: typeof AuthenticatedDevToolsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/daily-logs': {
@@ -1497,6 +1550,13 @@ declare module '@tanstack/react-router' {
       path: '/change-orders'
       fullPath: '/change-orders'
       preLoaderRoute: typeof AuthenticatedChangeOrdersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/book-move': {
+      id: '/_authenticated/book-move'
+      path: '/book-move'
+      fullPath: '/book-move'
+      preLoaderRoute: typeof AuthenticatedBookMoveRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/bills': {
@@ -1556,6 +1616,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedBidPackagesRoute: typeof AuthenticatedBidPackagesRoute
   AuthenticatedBillsRoute: typeof AuthenticatedBillsRoute
+  AuthenticatedBookMoveRoute: typeof AuthenticatedBookMoveRoute
   AuthenticatedChangeOrdersRoute: typeof AuthenticatedChangeOrdersRoute
   AuthenticatedCommitmentLogRoute: typeof AuthenticatedCommitmentLogRoute
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
@@ -1578,6 +1639,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedListingBannersRoute: typeof AuthenticatedListingBannersRoute
   AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
   AuthenticatedMeetingMinutesRoute: typeof AuthenticatedMeetingMinutesRoute
+  AuthenticatedMoveBookingsRoute: typeof AuthenticatedMoveBookingsRoute
+  AuthenticatedMoveServiceRoute: typeof AuthenticatedMoveServiceRoute
   AuthenticatedMyDocumentsRoute: typeof AuthenticatedMyDocumentsRoute
   AuthenticatedMyIdCardRoute: typeof AuthenticatedMyIdCardRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -1623,6 +1686,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedBidPackagesRoute: AuthenticatedBidPackagesRoute,
   AuthenticatedBillsRoute: AuthenticatedBillsRoute,
+  AuthenticatedBookMoveRoute: AuthenticatedBookMoveRoute,
   AuthenticatedChangeOrdersRoute: AuthenticatedChangeOrdersRoute,
   AuthenticatedCommitmentLogRoute: AuthenticatedCommitmentLogRoute,
   AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
@@ -1646,6 +1710,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedListingBannersRoute: AuthenticatedListingBannersRoute,
   AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
   AuthenticatedMeetingMinutesRoute: AuthenticatedMeetingMinutesRoute,
+  AuthenticatedMoveBookingsRoute: AuthenticatedMoveBookingsRoute,
+  AuthenticatedMoveServiceRoute: AuthenticatedMoveServiceRoute,
   AuthenticatedMyDocumentsRoute: AuthenticatedMyDocumentsRoute,
   AuthenticatedMyIdCardRoute: AuthenticatedMyIdCardRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
