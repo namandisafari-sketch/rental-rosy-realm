@@ -144,12 +144,17 @@ export function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <div className="mx-auto max-w-2xl px-4 py-12">
+        <div className="mb-4">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/pricing"><ArrowLeft className="mr-1 h-4 w-4" /> Back to pricing</Link>
+          </Button>
+        </div>
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Building2 className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold">Habico Portal</h1>
           </div>
-          <p className="text-muted-foreground">Register your company to get started</p>
+          <p className="text-muted-foreground">Register your company to get started{selectedPlan ? ` — ${selectedPlan.name}` : ""}</p>
         </div>
 
         {/* Steps indicator */}
