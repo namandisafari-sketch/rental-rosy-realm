@@ -595,13 +595,13 @@ function PayRentDialog({
     }
     setLoading(true);
     try {
-      const result = await createPaymentIntent({
+      const result = await createPaymentIntent({ data: {
         amount: Math.round(Number(amount) * 100),
         lease_id: activeLease.id,
         payment_type: "rent",
         period_label: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
         months_covered: 1,
-      });
+      }});
       setClientSecret(result.clientSecret);
       setPaymentIntentId(result.paymentIntentId);
       setStep("stripe");
