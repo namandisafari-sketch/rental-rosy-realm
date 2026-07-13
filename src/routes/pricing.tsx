@@ -208,10 +208,10 @@ function PricingPage() {
                   </div>
                   <div className="p-6 pt-0">
                     <Button asChild className="w-full" variant={isPopular ? "default" : "outline"}>
-                      <a href="https://register.habico.ug">
+                      <Link to="/register" search={{ plan: plan.slug }}>
                         {price === 0 ? "Get started free" : "Choose plan"}
                         <ArrowRight className="ml-2 h-4 w-4" />
-                      </a>
+                      </Link>
                     </Button>
                   </div>
                 </div>
