@@ -267,11 +267,11 @@ export function RegisterPage() {
           </div>
         )}
 
-        {step === 3 && clientSecret && (
+        {step === 3 && clientSecret && getStripe() && (
           <Card>
             <CardHeader><CardTitle>Payment</CardTitle><CardDescription>Complete your payment to activate your subscription</CardDescription></CardHeader>
             <CardContent>
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <Elements stripe={getStripe()!} options={{ clientSecret }}>
                 <PaymentForm
                   onSuccess={handleComplete}
                   companyName={companyName}
@@ -284,6 +284,7 @@ export function RegisterPage() {
                   adminPassword={adminPassword}
                   planId={selectedPlan?.id ?? ""}
                   paymentIntentId={paymentIntentId}
+                  amount={selectedPlan?.monthly_price ?? 0}
                 />
               </Elements>
             </CardContent>
