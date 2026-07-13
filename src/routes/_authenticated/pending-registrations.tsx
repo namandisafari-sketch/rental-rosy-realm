@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, XCircle, Eye, Clock, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Clock, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { verifyRegistrationPayment } from "@/lib/verifyRegistrationPayment.functions";
+import { resendLicenseEmail } from "@/lib/resendLicenseEmail.functions";
 
 export const Route = createFileRoute("/_authenticated/pending-registrations")({
   head: () => ({ meta: [{ title: "Pending Registrations — Habico Portal" }] }),
@@ -121,6 +122,15 @@ function PendingRegistrationsPage() {
     if (!rejectId || !rejectReason.trim()) return;
     rejectMutation.mutate({ id: rejectId, reason: rejectReason.trim() });
   };
+
+  const resendMutation = useMutation({
+    mutationFn: async (adminEmail: string) => {
+      const result = await resendLicenseEmail({ data: { adminEmail } });
+      if (!result.success) throw new Error(result.error);
+    },
+    onSuccess: () => toast.success("License email resent!"),
+    onError: (err) => toast.error((err as any)?.message || "Failed to resend email"),
+  });
 
   function openVerify(reg: PendingRegistration) {
     setVerifyingId(reg.id);
@@ -258,6 +268,17 @@ function PendingRegistrationsPage() {
                           )}
                         </DialogContent>
                       </Dialog>
+
+                      {reg.status === "verified" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resendMutation.mutate(reg.admin_email)}
+                          disabled={resendMutation.isPending}
+                        >
+                          {resendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                        </Button>
+                      )}
 
                       {reg.status === "pending" && (
                         <>
