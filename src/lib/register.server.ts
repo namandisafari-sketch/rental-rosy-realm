@@ -39,13 +39,30 @@ export const completeRegistration = createServerFn({ method: "POST" })
     adminPhone: string;
   }) => input)
   .handler(async ({ data }) => {
-    const stripe = getStripe();
-    const pi = await stripe.paymentIntents.retrieve(data.paymentIntentId);
-    if (pi.status !== "succeeded") {
-      return { success: false as const, error: "Payment not completed" };
-    }
-
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Verify the plan and decide whether payment is required
+    const { data: planRow } = await supabaseAdmin
+      .from("subscription_plans")
+      .select("id, name, monthly_price")
+      .eq("id", data.planId)
+      .single();
+    const requiresPayment = Number(planRow?.monthly_price ?? 0) > 0;
+
+    let paidAmount = 0;
+    let stripeStatus: string | null = null;
+    if (requiresPayment) {
+      if (!data.paymentIntentId) {
+        return { success: false as const, error: "Payment required for this plan" };
+      }
+      const stripe = getStripe();
+      const pi = await stripe.paymentIntents.retrieve(data.paymentIntentId);
+      if (pi.status !== "succeeded") {
+        return { success: false as const, error: "Payment not completed" };
+      }
+      paidAmount = pi.amount_received ? pi.amount_received / 100 : 0;
+      stripeStatus = pi.status;
+    }
 
     // 1. Create the company
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -105,34 +122,29 @@ export const completeRegistration = createServerFn({ method: "POST" })
       return { success: false as const, error: roleError.message };
     }
 
-    // 5. Record the payment
-    const { error: paymentError } = await supabaseAdmin
-      .from("payments")
-      .insert({
-        amount: pi.amount_received ? pi.amount_received / 100 : 0,
-        method: "stripe",
-        payment_type: "registration",
-        stripe_payment_intent_id: data.paymentIntentId,
-        stripe_payment_status: pi.status,
-        payment_date: new Date().toISOString().slice(0, 10),
-      });
-
-    if (paymentError) console.error("Failed to record registration payment", paymentError);
+    // 5. Record the payment (only if a payment was taken)
+    if (requiresPayment) {
+      const { error: paymentError } = await supabaseAdmin
+        .from("payments")
+        .insert({
+          amount: paidAmount,
+          method: "stripe",
+          payment_type: "registration",
+          stripe_payment_intent_id: data.paymentIntentId,
+          stripe_payment_status: stripeStatus,
+          payment_date: new Date().toISOString().slice(0, 10),
+        });
+      if (paymentError) console.error("Failed to record registration payment", paymentError);
+    }
 
     // 6. Send license key email
-    const { data: plan } = await supabaseAdmin
-      .from("subscription_plans")
-      .select("name")
-      .eq("id", data.planId)
-      .single();
-
     sendLicenseKeyEmail({
       to: data.adminEmail,
       companyName: data.companyName,
       licenseKey,
       adminName: data.adminName,
       adminEmail: data.adminEmail,
-      planName: plan?.name ?? "Unknown",
+      planName: planRow?.name ?? "Unknown",
     }).catch((e) => console.error("Failed to send license email", e));
 
     return {

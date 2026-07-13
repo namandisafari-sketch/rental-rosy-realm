@@ -1,19 +1,25 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Check, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { Building2, Check, Copy, ExternalLink, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { createRegistrationIntent, completeRegistration } from "@/lib/register.server";
 import AppStoreBadges from "@/components/app-store-badges";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "");
+const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+let stripePromise: Promise<Stripe | null> | null = null;
+function getStripe() {
+  if (!STRIPE_KEY) return null;
+  if (!stripePromise) stripePromise = loadStripe(STRIPE_KEY);
+  return stripePromise;
+}
 
 export type Plan = {
   id: string;
@@ -25,20 +31,17 @@ export type Plan = {
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Register — Habico Portal" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({ plan: typeof s.plan === "string" ? s.plan : undefined }),
   component: RegisterPage,
 });
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { plan?: string };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      document.title = "Register — Habico Portal";
-      if (window.location.hostname !== "register.habico.ug") {
-        navigate({ to: "/pricing", replace: true });
-      }
-    }
-  }, [navigate]);
+    if (typeof document !== "undefined") document.title = "Register — Habico Portal";
+  }, []);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
@@ -64,12 +67,19 @@ export function RegisterPage() {
     retry: false,
   });
 
+  // Preselect plan from ?plan=slug or ?plan=id
+  const preselect = useMemo(() => search.plan, [search.plan]);
+  useEffect(() => {
+    if (!preselect || selectedPlan) return;
+    const p = plans.find((x) => x.slug === preselect || x.id === preselect);
+    if (p) setSelectedPlan(p);
+  }, [preselect, plans, selectedPlan]);
+
   const createIntent = useMutation({
-    mutationFn: async () => {
-      if (!selectedPlan) throw new Error("No plan selected");
+    mutationFn: async (plan: Plan) => {
       return createRegistrationIntent({ data: {
-        planId: selectedPlan.id,
-        amount: selectedPlan.monthly_price,
+        planId: plan.id,
+        amount: plan.monthly_price,
         companyName,
         adminEmail,
       }});
@@ -82,6 +92,22 @@ export function RegisterPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to create payment"),
   });
 
+  const finishFreeRegistration = useMutation({
+    mutationFn: async () => completeRegistration({ data: {
+      paymentIntentId: "",
+      planId: selectedPlan?.id ?? "",
+      companyName, companyEmail, companyPhone, companyAddress,
+      adminName, adminEmail, adminPassword, adminPhone,
+    }}),
+    onSuccess: (result) => {
+      if (!result.success) { toast.error(result.error); return; }
+      setLicenseKey(result.licenseKey);
+      setStep(4);
+      toast.success("Registration complete!");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to register"),
+  });
+
   function handleContinueToPlan() {
     if (!companyName || !adminName || !adminEmail || !adminPassword) {
       toast.error("Please fill in all required fields");
@@ -92,11 +118,22 @@ export function RegisterPage() {
       return;
     }
     setStep(2);
+    // Auto-advance if a plan is preselected
+    if (selectedPlan) handleSelectPlan(selectedPlan);
   }
 
   function handleSelectPlan(plan: Plan) {
     setSelectedPlan(plan);
-    createIntent.mutate();
+    if (Number(plan.monthly_price) <= 0) {
+      // Free plan — skip payment
+      finishFreeRegistration.mutate();
+      return;
+    }
+    if (!STRIPE_KEY) {
+      toast.error("Online payment isn't configured yet. Please contact sales to activate this plan.");
+      return;
+    }
+    createIntent.mutate(plan);
   }
 
   function handleComplete(licenseKey: string) {
@@ -107,12 +144,17 @@ export function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
       <div className="mx-auto max-w-2xl px-4 py-12">
+        <div className="mb-4">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/pricing"><ArrowLeft className="mr-1 h-4 w-4" /> Back to pricing</Link>
+          </Button>
+        </div>
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Building2 className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold">Habico Portal</h1>
           </div>
-          <p className="text-muted-foreground">Register your company to get started</p>
+          <p className="text-muted-foreground">Register your company to get started{selectedPlan ? ` — ${selectedPlan.name}` : ""}</p>
         </div>
 
         {/* Steps indicator */}
@@ -225,11 +267,11 @@ export function RegisterPage() {
           </div>
         )}
 
-        {step === 3 && clientSecret && (
+        {step === 3 && clientSecret && getStripe() && (
           <Card>
             <CardHeader><CardTitle>Payment</CardTitle><CardDescription>Complete your payment to activate your subscription</CardDescription></CardHeader>
             <CardContent>
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <Elements stripe={getStripe()!} options={{ clientSecret }}>
                 <PaymentForm
                   onSuccess={handleComplete}
                   companyName={companyName}
@@ -242,6 +284,7 @@ export function RegisterPage() {
                   adminPassword={adminPassword}
                   planId={selectedPlan?.id ?? ""}
                   paymentIntentId={paymentIntentId}
+                  amount={selectedPlan?.monthly_price ?? 0}
                 />
               </Elements>
             </CardContent>
@@ -315,7 +358,7 @@ export function RegisterPage() {
 function PaymentForm({
   onSuccess,
   companyName, companyEmail, companyPhone, companyAddress,
-  adminName, adminEmail, adminPhone, adminPassword, planId, paymentIntentId,
+  adminName, adminEmail, adminPhone, adminPassword, planId, paymentIntentId, amount,
 }: {
   onSuccess: (licenseKey: string) => void;
   companyName: string;
@@ -328,6 +371,7 @@ function PaymentForm({
   adminPassword: string;
   planId: string;
   paymentIntentId: string;
+  amount: number;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -379,7 +423,7 @@ function PaymentForm({
       <PaymentElement />
       <Button type="submit" disabled={!stripe || loading} className="w-full">
         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-        {loading ? "Processing..." : `Pay Now — UGX 0`}
+        {loading ? "Processing..." : `Pay Now — UGX ${Number(amount).toLocaleString()}`}
       </Button>
     </form>
   );
