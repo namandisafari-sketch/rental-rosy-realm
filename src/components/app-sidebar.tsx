@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton,
@@ -9,28 +9,42 @@ import { useAuth, useHighestRole } from "@/hooks/use-auth";
 import { getWorkspace, type NavGroup } from "@/lib/workspace-config";
 import { useAllFeatureAccess } from "@/hooks/use-feature-access";
 import { Button } from "./ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
+import { useState } from "react";
+import logoSrc from "@/assets/habico-logo.jpg";
 
 function NavGroup({ label, items }: { label: string; items: { title: string; url: string; icon: any }[] }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const initiallyOpen = items.some((it) => path === it.url || (it.url !== "/dashboard" && path.startsWith(it.url)));
+  const [open, setOpen] = useState(initiallyOpen);
   const isActive = (url: string) => path === url || (url !== "/dashboard" && path.startsWith(url));
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((it) => (
-            <SidebarMenuItem key={it.url}>
-              <SidebarMenuButton asChild isActive={isActive(it.url)}>
-                <Link to={it.url}>
-                  <it.icon className="h-4 w-4" />
-                  <span>{it.title}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <SidebarGroup>
+        <CollapsibleTrigger asChild>
+          <SidebarGroupLabel className="flex cursor-pointer items-center justify-between">
+            <span>{label}</span>
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "" : "-rotate-90"}`} />
+          </SidebarGroupLabel>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map((it) => (
+                <SidebarMenuItem key={it.url}>
+                  <SidebarMenuButton asChild isActive={isActive(it.url)}>
+                    <Link to={it.url}>
+                      <it.icon className="h-4 w-4" />
+                      <span>{it.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
   );
 }
 
@@ -63,12 +77,7 @@ export function AppSidebar() {
         style={{ background: ws.sidebarHeaderBg }}
       >
         <Link to={ws.defaultRoute} className="flex items-center gap-2 p-2">
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-md"
-            style={{ background: ws.accent, color: ws.accentForeground }}
-          >
-            <WsIcon className="h-4 w-4" />
-          </div>
+          <img src={logoSrc} alt="Habico" className="h-8 w-8 rounded-md object-cover" />
           <div className="leading-tight">
             <div className="display text-sm font-bold text-sidebar-foreground">HABICO</div>
             <div

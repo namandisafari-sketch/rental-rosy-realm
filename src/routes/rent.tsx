@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useAppMode } from "@/hooks/app-mode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,12 +12,11 @@ import { SearchableSelect, type SearchableOption } from "@/components/ui/searcha
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { toast } from "sonner";
 import {
   Building2, MapPin, Home, Bath, Bed, Search, SlidersHorizontal,
   ArrowRight, CheckCircle2, Loader2, Phone, Mail, Briefcase,
-  DollarSign, User, ChevronDown, X
+  DollarSign, User, ChevronDown, X, MessageSquare
 } from "lucide-react";
 
 export const Route = createFileRoute("/rent")({
@@ -65,6 +65,7 @@ type Property = {
 
 function RentPage() {
   const { user } = useAuth();
+  const { clearMode } = useAppMode();
   const nav = useNavigate();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -321,6 +322,24 @@ function RentPage() {
                   </div>
                 </div>
 
+                <div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
+                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Contact Habico</h4>
+                  <div className="mt-3 space-y-2 text-sm">
+                    <a href="tel:+256702239607" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                      <Phone className="h-4 w-4 text-accent" /> 0702 239 607
+                    </a>
+                    <a href="tel:+256756742220" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                      <Phone className="h-4 w-4 text-accent" /> 0756 742 220
+                    </a>
+                    <a href="mailto:licenses@habico.ug" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                      <Mail className="h-4 w-4 text-accent" /> licenses@habico.ug
+                    </a>
+                    <a href="https://wa.me/256702239607" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                      <MessageSquare className="h-4 w-4 text-accent" /> WhatsApp
+                    </a>
+                  </div>
+                </div>
+
                 <div>
                   <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Available Units</h4>
                   {vacantUnits.length === 0 ? (
@@ -353,7 +372,12 @@ function RentPage() {
                             <div className="text-right">
                               <div className="text-lg font-bold">{formatPrice(unit.monthly_rent)}</div>
                               <div className="text-[10px] text-muted-foreground">/month</div>
-                              <Button size="sm" className="mt-2" onClick={() => openApply(propDetail, unit)}>Apply Now</Button>
+                              <div className="mt-2 flex gap-2">
+                                <Button size="sm" variant="outline" onClick={() => window.open("https://wa.me/256702239607?text=" + encodeURIComponent(`Hi Habico, I'm interested in ${propDetail.name} — Unit ${unit.unit_number}`), "_blank")}>
+                                  <MessageSquare className="mr-1 h-3 w-3" /> WhatsApp
+                                </Button>
+                                <Button size="sm" onClick={() => openApply(propDetail, unit)}>Apply Now</Button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -436,7 +460,9 @@ function RentPage() {
         </DialogContent>
       </Dialog>
 
-      <SiteFooter />
+      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
+        <button onClick={() => clearMode()} className="underline hover:text-foreground">Switch how you access Habico</button>
+      </footer>
     </div>
   );
 }

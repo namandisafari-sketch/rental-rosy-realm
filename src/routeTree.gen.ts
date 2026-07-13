@@ -13,6 +13,8 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RentRouteImport } from './routes/rent'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as DownloadRouteImport } from './routes/download'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CardRouteImport } from './routes/card'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -52,7 +54,9 @@ import { Route as AuthenticatedProgressPaymentsRouteImport } from './routes/_aut
 import { Route as AuthenticatedPreventativeMaintenanceRouteImport } from './routes/_authenticated/preventative-maintenance'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedPaymentProofsRouteImport } from './routes/_authenticated/payment-proofs'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMyIdCardRouteImport } from './routes/_authenticated/my-id-card'
+import { Route as AuthenticatedMyDocumentsRouteImport } from './routes/_authenticated/my-documents'
 import { Route as AuthenticatedMeetingMinutesRouteImport } from './routes/_authenticated/meeting-minutes'
 import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
 import { Route as AuthenticatedListingBannersRouteImport } from './routes/_authenticated/listing-banners'
@@ -98,6 +102,16 @@ const RentRoute = RentRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -312,11 +326,23 @@ const AuthenticatedPaymentProofsRoute =
     path: '/payment-proofs',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMyIdCardRoute = AuthenticatedMyIdCardRouteImport.update({
   id: '/my-id-card',
   path: '/my-id-card',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMyDocumentsRoute =
+  AuthenticatedMyDocumentsRouteImport.update({
+    id: '/my-documents',
+    path: '/my-documents',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMeetingMinutesRoute =
   AuthenticatedMeetingMinutesRouteImport.update({
     id: '/meeting-minutes',
@@ -465,6 +491,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/card': typeof CardRoute
   '/contact': typeof ContactRoute
+  '/download': typeof DownloadRoute
+  '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/rent': typeof RentRoute
   '/services': typeof ServicesRoute
@@ -494,7 +522,9 @@ export interface FileRoutesByFullPath {
   '/listing-banners': typeof AuthenticatedListingBannersRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/meeting-minutes': typeof AuthenticatedMeetingMinutesRoute
+  '/my-documents': typeof AuthenticatedMyDocumentsRoute
   '/my-id-card': typeof AuthenticatedMyIdCardRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
@@ -536,6 +566,8 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/card': typeof CardRoute
   '/contact': typeof ContactRoute
+  '/download': typeof DownloadRoute
+  '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/rent': typeof RentRoute
   '/services': typeof ServicesRoute
@@ -565,7 +597,9 @@ export interface FileRoutesByTo {
   '/listing-banners': typeof AuthenticatedListingBannersRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/meeting-minutes': typeof AuthenticatedMeetingMinutesRoute
+  '/my-documents': typeof AuthenticatedMyDocumentsRoute
   '/my-id-card': typeof AuthenticatedMyIdCardRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
   '/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
@@ -609,6 +643,8 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/card': typeof CardRoute
   '/contact': typeof ContactRoute
+  '/download': typeof DownloadRoute
+  '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/rent': typeof RentRoute
   '/services': typeof ServicesRoute
@@ -638,7 +674,9 @@ export interface FileRoutesById {
   '/_authenticated/listing-banners': typeof AuthenticatedListingBannersRoute
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
   '/_authenticated/meeting-minutes': typeof AuthenticatedMeetingMinutesRoute
+  '/_authenticated/my-documents': typeof AuthenticatedMyDocumentsRoute
   '/_authenticated/my-id-card': typeof AuthenticatedMyIdCardRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
@@ -682,6 +720,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/card'
     | '/contact'
+    | '/download'
+    | '/pricing'
     | '/register'
     | '/rent'
     | '/services'
@@ -711,7 +751,9 @@ export interface FileRouteTypes {
     | '/listing-banners'
     | '/maintenance'
     | '/meeting-minutes'
+    | '/my-documents'
     | '/my-id-card'
+    | '/notifications'
     | '/payment-proofs'
     | '/payments'
     | '/preventative-maintenance'
@@ -753,6 +795,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/card'
     | '/contact'
+    | '/download'
+    | '/pricing'
     | '/register'
     | '/rent'
     | '/services'
@@ -782,7 +826,9 @@ export interface FileRouteTypes {
     | '/listing-banners'
     | '/maintenance'
     | '/meeting-minutes'
+    | '/my-documents'
     | '/my-id-card'
+    | '/notifications'
     | '/payment-proofs'
     | '/payments'
     | '/preventative-maintenance'
@@ -825,6 +871,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/card'
     | '/contact'
+    | '/download'
+    | '/pricing'
     | '/register'
     | '/rent'
     | '/services'
@@ -854,7 +902,9 @@ export interface FileRouteTypes {
     | '/_authenticated/listing-banners'
     | '/_authenticated/maintenance'
     | '/_authenticated/meeting-minutes'
+    | '/_authenticated/my-documents'
     | '/_authenticated/my-id-card'
+    | '/_authenticated/notifications'
     | '/_authenticated/payment-proofs'
     | '/_authenticated/payments'
     | '/_authenticated/preventative-maintenance'
@@ -898,6 +948,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CardRoute: typeof CardRoute
   ContactRoute: typeof ContactRoute
+  DownloadRoute: typeof DownloadRoute
+  PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
   RentRoute: typeof RentRoute
   ServicesRoute: typeof ServicesRoute
@@ -932,6 +984,20 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -1207,11 +1273,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPaymentProofsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/my-id-card': {
       id: '/_authenticated/my-id-card'
       path: '/my-id-card'
       fullPath: '/my-id-card'
       preLoaderRoute: typeof AuthenticatedMyIdCardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/my-documents': {
+      id: '/_authenticated/my-documents'
+      path: '/my-documents'
+      fullPath: '/my-documents'
+      preLoaderRoute: typeof AuthenticatedMyDocumentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/meeting-minutes': {
@@ -1439,7 +1519,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedListingBannersRoute: typeof AuthenticatedListingBannersRoute
   AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
   AuthenticatedMeetingMinutesRoute: typeof AuthenticatedMeetingMinutesRoute
+  AuthenticatedMyDocumentsRoute: typeof AuthenticatedMyDocumentsRoute
   AuthenticatedMyIdCardRoute: typeof AuthenticatedMyIdCardRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPaymentProofsRoute: typeof AuthenticatedPaymentProofsRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedPreventativeMaintenanceRoute: typeof AuthenticatedPreventativeMaintenanceRoute
@@ -1502,7 +1584,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedListingBannersRoute: AuthenticatedListingBannersRoute,
   AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
   AuthenticatedMeetingMinutesRoute: AuthenticatedMeetingMinutesRoute,
+  AuthenticatedMyDocumentsRoute: AuthenticatedMyDocumentsRoute,
   AuthenticatedMyIdCardRoute: AuthenticatedMyIdCardRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPaymentProofsRoute: AuthenticatedPaymentProofsRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedPreventativeMaintenanceRoute:
@@ -1550,6 +1634,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CardRoute: CardRoute,
   ContactRoute: ContactRoute,
+  DownloadRoute: DownloadRoute,
+  PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
   RentRoute: RentRoute,
   ServicesRoute: ServicesRoute,

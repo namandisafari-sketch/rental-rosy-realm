@@ -6,13 +6,18 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useLocation,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/use-auth";
+import { AppModeProvider, useAppMode } from "@/hooks/app-mode";
+import { AppModeSelector } from "@/components/app-mode-selector";
 import { Toaster } from "@/components/ui/sonner";
+import { RegisterPage } from "@/routes/register";
+import { setExeDownloadUrl } from "@/components/app-store-badges";
 
 function NotFoundComponent() {
   return (
@@ -89,14 +94,50 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AppGate({ children }: { children: ReactNode }) {
+  const { mode } = useAppMode();
+  const loc = useLocation();
+  const [onRegisterSubdomain, setOnRegisterSubdomain] = useState(false);
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    setOnRegisterSubdomain(
+      typeof window !== "undefined" && window.location.hostname === "register.habico.ug"
+    );
+    setIsNative(
+      typeof window !== "undefined" && "Capacitor" in window
+    );
+  }, []);
+
+  if (onRegisterSubdomain) {
+    return <RegisterPage />;
+  }
+
+  const isPublic = loc.pathname === "/auth" || loc.pathname === "/register";
+  const isApi = loc.pathname.startsWith("/_server");
+
+  if (isNative && !mode && !isPublic && !isApi) {
+    return <AppModeSelector />;
+  }
+
+  return <>{children}</>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    setExeDownloadUrl("/Habico%20Portal-Setup-1.0.0.exe");
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster />
-      </AuthProvider>
+      <AppModeProvider>
+        <AuthProvider>
+          <AppGate>
+            <Outlet />
+          </AppGate>
+          <Toaster />
+        </AuthProvider>
+      </AppModeProvider>
     </QueryClientProvider>
   );
 }

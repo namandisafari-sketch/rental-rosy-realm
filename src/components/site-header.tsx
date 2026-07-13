@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Building2, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import AppStoreBadges from "@/components/app-store-badges";
+import logoSrc from "@/assets/habico-logo.jpg";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -11,6 +13,8 @@ export function SiteHeader() {
     { label: "Home", to: "/" as const },
     { label: "Rent", to: "/rent" as const },
     { label: "Services", to: "/services" as const },
+    { label: "Pricing", to: "/pricing" as const },
+    { label: "Download", to: "/download" as const },
     { label: "About", to: "/about" as const },
     { label: "Contact", to: "/contact" as const },
   ];
@@ -18,9 +22,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Building2 className="h-5 w-5" />
-          </div>
+          <img src={logoSrc} alt="Habico" className="h-9 w-9 rounded-md object-cover" />
           <div className="leading-tight">
             <div className="display text-base font-bold text-primary">HABICO</div>
             <div className="text-[10px] font-semibold uppercase tracking-widest text-accent">Property Managers</div>
@@ -42,6 +44,7 @@ export function SiteHeader() {
               <Button asChild><Link to="/auth" search={{ mode: "signup" }}>Get started</Link></Button>
             </>
           )}
+          <AppStoreBadges compact />
         </div>
         <button className="md:hidden" onClick={() => setOpen((o) => !o)} aria-label="Menu"><Menu /></button>
       </div>
@@ -56,6 +59,9 @@ export function SiteHeader() {
             ) : (
               <Button asChild className="mt-2"><Link to="/auth">Sign in</Link></Button>
             )}
+            <div className="mt-4 border-t border-border pt-4">
+              <AppStoreBadges compact />
+            </div>
           </div>
         </div>
       )}

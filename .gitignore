@@ -39,8 +39,15 @@ android/**/build/
 android/build/
 .vercel
 
-# Electron build output
+# APK / AAB build artifacts
+*.apk
+*.aab
+
+# Electron / Desktop build output
 dist-electron/
 release/
 desktop/dist/
 desktop/node_modules/
+
+# EXE build artifacts
+public/*.exe

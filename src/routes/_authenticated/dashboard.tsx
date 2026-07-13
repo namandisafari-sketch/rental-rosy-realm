@@ -1,14 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { StripePaymentForm } from "@/components/ui/stripe-payment-form";
+import { createPaymentIntent, recordStripePayment } from "@/lib/stripe.server";
 import {
   Building2, Users, Receipt, Wrench, TrendingUp, AlertTriangle,
-  ArrowRight, Home, FileText, Calendar, DollarSign, MapPin, Landmark, Link2,
+  ArrowRight, Home, FileText, Calendar, DollarSign, MapPin, Landmark, Link2, CreditCard, Loader2,
 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Habico Portal" }] }),
@@ -196,7 +203,7 @@ function useTenantDashboardData(tenantId: string) {
   return useQuery({
     queryKey: ["tenant-dashboard", tenantId],
     queryFn: async () => {
-      const [leasesRes, mrRes] = await Promise.all([
+      const [leasesRes, mrRes, msgRes] = await Promise.all([
         supabase.from("leases")
           .select("*, units(unit_number, properties(name))")
           .eq("tenant_id", tenantId)
@@ -205,13 +212,19 @@ function useTenantDashboardData(tenantId: string) {
           .select("*")
           .eq("tenant_id", tenantId)
           .order("created_at", { ascending: false }),
+        supabase.from("rental_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenantId)
+          .eq("is_read", false),
       ]);
 
       const leases = (leasesRes.data as any) ?? [];
       const activeLeaseIds = leases.filter((l: any) => l.status === "active").map((l: any) => l.id);
 
       let payments: any[] = [];
+      let activeLease: any = null;
       if (activeLeaseIds.length > 0) {
+        activeLease = leases.find((l: any) => l.status === "active");
         const { data: pData } = await supabase
           .from("payments")
           .select("*, leases!inner(monthly_rent, units(unit_number, properties(name)))")
@@ -221,7 +234,10 @@ function useTenantDashboardData(tenantId: string) {
         payments = (pData as any) ?? [];
       }
 
-      return { leases, payments, maintenanceRequests: (mrRes.data as any) ?? [] } as any;
+      const unreadCount = msgRes.count ?? 0;
+      const outstandingBalance = activeLease ? Number(activeLease.outstanding_balance ?? 0) : 0;
+
+      return { leases, payments, maintenanceRequests: (mrRes.data as any) ?? [], unreadCount, outstandingBalance } as any;
     },
     enabled: !!tenantId,
   });
@@ -557,8 +573,149 @@ function StaffDashboard() {
   );
 }
 
+function PayRentDialog({
+  activeLease,
+  onSuccess,
+}: {
+  activeLease: any;
+  onSuccess: () => void;
+}) {
+  const [step, setStep] = useState<"amount" | "stripe">("amount");
+  const [amount, setAmount] = useState("");
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+
+  async function handleCreatePayment() {
+    if (!amount || Number(amount) <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await createPaymentIntent({
+        amount: Math.round(Number(amount) * 100),
+        lease_id: activeLease.id,
+        payment_type: "rent",
+        period_label: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+        months_covered: 1,
+      });
+      setClientSecret(result.clientSecret);
+      setPaymentIntentId(result.paymentIntentId);
+      setStep("stripe");
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to create payment");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleStripeSuccess() {
+    if (!activeLease || !paymentIntentId || !user) return;
+    try {
+      const result = await recordStripePayment({
+        paymentIntentId,
+        amount: Number(amount),
+        lease_id: activeLease.id,
+        payment_type: "rent",
+        method: "stripe",
+        period_label: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+        months_covered: 1,
+        recorded_by: user.id,
+      });
+      if (result.success) {
+        toast.success("Payment recorded successfully");
+      } else {
+        toast.error(result.error ?? "Failed to record payment");
+      }
+      setOpen(false);
+      setStep("amount");
+      setAmount("");
+      setClientSecret(null);
+      setPaymentIntentId(null);
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to record payment");
+    }
+  }
+
+  function handleCancel() {
+    setOpen(false);
+    setStep("amount");
+    setAmount("");
+    setClientSecret(null);
+    setPaymentIntentId(null);
+  }
+
+  const suggestedAmount = activeLease ? Number(activeLease.monthly_rent) : 0;
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+          <CreditCard className="mr-2 h-5 w-5" />
+          Pay Rent Now
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{step === "amount" ? "Enter Payment Amount" : "Pay with Card"}</DialogTitle>
+        </DialogHeader>
+        {step === "amount" ? (
+          <div className="space-y-4">
+            <div>
+              <Label>Amount (UGX)</Label>
+              <Input
+                type="number"
+                className="mt-1.5 text-lg"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={String(suggestedAmount)}
+              />
+            </div>
+            {suggestedAmount > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {[suggestedAmount, Math.round(suggestedAmount / 2)].map((a) => (
+                  <Button
+                    key={a}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAmount(String(a))}
+                  >
+                    UGX {a.toLocaleString()}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Your monthly rent is <strong>UGX {suggestedAmount.toLocaleString()}</strong>.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+              <Button onClick={handleCreatePayment} disabled={!amount || loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Continue to Payment
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : clientSecret ? (
+          <StripePaymentForm
+            clientSecret={clientSecret}
+            onSuccess={handleStripeSuccess}
+            onCancel={handleCancel}
+          />
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TenantDashboard() {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const { data: d, isLoading } = useTenantDashboardData(user?.id ?? "");
 
   if (isLoading || !d) {
@@ -566,6 +723,8 @@ function TenantDashboard() {
   }
 
   const activeLease = (d.leases as any[]).find((l: any) => l.status === "active");
+  const hasBalance = d.outstandingBalance > 0;
+  const balanceColor = hasBalance ? "text-red-600" : "text-green-600";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -575,6 +734,33 @@ function TenantDashboard() {
           Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""}.
         </h1>
       </div>
+
+      {/* Balance / Arrears Card */}
+      <Card className={`shadow-card border-l-4 ${hasBalance ? "border-l-red-500" : "border-l-green-500"}`}>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className={`rounded-full p-3 ${hasBalance ? "bg-red-100" : "bg-green-100"}`}>
+                <DollarSign className={`h-6 w-6 ${balanceColor}`} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">{hasBalance ? "Outstanding Balance" : "Account is Current"}</p>
+                <p className={`text-2xl font-bold ${balanceColor}`}>
+                  {hasBalance ? `UGX ${d.outstandingBalance.toLocaleString()}` : "No balance due"}
+                </p>
+                {hasBalance && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Please pay your outstanding balance to avoid late fees.
+                  </p>
+                )}
+              </div>
+            </div>
+            {activeLease && (
+              <PayRentDialog activeLease={activeLease} onSuccess={() => qc.invalidateQueries({ queryKey: ["tenant-dashboard"] })} />
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {activeLease ? (
         <Card className="shadow-card border-l-4 border-l-accent">

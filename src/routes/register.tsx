@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,10 +11,11 @@ import { toast } from "sonner";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { createRegistrationIntent, completeRegistration } from "@/lib/register.server";
+import AppStoreBadges from "@/components/app-store-badges";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "");
 
-type Plan = {
+export type Plan = {
   id: string;
   name: string;
   slug: string;
@@ -27,8 +28,17 @@ export const Route = createFileRoute("/register")({
   component: RegisterPage,
 });
 
-function RegisterPage() {
+export function RegisterPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      document.title = "Register — Habico Portal";
+      if (window.location.hostname !== "register.habico.ug") {
+        navigate({ to: "/pricing", replace: true });
+      }
+    }
+  }, [navigate]);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
@@ -289,6 +299,14 @@ function RegisterPage() {
             </CardContent>
           </Card>
         )}
+      </div>
+      <div className="mx-auto max-w-2xl px-4 pb-8">
+        <div className="border-t border-border pt-6">
+          <p className="text-center text-xs font-medium uppercase tracking-widest text-muted-foreground mb-4">Download the Habico app</p>
+          <div className="flex justify-center">
+            <AppStoreBadges compact />
+          </div>
+        </div>
       </div>
     </div>
   );

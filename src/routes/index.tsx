@@ -4,6 +4,7 @@ import heroImg from "@/assets/hero-residence.jpg";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import AppStoreBadges from "@/components/app-store-badges";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -63,6 +64,9 @@ function HomePage() {
                   <div className="text-xs uppercase tracking-wider text-primary-foreground/70">{s.l}</div>
                 </div>
               ))}
+            </div>
+            <div className="mt-8">
+              <AppStoreBadges />
             </div>
           </div>
         </div>
@@ -127,6 +131,9 @@ function HomePage() {
             <div className="flex flex-wrap gap-3 md:justify-end">
               <Button asChild size="lg" variant="outline" className="border-primary-foreground/40 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"><Link to="/contact">Talk to us</Link></Button>
               <Button asChild size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90"><Link to="/auth" search={{ mode: "signup" }}>Open portal</Link></Button>
+            </div>
+            <div className="mt-6 flex justify-center md:justify-start">
+              <AppStoreBadges compact />
             </div>
           </div>
         </div>

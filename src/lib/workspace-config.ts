@@ -7,7 +7,7 @@ import {
   MessageSquareQuote, FileUp, Handshake, GitCompareArrows, Clock,
   PiggyBank, Landmark, FileCheck, ClipboardCheck, Hash,
   ReceiptText, ScrollText, Gauge, CalendarRange, NotebookPen,
-  ListTodo, TriangleAlert, FolderKanban, Image, Banknote,
+  ListTodo, TriangleAlert, FolderKanban, Image, Banknote, Bell,
   type LucideIcon, Crown, UserCog, User, Shield, BookOpen, Building
 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
@@ -245,9 +245,11 @@ export const workspaceConfigs: Record<AppRole, WorkspaceConfig> = {
           { title: "My Payments", url: "/payments", icon: Receipt },
           { title: "Payment Proofs", url: "/payment-proofs", icon: ShieldCheck },
           { title: "Messages", url: "/rental-messages", icon: MessageSquare },
+          { title: "My Documents", url: "/my-documents", icon: FileText },
         ]},
         { label: "Services", items: [
           { title: "Maintenance", url: "/maintenance", icon: Wrench },
+          { title: "Notifications", url: "/notifications", icon: Bell },
         ]},
       ],
       extraItems: [
@@ -257,6 +259,7 @@ export const workspaceConfigs: Record<AppRole, WorkspaceConfig> = {
     allowedRoutes: [
       ...rentalItems.map(i => i.url),
       "/dashboard", "/my-id-card", "/settings",
+      "/my-documents", "/notifications",
     ],
   },
 };

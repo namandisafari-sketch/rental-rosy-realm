@@ -1,6 +1,7 @@
 {
 	"appId": "com.rentalrosy.realm",
 	"appName": "Habico",
-	"webDir": "dist",
+	"webDir": ".output/public",
+	"backgroundColor": "#0f0f11",
 	"android": {}
 }

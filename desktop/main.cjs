@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Tray, Menu, nativeImage, screen } = require("electron");
 const path = require("path");
+const fs = require("fs");
 
 const APP_URL = "https://www.habico.ug/auth";
 const APP_ID = "com.habico.portal";
@@ -9,6 +10,19 @@ let mainWindow = null;
 let tray = null;
 
 const iconPath = path.join(__dirname, "buildResources", "icon.ico");
+const errorPagePath = path.join(__dirname, "error.html");
+
+function loadErrorPage(detail) {
+  if (!mainWindow) return;
+  let html = fs.readFileSync(errorPagePath, "utf-8");
+  if (detail) {
+    html = html.replace(
+      '<div class="details" id="errorDetail"></div>',
+      `<div class="details" id="errorDetail">${detail}</div>`
+    );
+  }
+  mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+}
 
 app.setAppUserModelId(APP_ID);
 
@@ -43,6 +57,7 @@ function createWindow() {
       nodeIntegration: false,
     },
     show: false,
+    backgroundColor: "#f8fafc",
   });
 
   Menu.setApplicationMenu(null);
@@ -53,8 +68,13 @@ function createWindow() {
     mainWindow.show();
   });
 
-  mainWindow.webContents.on("did-fail-load", (_e, code, desc) => {
-    console.error(`Failed to load ${APP_URL}: ${code} ${desc}`);
+  let failedOnce = false;
+  mainWindow.webContents.on("did-fail-load", (_e, code, desc, url) => {
+    console.error(`Failed to load ${url}: ${code} ${desc}`);
+    if (!failedOnce && url !== "data:text/html,<html></html>") {
+      failedOnce = true;
+      loadErrorPage(`Failed to load ${APP_URL}<br/>Error: ${desc} (${code})`);
+    }
   });
 
   setTimeout(() => {
@@ -97,6 +117,14 @@ function createTray() {
     });
   } catch (_) { /* tray not critical */ }
 }
+
+app.on("certificate-error", (event, _webContents, _url, _error, _certificate, callback) => {
+  event.preventDefault();
+  callback(false);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    loadErrorPage("SSL certificate error. Check your system date/time and internet connection.");
+  }
+});
 
 app.whenReady().then(() => {
   try {
