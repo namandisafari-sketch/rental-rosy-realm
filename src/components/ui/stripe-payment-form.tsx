@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string);
+const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+let stripePromise: Promise<Stripe | null> | null = null;
+function getStripe() {
+  if (!STRIPE_KEY) return null;
+  if (!stripePromise) stripePromise = loadStripe(STRIPE_KEY);
+  return stripePromise;
+}
 
 function PaymentFormInner({
   onSuccess,
