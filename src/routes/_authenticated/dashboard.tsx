@@ -615,7 +615,7 @@ function PayRentDialog({
   async function handleStripeSuccess() {
     if (!activeLease || !paymentIntentId || !user) return;
     try {
-      const result = await recordStripePayment({
+      const result = await recordStripePayment({ data: {
         paymentIntentId,
         amount: Number(amount),
         lease_id: activeLease.id,
@@ -624,7 +624,7 @@ function PayRentDialog({
         period_label: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
         months_covered: 1,
         recorded_by: user.id,
-      });
+      }});
       if (result.success) {
         toast.success("Payment recorded successfully");
       } else {
