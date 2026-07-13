@@ -1907,7 +1907,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
-          lease_id: string
+          lease_id: string | null
           method: string
           months_covered: number | null
           notes: string | null
@@ -1925,7 +1925,7 @@ export type Database = {
           amount: number
           created_at?: string
           id?: string
-          lease_id: string
+          lease_id?: string | null
           method?: string
           months_covered?: number | null
           notes?: string | null
@@ -1943,7 +1943,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
-          lease_id?: string
+          lease_id?: string | null
           method?: string
           months_covered?: number | null
           notes?: string | null
