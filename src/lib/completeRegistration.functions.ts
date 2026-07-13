@@ -119,16 +119,20 @@ export const completeRegistration = createServerFn({ method: "POST" })
       if (paymentError) console.error("Failed to record registration payment", paymentError);
     }
 
-    // 6. Send license key email
+    // 6. Send license key email (must await — Vercel kills dangling promises after response)
     const { sendLicenseKeyEmail } = await import("@/lib/email.server");
-    sendLicenseKeyEmail({
-      to: data.adminEmail,
-      companyName: data.companyName,
-      licenseKey,
-      adminName: data.adminName,
-      adminEmail: data.adminEmail,
-      planName: planRow?.name ?? "Unknown",
-    }).catch((e) => console.error("Failed to send license email", e));
+    try {
+      await sendLicenseKeyEmail({
+        to: data.adminEmail,
+        companyName: data.companyName,
+        licenseKey,
+        adminName: data.adminName,
+        adminEmail: data.adminEmail,
+        planName: planRow?.name ?? "Unknown",
+      });
+    } catch (e) {
+      console.error("Failed to send license email", e);
+    }
 
     return {
       success: true,

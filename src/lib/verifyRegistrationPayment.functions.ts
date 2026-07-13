@@ -102,18 +102,22 @@ export const verifyRegistrationPayment = createServerFn({ method: "POST" })
       status: "verified",
     }).eq("id", data.pendingId);
 
-    // Send license key email
+    // Send license key email (must await — Vercel kills dangling promises after response)
     const { sendLicenseKeyEmail } = await import("@/lib/email.server");
-    sendLicenseKeyEmail({
-      to: pending.admin_email,
-      companyName: pending.company_name,
-      licenseKey,
-      adminName: pending.admin_name,
-      adminEmail: pending.admin_email,
-      planName,
-      amount: Number(pending.amount),
-      paymentDate: new Date().toLocaleDateString("en-UG", { year: "numeric", month: "long", day: "numeric" }),
-    }).catch((e) => console.error("Failed to send license email", e));
+    try {
+      await sendLicenseKeyEmail({
+        to: pending.admin_email,
+        companyName: pending.company_name,
+        licenseKey,
+        adminName: pending.admin_name,
+        adminEmail: pending.admin_email,
+        planName,
+        amount: Number(pending.amount),
+        paymentDate: new Date().toLocaleDateString("en-UG", { year: "numeric", month: "long", day: "numeric" }),
+      });
+    } catch (e) {
+      console.error("Failed to send license email", e);
+    }
 
     return { success: true as const, licenseKey, companyId: company.id, userId };
   });

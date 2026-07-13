@@ -83,16 +83,20 @@ export const activateLicenseKey = createServerFn({ method: "POST" })
       return { success: false as const, message: roleError.message };
     }
 
-    // Send welcome email
+    // Send welcome email (must await — Vercel kills dangling promises after response)
     const { sendLicenseKeyEmail } = await import("@/lib/email.server");
-    sendLicenseKeyEmail({
-      to: data.adminEmail,
-      companyName: company.name,
-      licenseKey: data.licenseKey.trim(),
-      adminName: data.adminName,
-      adminEmail: data.adminEmail,
-      planName: "your selected plan",
-    }).catch((e) => console.error("Failed to send license activation email", e));
+    try {
+      await sendLicenseKeyEmail({
+        to: data.adminEmail,
+        companyName: company.name,
+        licenseKey: data.licenseKey.trim(),
+        adminName: data.adminName,
+        adminEmail: data.adminEmail,
+        planName: "your selected plan",
+      });
+    } catch (e) {
+      console.error("Failed to send license activation email", e);
+    }
 
     return { success: true as const, companyId: company.id, companyName: company.name };
   });
