@@ -122,34 +122,29 @@ export const completeRegistration = createServerFn({ method: "POST" })
       return { success: false as const, error: roleError.message };
     }
 
-    // 5. Record the payment
-    const { error: paymentError } = await supabaseAdmin
-      .from("payments")
-      .insert({
-        amount: pi.amount_received ? pi.amount_received / 100 : 0,
-        method: "stripe",
-        payment_type: "registration",
-        stripe_payment_intent_id: data.paymentIntentId,
-        stripe_payment_status: pi.status,
-        payment_date: new Date().toISOString().slice(0, 10),
-      });
-
-    if (paymentError) console.error("Failed to record registration payment", paymentError);
+    // 5. Record the payment (only if a payment was taken)
+    if (requiresPayment) {
+      const { error: paymentError } = await supabaseAdmin
+        .from("payments")
+        .insert({
+          amount: paidAmount,
+          method: "stripe",
+          payment_type: "registration",
+          stripe_payment_intent_id: data.paymentIntentId,
+          stripe_payment_status: stripeStatus,
+          payment_date: new Date().toISOString().slice(0, 10),
+        });
+      if (paymentError) console.error("Failed to record registration payment", paymentError);
+    }
 
     // 6. Send license key email
-    const { data: plan } = await supabaseAdmin
-      .from("subscription_plans")
-      .select("name")
-      .eq("id", data.planId)
-      .single();
-
     sendLicenseKeyEmail({
       to: data.adminEmail,
       companyName: data.companyName,
       licenseKey,
       adminName: data.adminName,
       adminEmail: data.adminEmail,
-      planName: plan?.name ?? "Unknown",
+      planName: planRow?.name ?? "Unknown",
     }).catch((e) => console.error("Failed to send license email", e));
 
     return {
