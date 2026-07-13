@@ -358,7 +358,7 @@ export function RegisterPage() {
 function PaymentForm({
   onSuccess,
   companyName, companyEmail, companyPhone, companyAddress,
-  adminName, adminEmail, adminPhone, adminPassword, planId, paymentIntentId,
+  adminName, adminEmail, adminPhone, adminPassword, planId, paymentIntentId, amount,
 }: {
   onSuccess: (licenseKey: string) => void;
   companyName: string;
@@ -371,6 +371,7 @@ function PaymentForm({
   adminPassword: string;
   planId: string;
   paymentIntentId: string;
+  amount: number;
 }) {
   const stripe = useStripe();
   const elements = useElements();
