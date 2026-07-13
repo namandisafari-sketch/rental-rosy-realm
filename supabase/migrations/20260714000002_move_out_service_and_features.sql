@@ -134,7 +134,53 @@ CREATE TRIGGER move_bookings_touch_updated_at
   BEFORE UPDATE ON public.move_bookings
   FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 
--- 6. Public RPC to get the first active move service config for display
+-- 6. Fix company_has_feature to fall back to true when company has no plan
+CREATE OR REPLACE FUNCTION public.company_has_feature(p_feature_key TEXT)
+RETURNS TABLE (has_access BOOLEAN)
+LANGUAGE plpgsql STABLE
+SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_company_id UUID;
+  v_is_staff BOOLEAN;
+BEGIN
+  SELECT p.company_id, public.is_staff(auth.uid())
+  INTO v_company_id, v_is_staff
+  FROM public.profiles p
+  WHERE p.id = auth.uid();
+
+  -- System staff with no company see everything
+  IF v_is_staff AND v_company_id IS NULL THEN
+    has_access := true;
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  -- If company has no plan, allow everything (graceful fallback)
+  IF NOT EXISTS (
+    SELECT 1 FROM public.companies
+    WHERE id = v_company_id AND plan_id IS NOT NULL
+  ) THEN
+    has_access := true;
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  -- Check feature access via company's plan
+  SELECT COALESCE(pf.is_enabled, false) INTO has_access
+  FROM public.companies c
+  JOIN public.subscription_plans sp ON sp.id = c.plan_id
+  JOIN public.plan_features pf ON pf.plan_id = sp.id
+  WHERE c.id = v_company_id
+    AND pf.feature_key = p_feature_key
+    AND sp.is_active = true
+    AND c.is_active = true;
+
+  RETURN NEXT;
+END;
+$$;
+
+-- 7. Public RPC to get the first active move service config for display
 CREATE OR REPLACE FUNCTION public.get_active_move_service_config()
 RETURNS SETOF public.move_service_configs
 LANGUAGE sql

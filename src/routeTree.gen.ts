@@ -17,6 +17,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CardRouteImport } from './routes/card'
+import { Route as BookMoveRouteImport } from './routes/book-move'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -83,7 +84,6 @@ import { Route as AuthenticatedConstructionInvoicesRouteImport } from './routes/
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedCommitmentLogRouteImport } from './routes/_authenticated/commitment-log'
 import { Route as AuthenticatedChangeOrdersRouteImport } from './routes/_authenticated/change-orders'
-import { Route as AuthenticatedBookMoveRouteImport } from './routes/_authenticated/book-move'
 import { Route as AuthenticatedBillsRouteImport } from './routes/_authenticated/bills'
 import { Route as AuthenticatedBidPackagesRouteImport } from './routes/_authenticated/bid-packages'
 import { Route as AuthenticatedAssetsRouteImport } from './routes/_authenticated/assets'
@@ -128,6 +128,11 @@ const ContactRoute = ContactRouteImport.update({
 const CardRoute = CardRouteImport.update({
   id: '/card',
   path: '/card',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookMoveRoute = BookMoveRouteImport.update({
+  id: '/book-move',
+  path: '/book-move',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -492,11 +497,6 @@ const AuthenticatedChangeOrdersRoute =
     path: '/change-orders',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedBookMoveRoute = AuthenticatedBookMoveRouteImport.update({
-  id: '/book-move',
-  path: '/book-move',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedBillsRoute = AuthenticatedBillsRouteImport.update({
   id: '/bills',
   path: '/bills',
@@ -529,6 +529,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/book-move': typeof BookMoveRoute
   '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/download': typeof DownloadRoute
@@ -541,7 +542,6 @@ export interface FileRoutesByFullPath {
   '/assets': typeof AuthenticatedAssetsRoute
   '/bid-packages': typeof AuthenticatedBidPackagesRoute
   '/bills': typeof AuthenticatedBillsRoute
-  '/book-move': typeof AuthenticatedBookMoveRoute
   '/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/commitment-log': typeof AuthenticatedCommitmentLogRoute
   '/companies': typeof AuthenticatedCompaniesRoute
@@ -610,6 +610,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/book-move': typeof BookMoveRoute
   '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/download': typeof DownloadRoute
@@ -622,7 +623,6 @@ export interface FileRoutesByTo {
   '/assets': typeof AuthenticatedAssetsRoute
   '/bid-packages': typeof AuthenticatedBidPackagesRoute
   '/bills': typeof AuthenticatedBillsRoute
-  '/book-move': typeof AuthenticatedBookMoveRoute
   '/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/commitment-log': typeof AuthenticatedCommitmentLogRoute
   '/companies': typeof AuthenticatedCompaniesRoute
@@ -693,6 +693,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/book-move': typeof BookMoveRoute
   '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/download': typeof DownloadRoute
@@ -705,7 +706,6 @@ export interface FileRoutesById {
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
   '/_authenticated/bid-packages': typeof AuthenticatedBidPackagesRoute
   '/_authenticated/bills': typeof AuthenticatedBillsRoute
-  '/_authenticated/book-move': typeof AuthenticatedBookMoveRoute
   '/_authenticated/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/_authenticated/commitment-log': typeof AuthenticatedCommitmentLogRoute
   '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
@@ -776,6 +776,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/book-move'
     | '/card'
     | '/contact'
     | '/download'
@@ -788,7 +789,6 @@ export interface FileRouteTypes {
     | '/assets'
     | '/bid-packages'
     | '/bills'
-    | '/book-move'
     | '/change-orders'
     | '/commitment-log'
     | '/companies'
@@ -857,6 +857,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/book-move'
     | '/card'
     | '/contact'
     | '/download'
@@ -869,7 +870,6 @@ export interface FileRouteTypes {
     | '/assets'
     | '/bid-packages'
     | '/bills'
-    | '/book-move'
     | '/change-orders'
     | '/commitment-log'
     | '/companies'
@@ -939,6 +939,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/auth'
+    | '/book-move'
     | '/card'
     | '/contact'
     | '/download'
@@ -951,7 +952,6 @@ export interface FileRouteTypes {
     | '/_authenticated/assets'
     | '/_authenticated/bid-packages'
     | '/_authenticated/bills'
-    | '/_authenticated/book-move'
     | '/_authenticated/change-orders'
     | '/_authenticated/commitment-log'
     | '/_authenticated/companies'
@@ -1022,6 +1022,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  BookMoveRoute: typeof BookMoveRoute
   CardRoute: typeof CardRoute
   ContactRoute: typeof ContactRoute
   DownloadRoute: typeof DownloadRoute
@@ -1088,6 +1089,13 @@ declare module '@tanstack/react-router' {
       path: '/card'
       fullPath: '/card'
       preLoaderRoute: typeof CardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book-move': {
+      id: '/book-move'
+      path: '/book-move'
+      fullPath: '/book-move'
+      preLoaderRoute: typeof BookMoveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1552,13 +1560,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChangeOrdersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/book-move': {
-      id: '/_authenticated/book-move'
-      path: '/book-move'
-      fullPath: '/book-move'
-      preLoaderRoute: typeof AuthenticatedBookMoveRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/bills': {
       id: '/_authenticated/bills'
       path: '/bills'
@@ -1616,7 +1617,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAssetsRoute: typeof AuthenticatedAssetsRoute
   AuthenticatedBidPackagesRoute: typeof AuthenticatedBidPackagesRoute
   AuthenticatedBillsRoute: typeof AuthenticatedBillsRoute
-  AuthenticatedBookMoveRoute: typeof AuthenticatedBookMoveRoute
   AuthenticatedChangeOrdersRoute: typeof AuthenticatedChangeOrdersRoute
   AuthenticatedCommitmentLogRoute: typeof AuthenticatedCommitmentLogRoute
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
@@ -1686,7 +1686,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAssetsRoute: AuthenticatedAssetsRoute,
   AuthenticatedBidPackagesRoute: AuthenticatedBidPackagesRoute,
   AuthenticatedBillsRoute: AuthenticatedBillsRoute,
-  AuthenticatedBookMoveRoute: AuthenticatedBookMoveRoute,
   AuthenticatedChangeOrdersRoute: AuthenticatedChangeOrdersRoute,
   AuthenticatedCommitmentLogRoute: AuthenticatedCommitmentLogRoute,
   AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
@@ -1763,6 +1762,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  BookMoveRoute: BookMoveRoute,
   CardRoute: CardRoute,
   ContactRoute: ContactRoute,
   DownloadRoute: DownloadRoute,

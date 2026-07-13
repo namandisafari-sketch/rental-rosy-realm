@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useHighestRole } from "@/hooks/use-auth";
+import { useAuth, useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,19 +44,47 @@ const FEATURE_LABELS: Record<string, string> = {
   reports: "Reports",
   companies: "Companies Management",
   branding: "Company Branding",
+  system: "Admin Pages (System)",
+  settings: "Settings",
+  move_service: "Move In/Out Service",
 };
 
 function SubscriptionPlansPage() {
   const queryClient = useQueryClient();
   const role = useHighestRole();
+  const { user } = useAuth();
   const [editPlan, setEditPlan] = useState<Plan | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", description: "", monthly_price: "0", yearly_price: "0", sort_order: "0" });
 
-  const { data: plans = [], isLoading } = useQuery({
-    queryKey: ["subscription-plans"],
+  const { data: currentProfile } = useQuery({
+    queryKey: ["current-profile", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("subscription_plans").select("*").order("sort_order");
+      if (!user?.id) return null;
+      const { data } = await supabase.from("profiles").select("company_id").eq("id", user.id).single();
+      return data ?? null;
+    },
+    enabled: !!user?.id,
+  });
+
+  const { data: userCompany } = useQuery({
+    queryKey: ["user-company-plan", currentProfile?.company_id],
+    queryFn: async () => {
+      if (!currentProfile?.company_id) return null;
+      const { data } = await supabase.from("companies").select("plan_id").eq("id", currentProfile.company_id).single();
+      return data ?? null;
+    },
+    enabled: !!currentProfile?.company_id,
+  });
+
+  const { data: plans = [], isLoading } = useQuery({
+    queryKey: ["subscription-plans", userCompany?.plan_id],
+    queryFn: async () => {
+      let query = supabase.from("subscription_plans").select("*").order("sort_order");
+      if (currentProfile?.company_id && userCompany?.plan_id) {
+        query = query.eq("id", userCompany.plan_id);
+      }
+      const { data, error } = await query;
       if (error && error.code !== "PGRST116" && !error.message?.includes("does not exist")) throw error;
       return (data ?? []) as Plan[];
     },
@@ -108,9 +136,11 @@ function SubscriptionPlansPage() {
     onError: (err) => toast.error((err as any)?.message || "Failed to update feature"),
   });
 
-  const isAdmin = role === "admin" || role === "manager";
+  const isStaff = role === "admin" || role === "manager";
+  const hasCompany = !!currentProfile?.company_id;
+  const isSuperAdmin = isStaff && !hasCompany;
 
-  if (!isAdmin) {
+  if (!isStaff) {
     return <div className="flex h-96 items-center justify-center"><p className="text-muted-foreground">Access denied.</p></div>;
   }
 
@@ -144,7 +174,7 @@ function SubscriptionPlansPage() {
           <h1 className="text-2xl font-bold tracking-tight">Subscription Plans</h1>
           <p className="text-sm text-muted-foreground">Manage subscription packages and their feature access</p>
         </div>
-        <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" />Add Plan</Button>
+        {isSuperAdmin && <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" />Add Plan</Button>}
       </div>
 
       {isLoading ? (
@@ -161,7 +191,7 @@ function SubscriptionPlansPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Slug: {plan.slug}</span>
                   {!plan.is_active && <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">Inactive</span>}
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(plan)}><Pencil className="h-4 w-4" /></Button>
+                  {isSuperAdmin && <Button variant="ghost" size="sm" onClick={() => openEdit(plan)}><Pencil className="h-4 w-4" /></Button>}
                 </div>
               </CardHeader>
               <CardContent>
@@ -178,12 +208,16 @@ function SubscriptionPlansPage() {
                       const enabled = pf?.is_enabled ?? false;
                       return (
                         <div key={key} className="flex items-center gap-2 rounded-lg border px-3 py-2">
-                          <Switch
-                            checked={enabled}
-                            onCheckedChange={(val) =>
-                              toggleFeature.mutate({ planId: plan.id, featureKey: key, isEnabled: val })
-                            }
-                          />
+                          {isSuperAdmin ? (
+                            <Switch
+                              checked={enabled}
+                              onCheckedChange={(val) =>
+                                toggleFeature.mutate({ planId: plan.id, featureKey: key, isEnabled: val })
+                              }
+                            />
+                          ) : (
+                            <div className={`h-4 w-4 rounded-full ${enabled ? 'bg-green-500' : 'bg-gray-300'}`} />
+                          )}
                           <span className="text-sm">{label}</span>
                         </div>
                       );
