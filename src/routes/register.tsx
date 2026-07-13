@@ -31,6 +31,7 @@ export type Plan = {
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Register — Habico Portal" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({ plan: typeof s.plan === "string" ? s.plan : undefined }),
   component: RegisterPage,
 });
 
