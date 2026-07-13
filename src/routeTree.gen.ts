@@ -52,6 +52,7 @@ import { Route as AuthenticatedProjectDashboardRouteImport } from './routes/_aut
 import { Route as AuthenticatedProjectBudgetRouteImport } from './routes/_authenticated/project-budget'
 import { Route as AuthenticatedProgressPaymentsRouteImport } from './routes/_authenticated/progress-payments'
 import { Route as AuthenticatedPreventativeMaintenanceRouteImport } from './routes/_authenticated/preventative-maintenance'
+import { Route as AuthenticatedDevToolsRouteImport } from './routes/_authenticated/dev-tools'
 import { Route as AuthenticatedPendingRegistrationsRouteImport } from './routes/_authenticated/pending-registrations'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedPaymentSettingsRouteImport } from './routes/_authenticated/payment-settings'
@@ -317,6 +318,11 @@ const AuthenticatedPreventativeMaintenanceRoute =
     path: '/preventative-maintenance',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDevToolsRoute = AuthenticatedDevToolsRouteImport.update({
+  id: '/dev-tools',
+  path: '/dev-tools',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedPendingRegistrationsRoute =
   AuthenticatedPendingRegistrationsRouteImport.update({
     id: '/pending-registrations',
@@ -522,6 +528,7 @@ export interface FileRoutesByFullPath {
   '/cost-codes': typeof AuthenticatedCostCodesRoute
   '/daily-logs': typeof AuthenticatedDailyLogsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dev-tools': typeof AuthenticatedDevToolsRoute
   '/e-leasing': typeof AuthenticatedELeasingRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/equipment-rentals': typeof AuthenticatedEquipmentRentalsRoute
@@ -599,6 +606,7 @@ export interface FileRoutesByTo {
   '/cost-codes': typeof AuthenticatedCostCodesRoute
   '/daily-logs': typeof AuthenticatedDailyLogsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/dev-tools': typeof AuthenticatedDevToolsRoute
   '/e-leasing': typeof AuthenticatedELeasingRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/equipment-rentals': typeof AuthenticatedEquipmentRentalsRoute
@@ -678,6 +686,7 @@ export interface FileRoutesById {
   '/_authenticated/cost-codes': typeof AuthenticatedCostCodesRoute
   '/_authenticated/daily-logs': typeof AuthenticatedDailyLogsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/dev-tools': typeof AuthenticatedDevToolsRoute
   '/_authenticated/e-leasing': typeof AuthenticatedELeasingRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/equipment-rentals': typeof AuthenticatedEquipmentRentalsRoute
@@ -757,6 +766,7 @@ export interface FileRouteTypes {
     | '/cost-codes'
     | '/daily-logs'
     | '/dashboard'
+    | '/dev-tools'
     | '/e-leasing'
     | '/employees'
     | '/equipment-rentals'
@@ -834,6 +844,7 @@ export interface FileRouteTypes {
     | '/cost-codes'
     | '/daily-logs'
     | '/dashboard'
+    | '/dev-tools'
     | '/e-leasing'
     | '/employees'
     | '/equipment-rentals'
@@ -1439,6 +1450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/dev-tools': {
+      id: '/_authenticated/dev-tools'
+      path: '/dev-tools'
+      fullPath: '/dev-tools'
+      preLoaderRoute: typeof AuthenticatedDevToolsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/daily-logs': {
       id: '/_authenticated/daily-logs'
       path: '/daily-logs'
@@ -1545,6 +1563,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCostCodesRoute: typeof AuthenticatedCostCodesRoute
   AuthenticatedDailyLogsRoute: typeof AuthenticatedDailyLogsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDevToolsRoute: typeof AuthenticatedDevToolsRoute
   AuthenticatedELeasingRoute: typeof AuthenticatedELeasingRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedEquipmentRentalsRoute: typeof AuthenticatedEquipmentRentalsRoute
@@ -1612,6 +1631,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCostCodesRoute: AuthenticatedCostCodesRoute,
   AuthenticatedDailyLogsRoute: AuthenticatedDailyLogsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDevToolsRoute: AuthenticatedDevToolsRoute,
   AuthenticatedELeasingRoute: AuthenticatedELeasingRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedEquipmentRentalsRoute: AuthenticatedEquipmentRentalsRoute,

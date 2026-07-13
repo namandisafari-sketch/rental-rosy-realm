@@ -80,6 +80,7 @@ const allRoutes: CmdItem[] = [
   { title: "Financial Reports", url: "/financial-reports", icon: DollarSign, group: "Reports" },
   { title: "Pending Registrations", url: "/pending-registrations", icon: Clock, group: "System" },
   { title: "Payment Settings", url: "/payment-settings", icon: Smartphone, group: "System" },
+  { title: "Dev Tools", url: "/dev-tools", icon: Settings, group: "System" },
   { title: "Settings", url: "/settings", icon: Settings, group: "System" },
   { title: "My ID Card", url: "/my-id-card", icon: CreditCard, group: "My Home" },
 ];
