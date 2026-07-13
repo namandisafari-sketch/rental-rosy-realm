@@ -1,17 +1,17 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useHighestRole } from "@/hooks/use-auth";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Plus, Pencil, Check, X, Loader2 } from "lucide-react";
+import { Building2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { toPng } from "html-to-image";
@@ -57,12 +57,10 @@ type CompanyBranding = {
 
 function CompaniesPage() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const role = useHighestRole();
   const isAdmin = role === "admin" || role === "manager";
   const [editCompany, setEditCompany] = useState<Company | null>(null);
-  const [editBranding, setEditBranding] = useState<CompanyBranding | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [brandingDialogOpen, setBrandingDialogOpen] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -103,19 +101,14 @@ function CompaniesPage() {
   });
 
   const saveCompanyMutation = useMutation({
-    mutationFn: async (vals: Partial<Company> & { id?: string; name: string }) => {
-      if (vals.id) {
-        const { error } = await supabase.from("companies").update(vals).eq("id", vals.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("companies").insert(vals);
-        if (error) throw error;
-      }
+    mutationFn: async (vals: Partial<Company> & { id: string; name: string }) => {
+      const { error } = await supabase.from("companies").update(vals).eq("id", vals.id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["companies"] });
-      toast.success("Company saved");
-      setDialogOpen(false);
+      toast.success("Company updated");
+      setEditDialogOpen(false);
       setEditCompany(null);
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to save"),
@@ -140,18 +133,12 @@ function CompaniesPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to save branding"),
   });
 
-  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", license_key: "", plan_id: "" });
-
-  function openNew() {
-    setForm({ name: "", email: "", phone: "", address: "", license_key: "", plan_id: "" });
-    setEditCompany(null);
-    setDialogOpen(true);
-  }
+  const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", address: "", license_key: "", plan_id: "" });
 
   function openEdit(c: Company) {
-    setForm({ name: c.name, email: c.email ?? "", phone: c.phone ?? "", address: c.address ?? "", license_key: c.license_key ?? "", plan_id: c.plan_id ?? "" });
+    setEditForm({ name: c.name, email: c.email ?? "", phone: c.phone ?? "", address: c.address ?? "", license_key: c.license_key ?? "", plan_id: c.plan_id ?? "" });
     setEditCompany(c);
-    setDialogOpen(true);
+    setEditDialogOpen(true);
   }
 
   function openBranding(companyId: string) {
@@ -165,12 +152,9 @@ function CompaniesPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Licensed Companies</h1>
-          <p className="text-sm text-muted-foreground">Property management companies licensed to use Habico Portal</p>
-        </div>
-        <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" />Add Company</Button>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Licensed Companies</h1>
+        <p className="text-sm text-muted-foreground">Property management companies licensed to use Habico Portal</p>
       </div>
 
       <Card>
@@ -227,29 +211,29 @@ function CompaniesPage() {
       </Card>
 
       {/* Company Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editCompany ? "Edit Company" : "Add Company"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Edit Company</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
               <Label>Company Name</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
             </div>
             <div>
               <Label>Email</Label>
-              <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <Input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
             </div>
             <div>
               <Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
             </div>
             <div>
               <Label>Address</Label>
-              <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+              <Input value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
             </div>
             <div>
               <Label>Subscription Plan</Label>
-              <Select value={form.plan_id} onValueChange={(v) => setForm({ ...form, plan_id: v })}>
+              <Select value={editForm.plan_id} onValueChange={(v) => setEditForm({ ...editForm, plan_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Select a plan..." /></SelectTrigger>
                 <SelectContent>
                   {plans.map((p) => (
@@ -260,11 +244,11 @@ function CompaniesPage() {
             </div>
             <div>
               <Label>License Key</Label>
-              <Input value={form.license_key} onChange={(e) => setForm({ ...form, license_key: e.target.value })} />
+              <Input value={editForm.license_key} onChange={(e) => setEditForm({ ...editForm, license_key: e.target.value })} />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button onClick={() => saveCompanyMutation.mutate({ id: editCompany?.id, ...form, plan_id: form.plan_id || null, is_active: editCompany?.is_active ?? true })} disabled={!form.name || saveCompanyMutation.isPending}>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+              <Button onClick={() => { if (!editCompany) return; saveCompanyMutation.mutate({ id: editCompany.id, ...editForm, plan_id: editForm.plan_id || null, is_active: editCompany.is_active }); }} disabled={!editForm.name || saveCompanyMutation.isPending}>
                 {saveCompanyMutation.isPending ? "Saving..." : "Save"}
               </Button>
             </div>

@@ -43,6 +43,12 @@ android/build/
 *.apk
 *.aab
 
+# Android signing credentials
+android/keystore.properties
+
+# Build output
+build-output.txt
+
 # Electron / Desktop build output
 dist-electron/
 release/

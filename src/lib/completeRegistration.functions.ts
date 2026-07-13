@@ -120,6 +120,7 @@ export const completeRegistration = createServerFn({ method: "POST" })
     }
 
     // 6. Send license key email
+    const { sendLicenseKeyEmail } = await import("@/lib/email.server");
     sendLicenseKeyEmail({
       to: data.adminEmail,
       companyName: data.companyName,
