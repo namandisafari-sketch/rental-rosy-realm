@@ -326,7 +326,7 @@ function AuthPage() {
                       return;
                     }
                     const pin = "Hb" + tenantPin.trim();
-                    const authEmail = cardValue.trim().toLowerCase() + "@habico.portal";
+                    const authEmail = cardValue.trim().toLowerCase() + "@habico.ug";
                     const { error: signInErr } = await supabase.auth.signInWithPassword({
                       email: authEmail,
                       password: pin,
