@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import React, { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FileUpload } from "@/components/ui/file-upload";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -21,6 +22,44 @@ export const Route = createFileRoute("/_authenticated/properties/$id")({
 
 const UNIT_TYPE_OPTIONS = ["residential", "commercial", "retail", "office", "warehouse", "storage"].map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
 
+const UNIT_PHOTO_FIELDS: Record<string, { key: string; label: string; hasVideo: boolean }[]> = {
+  residential: [
+    { key: "bedroom", label: "Bedroom", hasVideo: true },
+    { key: "bathroom", label: "Bathroom", hasVideo: true },
+    { key: "living_room", label: "Living Room", hasVideo: true },
+    { key: "kitchen", label: "Kitchen", hasVideo: true },
+  ],
+  commercial: [
+    { key: "storefront", label: "Storefront", hasVideo: true },
+    { key: "interior", label: "Interior Space", hasVideo: true },
+    { key: "restroom", label: "Restroom", hasVideo: true },
+    { key: "break_room", label: "Break Room", hasVideo: true },
+  ],
+  retail: [
+    { key: "storefront", label: "Storefront", hasVideo: true },
+    { key: "showroom", label: "Showroom", hasVideo: true },
+    { key: "restroom", label: "Restroom", hasVideo: true },
+    { key: "back_storage", label: "Storage / Back Room", hasVideo: true },
+  ],
+  office: [
+    { key: "reception", label: "Entrance / Reception", hasVideo: true },
+    { key: "workspace", label: "Workspace", hasVideo: true },
+    { key: "restroom", label: "Restroom / Kitchenette", hasVideo: true },
+    { key: "conference", label: "Conference Room", hasVideo: true },
+  ],
+  warehouse: [
+    { key: "exterior", label: "Exterior", hasVideo: true },
+    { key: "main_floor", label: "Main Floor", hasVideo: true },
+    { key: "loading_bay", label: "Loading Bay", hasVideo: true },
+    { key: "storage", label: "Storage Area", hasVideo: true },
+  ],
+  storage: [
+    { key: "exterior", label: "Exterior", hasVideo: true },
+    { key: "interior", label: "Interior", hasVideo: true },
+    { key: "security", label: "Security Features", hasVideo: true },
+  ],
+};
+
 function PropertyDetail() {
   const { id } = Route.useParams();
   const role = useHighestRole();
@@ -30,7 +69,7 @@ function PropertyDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [form, setForm] = useState({ unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant" });
+  const [form, setForm] = useState({ unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant", photos: {} as Record<string, string> });
 
   const { data: property } = useQuery({
     queryKey: ["property", id],
@@ -63,7 +102,7 @@ function PropertyDetail() {
         size_sqm: form.size_sqm ? Number(form.size_sqm) : null,
         monthly_rent: Number(form.monthly_rent), bedrooms: Number(form.bedrooms),
         bathrooms: Number(form.bathrooms), deposit_amount: Number(form.deposit_amount),
-        status: form.status,
+        status: form.status, photos: form.photos,
       });
       if (error) throw error;
     },
@@ -80,7 +119,7 @@ function PropertyDetail() {
         size_sqm: form.size_sqm ? Number(form.size_sqm) : null,
         monthly_rent: Number(form.monthly_rent), bedrooms: Number(form.bedrooms),
         bathrooms: Number(form.bathrooms), deposit_amount: Number(form.deposit_amount),
-        status: form.status,
+        status: form.status, photos: form.photos,
       }).eq("id", editingUnit.id);
       if (error) throw error;
     },
@@ -98,7 +137,7 @@ function PropertyDetail() {
   });
 
   function resetForm() {
-    setForm({ unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant" });
+    setForm({ unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant", photos: {} });
   }
 
   function openEdit(u: any) {
@@ -108,7 +147,7 @@ function PropertyDetail() {
       floor_number: (u as any).floor_number?.toString() ?? "", size_sqm: (u as any).size_sqm?.toString() ?? "",
       monthly_rent: u.monthly_rent.toString(), bedrooms: u.bedrooms?.toString() ?? "1",
       bathrooms: u.bathrooms?.toString() ?? "1", deposit_amount: (u as any).deposit_amount?.toString() ?? "0",
-      status: u.status,
+      status: u.status, photos: (u as any).photos ?? {},
     });
     setEditOpen(true);
   }
@@ -189,6 +228,29 @@ function PropertyDetail() {
                       ]}
                     />
                   </div>
+                  <div><Label>Photos &amp; Videos</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {(UNIT_PHOTO_FIELDS[form.unit_type] ?? UNIT_PHOTO_FIELDS.residential).map((f) => (
+                        <React.Fragment key={f.key}>
+                          <FileUpload
+                            value={form.photos?.[f.key + "_photo"] ?? ""}
+                            onChange={(url) => setForm({ ...form, photos: { ...form.photos, [f.key + "_photo"]: url } })}
+                            accept="image/*,video/*" maxSizeMB={20}
+                            label={f.label + " Photo"}
+                          />
+                          {f.hasVideo && (
+                            <FileUpload
+                              value={form.photos?.[f.key + "_video"] ?? ""}
+                              onChange={(url) => setForm({ ...form, photos: { ...form.photos, [f.key + "_video"]: url } })}
+                              accept="video/*" maxSizeMB={50}
+                              label={f.label + " Video"}
+                            />
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">Upload photos and walkthrough videos of each room.</p>
+                  </div>
                 </div>
                 <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.unit_number || create.isPending}>Create</Button></DialogFooter>
               </DialogContent>
@@ -234,6 +296,29 @@ function PropertyDetail() {
                       { value: "maintenance", label: "Maintenance" },
                     ]}
                   />
+                </div>
+                <div><Label>Photos &amp; Videos</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(UNIT_PHOTO_FIELDS[form.unit_type] ?? UNIT_PHOTO_FIELDS.residential).map((f) => (
+                      <React.Fragment key={f.key}>
+                        <FileUpload
+                          value={form.photos?.[f.key + "_photo"] ?? ""}
+                          onChange={(url) => setForm({ ...form, photos: { ...form.photos, [f.key + "_photo"]: url } })}
+                          accept="image/*,video/*" maxSizeMB={20}
+                          label={f.label + " Photo"}
+                        />
+                        {f.hasVideo && (
+                          <FileUpload
+                            value={form.photos?.[f.key + "_video"] ?? ""}
+                            onChange={(url) => setForm({ ...form, photos: { ...form.photos, [f.key + "_video"]: url } })}
+                            accept="video/*" maxSizeMB={50}
+                            label={f.label + " Video"}
+                          />
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Upload photos and walkthrough videos of each room.</p>
                 </div>
               </div>
               <DialogFooter><Button onClick={() => update.mutate()} disabled={!form.unit_number || update.isPending}>Save</Button></DialogFooter>

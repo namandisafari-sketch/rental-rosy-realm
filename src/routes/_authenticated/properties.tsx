@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import React, { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +24,44 @@ export const Route = createFileRoute("/_authenticated/properties")({
 const PROPERTY_TYPE_OPTIONS = ["residential", "commercial", "industrial", "land", "mixed_use"].map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1).replace("_", " ") }));
 const UNIT_TYPE_OPTIONS = ["residential", "commercial", "retail", "office", "warehouse", "storage"].map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
 const EMPTY_UNIT = { unit_number: "", unit_type: "residential", floor_number: "", size_sqm: "", monthly_rent: "0", bedrooms: "1", bathrooms: "1", deposit_amount: "0", status: "vacant", photos: {} as Record<string, string> };
+
+const UNIT_PHOTO_FIELDS: Record<string, { key: string; label: string; hasVideo: boolean }[]> = {
+  residential: [
+    { key: "bedroom", label: "Bedroom", hasVideo: true },
+    { key: "bathroom", label: "Bathroom", hasVideo: true },
+    { key: "living_room", label: "Living Room", hasVideo: true },
+    { key: "kitchen", label: "Kitchen", hasVideo: true },
+  ],
+  commercial: [
+    { key: "storefront", label: "Storefront", hasVideo: true },
+    { key: "interior", label: "Interior Space", hasVideo: true },
+    { key: "restroom", label: "Restroom", hasVideo: true },
+    { key: "break_room", label: "Break Room", hasVideo: true },
+  ],
+  retail: [
+    { key: "storefront", label: "Storefront", hasVideo: true },
+    { key: "showroom", label: "Showroom", hasVideo: true },
+    { key: "restroom", label: "Restroom", hasVideo: true },
+    { key: "back_storage", label: "Storage / Back Room", hasVideo: true },
+  ],
+  office: [
+    { key: "reception", label: "Entrance / Reception", hasVideo: true },
+    { key: "workspace", label: "Workspace", hasVideo: true },
+    { key: "restroom", label: "Restroom / Kitchenette", hasVideo: true },
+    { key: "conference", label: "Conference Room", hasVideo: true },
+  ],
+  warehouse: [
+    { key: "exterior", label: "Exterior", hasVideo: true },
+    { key: "main_floor", label: "Main Floor", hasVideo: true },
+    { key: "loading_bay", label: "Loading Bay", hasVideo: true },
+    { key: "storage", label: "Storage Area", hasVideo: true },
+  ],
+  storage: [
+    { key: "exterior", label: "Exterior", hasVideo: true },
+    { key: "interior", label: "Interior", hasVideo: true },
+    { key: "security", label: "Security Features", hasVideo: true },
+  ],
+};
 
 function PropertiesPage() {
   const role = useHighestRole();
@@ -336,54 +374,24 @@ function PropertiesPage() {
             </div>
             <div><Label>Photos &amp; Videos</Label>
               <div className="grid grid-cols-2 gap-3">
-                <FileUpload
-                  value={unitForm.photos?.bedroom_photo ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bedroom_photo: url } })}
-                  accept="image/*,video/*" maxSizeMB={20}
-                  label="Bedroom Photo"
-                />
-                <FileUpload
-                  value={unitForm.photos?.bedroom_video ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bedroom_video: url } })}
-                  accept="video/*" maxSizeMB={50}
-                  label="Bedroom Video"
-                />
-                <FileUpload
-                  value={unitForm.photos?.bathroom_photo ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bathroom_photo: url } })}
-                  accept="image/*,video/*" maxSizeMB={20}
-                  label="Bathroom Photo"
-                />
-                <FileUpload
-                  value={unitForm.photos?.bathroom_video ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, bathroom_video: url } })}
-                  accept="video/*" maxSizeMB={50}
-                  label="Bathroom Video"
-                />
-                <FileUpload
-                  value={unitForm.photos?.living_room_photo ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, living_room_photo: url } })}
-                  accept="image/*,video/*" maxSizeMB={20}
-                  label="Living Room Photo"
-                />
-                <FileUpload
-                  value={unitForm.photos?.living_room_video ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, living_room_video: url } })}
-                  accept="video/*" maxSizeMB={50}
-                  label="Living Room Video"
-                />
-                <FileUpload
-                  value={unitForm.photos?.kitchen_photo ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, kitchen_photo: url } })}
-                  accept="image/*,video/*" maxSizeMB={20}
-                  label="Kitchen Photo"
-                />
-                <FileUpload
-                  value={unitForm.photos?.kitchen_video ?? ""}
-                  onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, kitchen_video: url } })}
-                  accept="video/*" maxSizeMB={50}
-                  label="Kitchen Video"
-                />
+                {(UNIT_PHOTO_FIELDS[unitForm.unit_type] ?? UNIT_PHOTO_FIELDS.residential).map((f) => (
+                  <React.Fragment key={f.key}>
+                    <FileUpload
+                      value={unitForm.photos?.[f.key + "_photo"] ?? ""}
+                      onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, [f.key + "_photo"]: url } })}
+                      accept="image/*,video/*" maxSizeMB={20}
+                      label={f.label + " Photo"}
+                    />
+                    {f.hasVideo && (
+                      <FileUpload
+                        value={unitForm.photos?.[f.key + "_video"] ?? ""}
+                        onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, [f.key + "_video"]: url } })}
+                        accept="video/*" maxSizeMB={50}
+                        label={f.label + " Video"}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
               <p className="mt-1 text-xs text-muted-foreground">Upload photos and walkthrough videos of each room.</p>
             </div>
