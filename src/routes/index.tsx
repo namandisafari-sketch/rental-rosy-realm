@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Building2, Wrench, Receipt, Users, ShieldCheck, BarChart3, CheckCircle2 } from "lucide-react";
+import { ArrowRight, ArrowLeftRight, Building2, Wrench, Receipt, Users, ShieldCheck, BarChart3, CheckCircle2 } from "lucide-react";
 import heroImg from "@/assets/hero-residence.jpg";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
@@ -91,6 +91,27 @@ function HomePage() {
               <p className="mt-2 text-sm text-muted-foreground">{s.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* MOVE SERVICE */}
+      <section className="mx-auto max-w-7xl px-4 py-20">
+        <div className="rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-accent/10 p-10 md:p-14">
+          <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-xl">
+              <div className="text-xs font-bold uppercase tracking-widest text-accent">New Service</div>
+              <h2 className="mt-2 display text-3xl font-bold md:text-4xl">Book a Move — In or Out</h2>
+              <p className="mt-3 text-muted-foreground">
+                Moving in or out of your property? Let Habico handle the logistics. Get a quick quote and schedule your move online.
+              </p>
+              <Button asChild size="lg" className="mt-6">
+                <Link to="/book-move">Book a Move <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              </Button>
+            </div>
+            <div className="hidden md:block">
+              <ArrowLeftRight className="h-24 w-24 text-accent/30" />
+            </div>
+          </div>
         </div>
       </section>
 

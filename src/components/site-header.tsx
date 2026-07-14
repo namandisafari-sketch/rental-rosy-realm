@@ -15,6 +15,7 @@ export function SiteHeader() {
     { label: "Services", to: "/services" as const },
     { label: "Pricing", to: "/pricing" as const },
     { label: "Download", to: "/download" as const },
+    { label: "Move Service", to: "/book-move" as const },
     { label: "About", to: "/about" as const },
     { label: "Contact", to: "/contact" as const },
   ];

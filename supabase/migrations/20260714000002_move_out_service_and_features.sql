@@ -122,7 +122,7 @@ CREATE POLICY move_bookings_public_select ON public.move_bookings
 INSERT INTO public.plan_features (plan_id, feature_key, is_enabled)
 SELECT p.id, 'move_service', true
 FROM public.subscription_plans p
-WHERE p.slug IN ('rental', 'full-suite')
+WHERE p.slug IN ('rental', 'construction', 'full-suite')
 ON CONFLICT (plan_id, feature_key) DO NOTHING;
 
 -- 5. Updated_at triggers
