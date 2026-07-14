@@ -2,7 +2,7 @@ const { app, BrowserWindow, Tray, Menu, nativeImage, screen, globalShortcut } = 
 const path = require("path");
 const fs = require("fs");
 
-const APP_URL = "https://rental-rosy-realm.vercel.app/auth";
+const APP_URL = "https://www.habico.ug/auth";
 const APP_ID = "com.habico.portal";
 const APP_NAME = "Habico Portal";
 
