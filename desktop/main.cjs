@@ -1,8 +1,8 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage, screen } = require("electron");
+const { app, BrowserWindow, Tray, Menu, nativeImage, screen, globalShortcut } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
-const APP_URL = "https://www.habico.ug/auth";
+const APP_URL = "https://rental-rosy-realm.vercel.app/auth";
 const APP_ID = "com.habico.portal";
 const APP_NAME = "Habico Portal";
 
@@ -60,12 +60,39 @@ function createWindow() {
     backgroundColor: "#f8fafc",
   });
 
+  // Right-click context menu with Inspect
+  mainWindow.webContents.on("context-menu", (_e, params) => {
+    const ctxMenu = Menu.buildFromTemplate([
+      { label: "Back", click: () => mainWindow.webContents.goBack() },
+      { label: "Forward", click: () => mainWindow.webContents.goForward() },
+      { type: "separator" },
+      { label: "Reload", click: () => mainWindow.webContents.reload() },
+      { type: "separator" },
+      { label: "Inspect Element", click: () => mainWindow.webContents.inspectElement(params.x, params.y) },
+      { label: "DevTools", click: () => mainWindow.webContents.openDevTools() },
+    ]);
+    ctxMenu.popup();
+  });
+
+  // F12 to toggle DevTools
+  globalShortcut.register("F12", () => {
+    if (mainWindow) {
+      if (mainWindow.webContents.isDevToolsOpened()) {
+        mainWindow.webContents.closeDevTools();
+      } else {
+        mainWindow.webContents.openDevTools();
+      }
+    }
+  });
+
   Menu.setApplicationMenu(null);
 
   mainWindow.loadURL(APP_URL);
 
+  let pageError = false;
+
   mainWindow.once("ready-to-show", () => {
-    mainWindow.show();
+    if (!pageError) mainWindow.show();
   });
 
   let failedOnce = false;
@@ -73,15 +100,23 @@ function createWindow() {
     console.error(`Failed to load ${url}: ${code} ${desc}`);
     if (!failedOnce && url !== "data:text/html,<html></html>") {
       failedOnce = true;
+      pageError = true;
       loadErrorPage(`Failed to load ${APP_URL}<br/>Error: ${desc} (${code})`);
     }
   });
 
+  // Catch JS errors in the web app
+  mainWindow.webContents.on("console-message", (_e, level, message) => {
+    if (level >= 2) console.error(`[renderer] ${message}`);
+  });
+
+  // If page loads but is blank after 10s, show error page
   setTimeout(() => {
-    if (mainWindow && !mainWindow.isVisible()) {
-      mainWindow.show();
+    if (mainWindow && !mainWindow.isVisible() && !pageError) {
+      pageError = true;
+      loadErrorPage("The page loaded but did not render correctly. Try reloading.");
     }
-  }, 15000);
+  }, 10000);
 
   mainWindow.on("close", (e) => {
     if (!app.isQuitting) {
@@ -140,6 +175,10 @@ app.whenReady().then(() => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on("will-quit", () => {
+  globalShortcut.unregisterAll();
 });
 
 app.on("window-all-closed", () => {
