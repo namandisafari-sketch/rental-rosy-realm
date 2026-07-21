@@ -73,18 +73,28 @@ function MaintenancePage() {
   const [editContractorPhone, setEditContractorPhone] = useState("");
   const [editResolutionNotes, setEditResolutionNotes] = useState("");
 
-  const { data: leases } = useQuery({
-    queryKey: ["leases", user?.id],
+  const { data: tenantRecord } = useQuery({
+    queryKey: ["tenant-record", user?.id],
     queryFn: async () => {
-      if (!user || isStaff) return [];
+      if (!user) return null;
+      const { data } = await supabase.from("tenants").select("id").eq("auth_user_id", user.id).maybeSingle();
+      return (data as any) ?? null;
+    },
+    enabled: !!user && !isStaff,
+  });
+
+  const { data: leases } = useQuery({
+    queryKey: ["leases", tenantRecord?.id],
+    queryFn: async () => {
+      if (!user || isStaff || !tenantRecord?.id) return [];
       const { data } = await supabase
         .from("leases")
         .select("id, unit_id, units!inner(id, name, property_id, properties!inner(id, name))")
-        .eq("tenant_id", user.id)
+        .eq("tenant_id", tenantRecord.id)
         .eq("status", "active");
       return (data as any) || [];
     },
-    enabled: !!user && !isStaff,
+    enabled: !!user && !isStaff && !!tenantRecord?.id,
   });
 
   const { data: allUnits } = useQuery({
@@ -107,14 +117,24 @@ function MaintenancePage() {
         .order("created_at", { ascending: false });
 
       if (!isStaff && user) {
-        const { data: userLeases } = await supabase
-          .from("leases")
-          .select("unit_id")
-          .eq("tenant_id", user.id)
-          .eq("status", "active");
-        const unitIds = (userLeases as any)?.map((l: any) => l.unit_id) || [];
-        if (unitIds.length > 0) {
-          query = query.in("unit_id", unitIds);
+        const { data: tRec } = await supabase
+          .from("tenants")
+          .select("id")
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
+        const actualTenantId = (tRec as any)?.id;
+        if (actualTenantId) {
+          const { data: userLeases } = await supabase
+            .from("leases")
+            .select("unit_id")
+            .eq("tenant_id", actualTenantId)
+            .eq("status", "active");
+          const unitIds = (userLeases as any)?.map((l: any) => l.unit_id) || [];
+          if (unitIds.length > 0) {
+            query = query.in("unit_id", unitIds);
+          } else {
+            query = query.eq("unit_id", -1);
+          }
         } else {
           query = query.eq("unit_id", -1);
         }

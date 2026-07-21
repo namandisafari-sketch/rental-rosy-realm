@@ -13,11 +13,13 @@ import { SearchableSelect, type SearchableOption } from "@/components/ui/searcha
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Receipt, Printer, AlertTriangle, CreditCard } from "lucide-react";
+import { Plus, Pencil, Trash2, Receipt, Printer, AlertTriangle, CreditCard, Mail, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { StripePaymentForm } from "@/components/ui/stripe-payment-form";
 import { createPaymentIntent } from "@/lib/createPaymentIntent.functions";
 import { recordStripePayment } from "@/lib/recordStripePayment.functions";
+import { sendReceipt } from "@/lib/sendEmails.functions";
+import { generateReceiptPdfBase64 } from "@/lib/generate-receipt-pdf";
 
 export const Route = createFileRoute("/_authenticated/payments")({
   head: () => ({ meta: [{ title: "Payments — Habico Portal" }] }),
@@ -701,11 +703,61 @@ function PaymentsPage() {
               </div>
             </div>
           )}
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => window.print()}>
+          <DialogFooter className="flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="mr-2 h-4 w-4" />Print
             </Button>
-            <Button variant="ghost" onClick={() => setReceiptOpen(false)}>Close</Button>
+            {receiptPayment?.tenant?.email && (
+              <Button variant="outline" size="sm" onClick={async () => {
+                if (!receiptPayment) return;
+                try {
+                  const pdfBase64 = generateReceiptPdfBase64({
+                    receiptNo: receiptPayment.reference ?? `PAY-${receiptPayment.id?.slice(0, 8)}`,
+                    date: receiptPayment.payment_date,
+                    tenantName: receiptPayment.tenant?.full_name ?? receiptPayment.tenant?.email ?? "Tenant",
+                    propertyName: receiptPayment.leases?.units?.properties?.name ?? "Property",
+                    unitNumber: receiptPayment.leases?.units?.unit_number ?? "",
+                    periodLabel: receiptPayment.period_label ?? "",
+                    paymentType: receiptPayment.payment_type ?? "rent",
+                    method: receiptPayment.method ?? "cash",
+                    amount: Number(receiptPayment.amount),
+                  });
+                  const result = await sendReceipt({
+                    to: receiptPayment.tenant.email,
+                    tenantName: receiptPayment.tenant?.full_name ?? "Tenant",
+                    receiptNo: receiptPayment.reference ?? `PAY-${receiptPayment.id?.slice(0, 8)}`,
+                    date: receiptPayment.payment_date,
+                    amount: Number(receiptPayment.amount),
+                    propertyName: receiptPayment.leases?.units?.properties?.name ?? "Property",
+                    unitNumber: receiptPayment.leases?.units?.unit_number ?? "",
+                    periodLabel: receiptPayment.period_label ?? "",
+                    paymentType: receiptPayment.payment_type ?? "rent",
+                    method: receiptPayment.method ?? "cash",
+                    pdfBase64,
+                    pdfFilename: `habico-receipt-${receiptPayment.id?.slice(0, 8) ?? "payment"}.pdf`,
+                  });
+                  if (result.success) {
+                    toast.success("Receipt emailed to tenant");
+                  } else {
+                    toast.error(result.error ?? "Failed to send receipt");
+                  }
+                } catch (e: any) {
+                  toast.error(e.message);
+                }
+              }}>
+                <Mail className="mr-2 h-4 w-4" />Email Receipt
+              </Button>
+            )}
+            {receiptPayment?.tenant?.phone && (
+              <Button variant="outline" size="sm" onClick={() => {
+                const p = receiptPayment;
+                const msg = `Habico Receipt\nReceipt #: ${p.reference ?? "—"}\nDate: ${p.payment_date}\nAmount: UGX ${Number(p.amount).toLocaleString()}\n${p.leases?.units?.properties?.name ?? ""} · ${p.leases?.units?.unit_number ?? ""}\nThank you for your payment!`;
+                window.open(`https://wa.me/${p.tenant?.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
+              }}>
+                <MessageSquare className="mr-2 h-4 w-4" />WhatsApp
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => setReceiptOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

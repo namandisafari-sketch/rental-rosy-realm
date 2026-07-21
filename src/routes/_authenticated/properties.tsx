@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Building2, MapPin, Pencil, Archive, Trash2, Loader2, Search, SlidersHorizontal, Home, User } from "lucide-react";
+import { Plus, Building2, MapPin, Pencil, Archive, Trash2, Loader2, Search, SlidersHorizontal, Home, User, List } from "lucide-react";
 import { toast } from "sonner";
 import { LocationSelector } from "@/components/location-selector";
 
@@ -74,6 +74,10 @@ function PropertiesPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [form, setForm] = useState({ name: "", address: "", location: "", city: "", property_type: "residential", description: "", image_url: "", owner_id: "" });
   const [unitOpen, setUnitOpen] = useState(false);
+  const [editUnitOpen, setEditUnitOpen] = useState(false);
+  const [editingUnit, setEditingUnit] = useState<any>(null);
+  const [manageUnitsPropId, setManageUnitsPropId] = useState<string>("");
+  const [showManageUnits, setShowManageUnits] = useState(false);
   const [unitPropertyId, setUnitPropertyId] = useState<string>("");
   const [unitForm, setUnitForm] = useState(EMPTY_UNIT);
 
@@ -186,10 +190,66 @@ function PropertiesPage() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const updateUnit = useMutation({
+    mutationFn: async () => {
+      if (!editingUnit) return;
+      const { error } = await supabase.from("units").update({
+        unit_number: unitForm.unit_number,
+        unit_type: unitForm.unit_type,
+        floor_number: unitForm.floor_number ? Number(unitForm.floor_number) : null,
+        size_sqm: unitForm.size_sqm ? Number(unitForm.size_sqm) : null,
+        monthly_rent: Number(unitForm.monthly_rent),
+        bedrooms: Number(unitForm.bedrooms),
+        bathrooms: Number(unitForm.bathrooms),
+        deposit_amount: Number(unitForm.deposit_amount),
+        status: unitForm.status,
+        photos: unitForm.photos,
+      }).eq("id", editingUnit.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Unit updated");
+      setEditUnitOpen(false);
+      setEditingUnit(null);
+      setUnitForm(EMPTY_UNIT);
+      qc.invalidateQueries({ queryKey: ["properties"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const deleteUnit = useMutation({
+    mutationFn: async (unitId: string) => {
+      const { error } = await supabase.from("units").delete().eq("id", unitId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Unit deleted");
+      qc.invalidateQueries({ queryKey: ["properties"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   function openAddUnit(propertyId: string) {
     setUnitPropertyId(propertyId);
     setUnitForm(EMPTY_UNIT);
     setUnitOpen(true);
+  }
+
+  function openEditUnit(u: any) {
+    setEditingUnit(u);
+    setUnitForm({
+      unit_number: u.unit_number,
+      unit_type: u.unit_type ?? "residential",
+      floor_number: u.floor_number?.toString() ?? "",
+      size_sqm: u.size_sqm?.toString() ?? "",
+      monthly_rent: u.monthly_rent?.toString() ?? "0",
+      bedrooms: u.bedrooms?.toString() ?? "1",
+      bathrooms: u.bathrooms?.toString() ?? "1",
+      deposit_amount: u.deposit_amount?.toString() ?? "0",
+      status: u.status ?? "vacant",
+      photos: u.photos ?? {},
+    });
+    setEditUnitOpen(true);
   }
 
   function openEdit(p: any) {
@@ -256,11 +316,12 @@ function PropertiesPage() {
                 </div>
               </div>
               <DialogFooter><Button onClick={() => create.mutate()} disabled={!form.name || !form.owner_id || create.isPending}>Create Property</Button></DialogFooter>
-            </DialogContent>
-          </Dialog>
-          </div>
-        )}
-      </div>
+        </DialogContent>
+      </Dialog>
+
+        </div>
+      )}
+    </div>
 
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{stats.total}</div><div className="text-xs text-muted-foreground">Properties</div></CardContent></Card>
@@ -412,6 +473,108 @@ function PropertiesPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showManageUnits} onOpenChange={(v) => { setShowManageUnits(v); if (!v) { setManageUnitsPropId(""); } }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>Manage units</DialogTitle><DialogDescription>{properties?.find((p: any) => p.id === manageUnitsPropId)?.name}</DialogDescription></DialogHeader>
+          <div className="space-y-2">
+            {(properties?.find((p: any) => p.id === manageUnitsPropId)?.units ?? []).length === 0 ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">No units for this property yet.</div>
+            ) : (
+              (properties?.find((p: any) => p.id === manageUnitsPropId)?.units ?? []).map((u: any) => (
+                <div key={u.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div>
+                    <div className="font-medium">{u.unit_number}</div>
+                    <div className="text-xs text-muted-foreground">{u.unit_type ?? "—"} · {u.bedrooms != null ? `${u.bedrooms} bed` : "—"} · UGX {u.monthly_rent != null ? Number(u.monthly_rent).toLocaleString() : "—"}</div>
+                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${
+                      u.status === "vacant" ? "bg-green-100 text-green-700" :
+                      u.status === "occupied" ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700"
+                    }`}>{u.status}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setShowManageUnits(false); openEditUnit(u); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild><Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={(e) => e.stopPropagation()}><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>Delete unit?</AlertDialogTitle><AlertDialogDescription>Permanently delete {u.unit_number}? This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteUnit.mutate(u.id)} disabled={deleteUnit.isPending} className="bg-destructive text-destructive-foreground">{deleteUnit.isPending ? <><Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Deleting</> : "Delete"}</AlertDialogAction></AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              ))
+            )}
+            <Button variant="outline" className="mt-2 w-full" onClick={() => { setShowManageUnits(false); openAddUnit(manageUnitsPropId); }}><Plus className="mr-2 h-4 w-4" />Add unit</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editUnitOpen} onOpenChange={(v) => { setEditUnitOpen(v); if (!v) { setEditingUnit(null); setUnitForm(EMPTY_UNIT); } }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>Edit unit</DialogTitle><DialogDescription>{editingUnit?.unit_number}</DialogDescription></DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Unit number *</Label><Input value={unitForm.unit_number} onChange={(e) => setUnitForm({ ...unitForm, unit_number: e.target.value })} placeholder="e.g. A1, 101" /></div>
+              <div><Label>Type</Label>
+                <SearchableSelect
+                  value={unitForm.unit_type}
+                  onValueChange={(v) => setUnitForm({ ...unitForm, unit_type: v })}
+                  placeholder="Select type"
+                  options={UNIT_TYPE_OPTIONS}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Floor</Label><Input type="number" value={unitForm.floor_number} onChange={(e) => setUnitForm({ ...unitForm, floor_number: e.target.value })} /></div>
+              <div><Label>Size (sqm)</Label><Input type="number" value={unitForm.size_sqm} onChange={(e) => setUnitForm({ ...unitForm, size_sqm: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Bedrooms</Label><Input type="number" value={unitForm.bedrooms} onChange={(e) => setUnitForm({ ...unitForm, bedrooms: e.target.value })} /></div>
+              <div><Label>Bathrooms</Label><Input type="number" value={unitForm.bathrooms} onChange={(e) => setUnitForm({ ...unitForm, bathrooms: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Monthly rent (UGX)</Label><Input type="number" value={unitForm.monthly_rent} onChange={(e) => setUnitForm({ ...unitForm, monthly_rent: e.target.value })} /></div>
+              <div><Label>Deposit (UGX)</Label><Input type="number" value={unitForm.deposit_amount} onChange={(e) => setUnitForm({ ...unitForm, deposit_amount: e.target.value })} /></div>
+            </div>
+            <div><Label>Photos &amp; Videos</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {(UNIT_PHOTO_FIELDS[unitForm.unit_type] ?? UNIT_PHOTO_FIELDS.residential).map((f) => (
+                  <React.Fragment key={f.key}>
+                    <FileUpload
+                      value={unitForm.photos?.[f.key + "_photo"] ?? ""}
+                      onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, [f.key + "_photo"]: url } })}
+                      accept="image/*,video/*" maxSizeMB={20}
+                      label={f.label + " Photo"}
+                    />
+                    {f.hasVideo && (
+                      <FileUpload
+                        value={unitForm.photos?.[f.key + "_video"] ?? ""}
+                        onChange={(url) => setUnitForm({ ...unitForm, photos: { ...unitForm.photos, [f.key + "_video"]: url } })}
+                        accept="video/*" maxSizeMB={50}
+                        label={f.label + " Video"}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">Upload photos and walkthrough videos of each room.</p>
+            </div>
+            <div><Label>Status</Label>
+              <SearchableSelect
+                value={unitForm.status}
+                onValueChange={(v) => setUnitForm({ ...unitForm, status: v })}
+                placeholder="Select status"
+                options={[
+                  { value: "vacant", label: "Vacant" },
+                  { value: "occupied", label: "Occupied" },
+                  { value: "maintenance", label: "Maintenance" },
+                ]}
+              />
+            </div>
+          </div>
+          <DialogFooter><Button onClick={() => updateUnit.mutate()} disabled={!unitForm.unit_number || updateUnit.isPending}>Save Changes</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? <div className="text-sm text-muted-foreground">Loading…</div> : filtered.length === 0 ? (
         <Card><CardContent className="flex flex-col items-center gap-2 py-16 text-center">
           <Building2 className="h-10 w-10 text-muted-foreground" />
@@ -446,6 +609,7 @@ function PropertiesPage() {
                 {isStaff && (
                   <div className="absolute right-2 top-2 hidden gap-1 group-hover:flex">
                     <Button size="icon" variant="secondary" className="h-7 w-7" title="Add unit" onClick={(e) => { e.preventDefault(); openAddUnit(p.id); }}><Plus className="h-3.5 w-3.5" /></Button>
+                    <Button size="icon" variant="secondary" className="h-7 w-7" title="Manage units" onClick={(e) => { e.preventDefault(); setManageUnitsPropId(p.id); setShowManageUnits(true); }}><List className="h-3.5 w-3.5" /></Button>
                     <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => { e.preventDefault(); openEdit(p); }}><Pencil className="h-3.5 w-3.5" /></Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild><Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => e.stopPropagation()}><Archive className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>

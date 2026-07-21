@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Building2, HardHat, Users, UserCog, ShieldCheck, CreditCard, Camera, CameraOff, CheckCircle } from "lucide-react";
@@ -37,6 +38,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('__habico_remember_me') !== 'false');
 
   const [cardValue, setCardValue] = useState(search.c ?? "");
   const [cardSending, setCardSending] = useState(false);
@@ -71,6 +74,7 @@ function AuthPage() {
         if (error) throw error;
         toast.success("Account created. Welcome to Habico.");
       } else {
+        localStorage.setItem('__habico_remember_me', String(rememberMe));
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
@@ -121,6 +125,12 @@ function AuthPage() {
               )}
               <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required maxLength={255} className="mt-1.5"/></div>
               <div><Label htmlFor="password">Password</Label><Input id="password" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required minLength={8} className="mt-1.5"/></div>
+              {mode === "signin" && (
+                <div className="flex items-center gap-2">
+                  <Checkbox id="remember" checked={rememberMe} onCheckedChange={(c) => setRememberMe(c === true)} />
+                  <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">Remember me</Label>
+                </div>
+              )}
               <Button type="submit" disabled={busy} className="w-full">{busy ? "…" : mode === "signup" ? "Create account" : "Sign in"}</Button>
               <p className="text-center text-sm text-muted-foreground">
                 {mode === "signup" ? "Already have an account?" : "New to Habico?"}{" "}
@@ -304,6 +314,10 @@ function AuthPage() {
                   />
                 </div>
               </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="card-remember" checked={rememberMe} onCheckedChange={(c) => setRememberMe(c === true)} />
+                <Label htmlFor="card-remember" className="text-sm font-normal cursor-pointer">Remember me</Label>
+              </div>
               <Button
                 className="w-full"
                 onClick={async () => {
@@ -327,6 +341,7 @@ function AuthPage() {
                     }
                     const pin = "Hb" + tenantPin.trim();
                     const authEmail = cardValue.trim().toLowerCase() + "@habico.ug";
+                    localStorage.setItem('__habico_remember_me', String(rememberMe));
                     const { error: signInErr } = await supabase.auth.signInWithPassword({
                       email: authEmail,
                       password: pin,

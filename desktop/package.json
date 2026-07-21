@@ -13,7 +13,7 @@
     "appId": "com.habico.portal",
     "productName": "Habico Portal",
     "directories": {
-      "output": "dist"
+      "output": "release"
     },
     "files": [
       "main.cjs",

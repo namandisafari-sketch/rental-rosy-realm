@@ -341,6 +341,168 @@ export async function sendReminderEmail(params: {
   return data;
 }
 
+export async function sendFinancialReportEmail(params: {
+  to: string;
+  landlordName: string;
+  propertyName: string;
+  pdfBase64: string;
+  pdfFilename: string;
+}) {
+  const resend = getResend();
+  const body = `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="font-size:14px;color:#475569;line-height:1.7;">
+      <p style="margin:0 0 16px;">Dear <strong style="color:#1e293b;">${params.landlordName}</strong>,</p>
+      <p style="margin:0 0 16px;">
+        Please find attached the financial report for <strong>${params.propertyName}</strong>.
+      </p>
+      <p style="margin:0 0 16px;">
+        This report includes the rent collection summary, payment breakdown, and commission statement for the period.
+      </p>
+      <p style="margin:0 0 0;font-size:12px;color:#94a3b8;">
+        For questions, contact us at <a href="mailto:support@habico.ug" style="color:#2563eb;">support@habico.ug</a>
+        or call ${HABICO_PHONE}.
+      </p>
+      <p style="margin:4px 0 0;font-size:12px;color:#94a3b8;">Best regards,<br/><strong style="color:#475569;">The Habico Team</strong></p>
+    </td>
+  </tr>
+</table>`;
+  const { data, error } = await resend.emails.send({
+    from: "Habico Reports <reports@habico.ug>",
+    to: [params.to],
+    subject: `Financial Report — ${params.propertyName} · Habico Portal`,
+    html: brandedWrapper("Financial Report", body),
+    attachments: [{ filename: params.pdfFilename, content: params.pdfBase64 }],
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function sendReceiptEmail(params: {
+  to: string;
+  tenantName: string;
+  receiptNo: string;
+  date: string;
+  amount: number;
+  propertyName: string;
+  unitNumber: string;
+  periodLabel: string;
+  paymentType: string;
+  method: string;
+  pdfBase64: string;
+  pdfFilename: string;
+}) {
+  const resend = getResend();
+  const typeLabel = { rent: "Rent", deposit: "Deposit", late_fee: "Late Fee", utility: "Utility" }[params.paymentType] ?? "Payment";
+  const body = `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="font-size:14px;color:#475569;line-height:1.7;">
+      <p style="margin:0 0 16px;">Dear <strong style="color:#1e293b;">${params.tenantName}</strong>,</p>
+      <p style="margin:0 0 16px;">
+        Thank you for your ${typeLabel.toLowerCase()} payment of
+        <strong style="color:#059669;">UGX ${params.amount.toLocaleString()}</strong>
+        for <strong>${params.propertyName} · ${params.unitNumber}</strong>.
+      </p>
+      <p style="margin:0 0 16px;">A receipt is attached to this email for your records.</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:8px;margin:16px 0;">
+        <tr>
+          <td style="padding:16px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+              <tr><td style="padding:4px 0;color:#64748b;">Receipt #</td><td style="padding:4px 0;font-weight:600;text-align:right;">${params.receiptNo}</td></tr>
+              <tr><td style="padding:4px 0;color:#64748b;">Date</td><td style="padding:4px 0;font-weight:600;text-align:right;">${params.date}</td></tr>
+              <tr><td style="padding:4px 0;color:#64748b;">Property</td><td style="padding:4px 0;font-weight:600;text-align:right;">${params.propertyName} · ${params.unitNumber}</td></tr>
+              <tr><td style="padding:4px 0;color:#64748b;">Period</td><td style="padding:4px 0;font-weight:600;text-align:right;">${params.periodLabel}</td></tr>
+              <tr><td style="padding:4px 0;color:#64748b;">Type</td><td style="padding:4px 0;font-weight:600;text-align:right;">${typeLabel}</td></tr>
+              <tr><td style="padding:4px 0;color:#64748b;">Method</td><td style="padding:4px 0;font-weight:600;text-align:right;text-transform:capitalize;">${params.method.replace("_", " ")}</td></tr>
+              <tr><td style="padding:8px 0 4px;border-top:1px solid #e2e8f0;font-weight:700;font-size:15px;">Amount Paid</td><td style="padding:8px 0 4px;border-top:1px solid #e2e8f0;font-weight:700;font-size:15px;text-align:right;color:#059669;">UGX ${params.amount.toLocaleString()}</td></tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">
+        For questions, contact us at <a href="mailto:support@habico.ug" style="color:#2563eb;">support@habico.ug</a>
+        or call ${HABICO_PHONE}.
+      </p>
+      <p style="margin:4px 0 0;font-size:12px;color:#94a3b8;">Best regards,<br/><strong style="color:#475569;">The Habico Team</strong></p>
+    </td>
+  </tr>
+</table>`;
+  const { data, error } = await resend.emails.send({
+    from: "Habico Payments <payments@habico.ug>",
+    to: [params.to],
+    subject: `Payment Receipt — ${params.propertyName} · Habico Portal`,
+    html: brandedWrapper("Payment Receipt", body),
+    attachments: [{ filename: params.pdfFilename, content: params.pdfBase64 }],
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function sendTenantReminderEmail(params: {
+  to: string;
+  tenantName: string;
+  propertyName: string;
+  unitNumber: string;
+  monthlyRent: number;
+  dueDate: string;
+  balance: number;
+  whatsappLink: string;
+}) {
+  const resend = getResend();
+  const body = `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="font-size:14px;color:#475569;line-height:1.7;">
+      <p style="margin:0 0 16px;">Dear <strong style="color:#1e293b;">${params.tenantName}</strong>,</p>
+      <p style="margin:0 0 16px;">
+        This is a friendly reminder that your rent payment of
+        <strong style="color:#dc2626;">UGX ${params.monthlyRent.toLocaleString()}</strong>
+        for <strong>${params.propertyName} · ${params.unitNumber}</strong>
+        was due on <strong>${params.dueDate}</strong>.
+      </p>
+      ${params.balance > 0 ? `<p style="margin:0 0 16px;">Your current outstanding balance is <strong style="color:#dc2626;">UGX ${params.balance.toLocaleString()}</strong>.</p>` : ""}
+      <p style="margin:0 0 16px;">
+        Please make payment at your earliest convenience to avoid any late fees.
+      </p>
+
+      <!-- WhatsApp -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+        <tr>
+          <td align="center">
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" style="background:#25D366;border-radius:6px;padding:12px 28px;">
+                  <a href="${params.whatsappLink}" target="_blank" style="color:#fff;text-decoration:none;font-size:14px;font-weight:600;display:inline-block;">
+                    Reply via WhatsApp
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">
+        If you have already made payment, please disregard this notice.
+        For any questions, contact us at <a href="mailto:support@habico.ug" style="color:#2563eb;">support@habico.ug</a>
+        or call ${HABICO_PHONE}.
+      </p>
+      <p style="margin:4px 0 0;font-size:12px;color:#94a3b8;">Best regards,<br/><strong style="color:#475569;">The Habico Team</strong></p>
+    </td>
+  </tr>
+</table>`;
+  const { data, error } = await resend.emails.send({
+    from: "Habico Reminders <reminder@habico.ug>",
+    to: [params.to],
+    subject: `Payment Reminder — ${params.propertyName} · Habico Portal`,
+    html: brandedWrapper("Payment Reminder", body),
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export const sendSampleLicenseEmail = createServerFn({ method: "POST" })
   .inputValidator((input: { to: string }) => input)
   .handler(async ({ data }) => {
@@ -357,3 +519,5 @@ export const sendSampleLicenseEmail = createServerFn({ method: "POST" })
 
     return { success: true, id: result?.id };
   });
+
+

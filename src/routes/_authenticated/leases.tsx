@@ -104,12 +104,26 @@ function LeasesPage() {
       const { data: prof, error: pe } = await supabase.from("profiles").select("id").eq("email", form.tenant_email).maybeSingle();
       if (pe) throw pe;
       if (!prof) throw new Error("No tenant account found for that email. Ask them to sign up first.");
+      let tenantId: string;
       const { data: tenantRec } = await supabase.from("tenants").select("id").eq("auth_user_id", prof.id).maybeSingle();
-      if (!tenantRec) throw new Error("No tenant record linked to that account. Create the tenant first.");
+      if (tenantRec) {
+        tenantId = tenantRec.id;
+      } else {
+        const { data: profFull } = await supabase.from("profiles").select("full_name").eq("id", prof.id).single();
+        const { data: newTenant, error: ntErr } = await supabase.from("tenants").insert({
+          auth_user_id: prof.id,
+          email: form.tenant_email,
+          full_name: profFull?.full_name ?? form.tenant_email.split("@")[0],
+          status: "active",
+        }).select("id").single();
+        if (ntErr) throw ntErr;
+        tenantId = newTenant.id;
+        toast.success("Tenant record created automatically");
+      }
       const monthlyRent = Number(form.monthly_rent);
       const lateFee = Number(form.late_fee_amount) || Math.round(monthlyRent * LATE_PENALTY_RATE);
       const { error } = await supabase.from("leases").insert({
-        unit_id: form.unit_id, tenant_id: tenantRec.id,
+        unit_id: form.unit_id, tenant_id: tenantId,
         monthly_rent: monthlyRent, deposit: Number(form.deposit),
         deposit_months: Number(form.deposit_months),
         start_date: form.start_date, end_date: form.end_date || null,
@@ -304,7 +318,7 @@ function LeasesPage() {
                 placeholder="Select unit…"
                 options={units.map((u: any) => ({ value: u.id, label: `${u.properties?.name} · Unit ${u.unit_number} — UGX ${Number(u.monthly_rent).toLocaleString()}/mo` }))}
               />
-              <p className="mt-1 text-xs text-muted-foreground">Only vacant units are available for new leases.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Select any unit — occupied or vacant.</p>
             </div>
             <div>
               <Label>Tenant Email * {isEdit ? "(cannot be changed)" : ""}</Label>

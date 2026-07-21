@@ -12,11 +12,12 @@ import { SearchableSelect, type SearchableOption } from "@/components/ui/searcha
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { SiteHeader } from "@/components/site-header";
+import { VisitAdPopup } from "@/components/visit-ad-popup";
 import { toast } from "sonner";
 import {
   Building2, MapPin, Home, Bath, Bed, Search, SlidersHorizontal,
   ArrowRight, CheckCircle2, Loader2, Phone, Mail, Briefcase,
-  DollarSign, User, ChevronDown, X, MessageSquare
+  DollarSign, User, ChevronDown, X, MessageSquare, PlusCircle, Ruler
 } from "lucide-react";
 
 export const Route = createFileRoute("/rent")({
@@ -80,6 +81,13 @@ function RentPage() {
     previous_address: "", notes: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showBrokerForm, setShowBrokerForm] = useState(false);
+  const [brokerSubmitting, setBrokerSubmitting] = useState(false);
+  const [brokerForm, setBrokerForm] = useState({
+    name: "", property_type: "residential", location: "", city: "",
+    address: "", description: "", price: "", size_sqm: "",
+    bedrooms: "", bathrooms: "", contact_name: "", contact_phone: "", contact_email: "",
+  });
 
   const { data: properties = [], isLoading, error } = useQuery({
     queryKey: ["rental-properties"],
@@ -87,12 +95,9 @@ function RentPage() {
       const { data, error } = await supabase
         .from("properties")
         .select("*, units(*)")
-        .or("is_active.is.null,is_active.eq.true")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []).filter(
-        (p: any) => !p.units?.length || p.units.some((u: any) => u.status?.toLowerCase() === "vacant")
-      ) as Property[];
+      return (data ?? []) as Property[];
     },
   });
 
@@ -152,6 +157,40 @@ function RentPage() {
       toast.error((err as Error).message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleBrokerSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setBrokerSubmitting(true);
+    try {
+      const { error } = await supabase.from("pending_listings").insert({
+        name: brokerForm.name,
+        property_type: brokerForm.property_type,
+        location: brokerForm.location || null,
+        city: brokerForm.city || null,
+        address: brokerForm.address || null,
+        description: brokerForm.description || null,
+        price: brokerForm.price ? Number(brokerForm.price) : null,
+        size_sqm: brokerForm.size_sqm ? Number(brokerForm.size_sqm) : null,
+        bedrooms: brokerForm.bedrooms ? Number(brokerForm.bedrooms) : null,
+        bathrooms: brokerForm.bathrooms ? Number(brokerForm.bathrooms) : null,
+        contact_name: brokerForm.contact_name,
+        contact_phone: brokerForm.contact_phone,
+        contact_email: brokerForm.contact_email || null,
+      });
+      if (error) throw error;
+      toast.success("Property submitted! A Habico admin will review and publish it.");
+      setShowBrokerForm(false);
+      setBrokerForm({
+        name: "", property_type: "residential", location: "", city: "",
+        address: "", description: "", price: "", size_sqm: "",
+        bedrooms: "", bathrooms: "", contact_name: "", contact_phone: "", contact_email: "",
+      });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBrokerSubmitting(false);
     }
   }
 
@@ -219,6 +258,18 @@ function RentPage() {
 
       {/* PROPERTY GRID */}
       <section className="mx-auto max-w-7xl px-4 pb-20">
+        {/* Submit a Property card */}
+        <Card className="mb-6 cursor-pointer border-dashed border-accent/40 bg-accent/5 transition hover:border-accent hover:shadow-soft" onClick={() => setShowBrokerForm(true)}>
+          <CardContent className="flex items-center justify-center gap-3 p-6">
+            <PlusCircle className="h-8 w-8 text-accent" />
+            <div>
+              <div className="text-sm font-semibold">Are you a broker or property owner?</div>
+              <div className="text-xs text-muted-foreground">Submit a property for review — admin will approve and publish it.</div>
+            </div>
+            <Button variant="outline" size="sm" className="shrink-0">Submit Property</Button>
+          </CardContent>
+        </Card>
+
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading properties...
@@ -240,6 +291,7 @@ function RentPage() {
             {filtered.map((p) => {
               const vacant = (p.units ?? []).filter((u) => u.status === "vacant");
               const minUnitRent = vacant.length ? Math.min(...vacant.map((u) => u.monthly_rent)) : 0;
+              const hasAvailability = vacant.length > 0;
 
               return (
                 <Card
@@ -257,7 +309,7 @@ function RentPage() {
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                        <span className={hasAvailability ? "rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent" : "rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"}>
                           {p.property_type ?? "Property"}
                         </span>
                       </div>
@@ -273,21 +325,27 @@ function RentPage() {
                       <MapPin className="h-3 w-3" />{p.city ?? p.location ?? p.address ?? "Kampala"}
                     </div>
                     <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Home className="h-3 w-3" /> {vacant.length} available</span>
-                      {vacant.some((u) => u.bedrooms > 0) && (
-                        <span className="flex items-center gap-1"><Bed className="h-3 w-3" /> {Math.min(...vacant.map((u) => u.bedrooms))}+ beds</span>
-                      )}
-                      {vacant.some((u) => u.bathrooms > 0) && (
-                        <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {Math.min(...vacant.map((u) => u.bathrooms))}+ baths</span>
+                      {hasAvailability ? (
+                        <>
+                          <span className="flex items-center gap-1"><Home className="h-3 w-3" /> {vacant.length} available</span>
+                          {vacant.some((u) => u.bedrooms > 0) && (
+                            <span className="flex items-center gap-1"><Bed className="h-3 w-3" /> {Math.min(...vacant.map((u) => u.bedrooms))}+ beds</span>
+                          )}
+                          {vacant.some((u) => u.bathrooms > 0) && (
+                            <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {Math.min(...vacant.map((u) => u.bathrooms))}+ baths</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">No available units</span>
                       )}
                     </div>
                     <Button
                       className="mt-4 w-full"
-                      variant="outline"
+                      variant={hasAvailability ? "outline" : "secondary"}
                       size="sm"
                       onClick={(e) => { e.stopPropagation(); setSelectedProp(p); }}
                     >
-                      View Details <ArrowRight className="ml-2 h-3 w-3" />
+                      {hasAvailability ? <>View Details <ArrowRight className="ml-2 h-3 w-3" /></> : "View Details"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -459,6 +517,60 @@ function RentPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* BROKER SUBMISSION DIALOG */}
+      <Dialog open={showBrokerForm} onOpenChange={setShowBrokerForm}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="display text-xl">Submit a Property</DialogTitle>
+            <DialogDescription>Fill in the details below. An admin will review and publish your listing.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleBrokerSubmit} className="space-y-4">
+            <div>
+              <Label>Property Name *</Label>
+              <Input value={brokerForm.name} onChange={(e) => setBrokerForm({ ...brokerForm, name: e.target.value })} placeholder="e.g. Sunset Apartments" required />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Type</Label>
+                <select value={brokerForm.property_type} onChange={(e) => setBrokerForm({ ...brokerForm, property_type: e.target.value })} className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none">
+                  <option value="residential">Residential</option>
+                  <option value="commercial">Commercial</option>
+                  <option value="land">Land</option>
+                  <option value="mixed_use">Mixed Use</option>
+                  <option value="industrial">Industrial</option>
+                </select>
+              </div>
+              <div><Label>Price (UGX)</Label><Input type="number" value={brokerForm.price} onChange={(e) => setBrokerForm({ ...brokerForm, price: e.target.value })} placeholder="e.g. 5000000" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Location</Label><Input value={brokerForm.location} onChange={(e) => setBrokerForm({ ...brokerForm, location: e.target.value })} placeholder="e.g. Kololo" /></div>
+              <div><Label>City</Label><Input value={brokerForm.city} onChange={(e) => setBrokerForm({ ...brokerForm, city: e.target.value })} placeholder="e.g. Kampala" /></div>
+            </div>
+            <div><Label>Address</Label><Input value={brokerForm.address} onChange={(e) => setBrokerForm({ ...brokerForm, address: e.target.value })} placeholder="Street / area" /></div>
+            <div><Label>Description</Label><Textarea value={brokerForm.description} onChange={(e) => setBrokerForm({ ...brokerForm, description: e.target.value })} rows={3} placeholder="Describe the property..." /></div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>Size (sqm)</Label><Input type="number" value={brokerForm.size_sqm} onChange={(e) => setBrokerForm({ ...brokerForm, size_sqm: e.target.value })} placeholder="e.g. 100" /></div>
+              <div><Label>Bedrooms</Label><Input type="number" value={brokerForm.bedrooms} onChange={(e) => setBrokerForm({ ...brokerForm, bedrooms: e.target.value })} placeholder="e.g. 3" /></div>
+              <div><Label>Bathrooms</Label><Input type="number" value={brokerForm.bathrooms} onChange={(e) => setBrokerForm({ ...brokerForm, bathrooms: e.target.value })} placeholder="e.g. 2" /></div>
+            </div>
+            <div className="border-t pt-4">
+              <p className="mb-2 text-xs font-semibold text-muted-foreground">Your Contact Info</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Your Name *</Label><Input value={brokerForm.contact_name} onChange={(e) => setBrokerForm({ ...brokerForm, contact_name: e.target.value })} placeholder="e.g. John Kamau" required /></div>
+                <div><Label>Phone *</Label><Input value={brokerForm.contact_phone} onChange={(e) => setBrokerForm({ ...brokerForm, contact_phone: e.target.value })} placeholder="+256 700 000 000" required /></div>
+              </div>
+              <div className="mt-3"><Label>Email</Label><Input type="email" value={brokerForm.contact_email} onChange={(e) => setBrokerForm({ ...brokerForm, contact_email: e.target.value })} placeholder="you@example.com" /></div>
+            </div>
+            <p className="text-xs text-muted-foreground">By submitting, you agree that a Habico admin will review this listing before it goes live.</p>
+            <Button type="submit" disabled={brokerSubmitting || !brokerForm.name} className="w-full">
+              {brokerSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : "Submit for Review"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <VisitAdPopup />
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
         <button onClick={() => clearMode()} className="underline hover:text-foreground">Switch how you access Habico</button>

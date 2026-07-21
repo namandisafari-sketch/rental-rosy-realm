@@ -21,9 +21,9 @@ const platforms = [
     title: "Windows Desktop",
     desc: "Full Habico Portal experience on your PC. Installer includes auto-updates.",
     action: "Download for Windows",
-    note: "Setup ~150 MB",
+    note: "Setup ~100 MB",
     color: "bg-blue-100 text-blue-700",
-    href: "", // will be set when EXE is hosted
+    href: "/Habico%20Portal-Setup-1.0.0.exe",
   },
   {
     icon: Smartphone,

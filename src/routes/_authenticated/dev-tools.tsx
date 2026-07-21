@@ -9,6 +9,7 @@ import { Loader2, Mail, Building2, User } from "lucide-react";
 import { toast } from "sonner";
 import { resendLicenseEmail } from "@/lib/resendLicenseEmail.functions";
 import { createSampleTenant } from "@/lib/createSampleTenant.functions";
+import { sendSampleAll } from "@/lib/sendEmails.functions";
 
 export const Route = createFileRoute("/_authenticated/dev-tools")({
   head: () => ({ meta: [{ title: "Dev Tools — Habico Portal" }] }),
@@ -83,6 +84,45 @@ function DevToolsPage() {
             >
               {resendMutation.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Mail className="mr-1 h-4 w-4" />}
               Resend
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Mail className="h-4 w-4 text-muted-foreground" />
+            Send Sample Emails
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">Send all sample email types (license, financial report, receipt, reminder) to a test address.</p>
+          <div className="flex gap-2">
+            <Input
+              placeholder="test@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-1"
+            />
+            <Button
+              onClick={async () => {
+                if (!email.trim()) { toast.error("Enter an email address"); return; }
+                try {
+                  const result = await sendSampleAll({ data: { to: email.trim() } });
+                  if (result.success) {
+                    const details = (result.results ?? []).map((r: any) => `${r.type}: ${r.id ? "sent" : "failed - " + r.error}`).join("\n");
+                    toast.success("Sample emails sent!\n" + details);
+                  } else {
+                    toast.error(result.error ?? "Failed");
+                  }
+                } catch (e: any) {
+                  toast.error(e.message);
+                }
+              }}
+            >
+              <Mail className="mr-1 h-4 w-4" />
+              Send All Samples
             </Button>
           </div>
         </CardContent>

@@ -4,6 +4,7 @@ import heroImg from "@/assets/hero-residence.jpg";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { VisitAdPopup } from "@/components/visit-ad-popup";
 import AppStoreBadges from "@/components/app-store-badges";
 
 export const Route = createFileRoute("/")({
@@ -160,6 +161,7 @@ function HomePage() {
         </div>
       </section>
 
+      <VisitAdPopup />
       <SiteFooter />
     </div>
   );

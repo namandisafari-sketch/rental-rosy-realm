@@ -19,7 +19,8 @@ export function SiteFooter() {
         <div>
           <h4 className="display text-sm font-bold uppercase tracking-widest text-accent">Explore</h4>
           <ul className="mt-3 space-y-2 text-sm text-primary-foreground/75">
-            <li><Link to="/rent">Rent a home</Link></li>
+            <li><Link to="/rent">Properties Available</Link></li>
+            <li><Link to="/land">Land for Sale</Link></li>
             <li><Link to="/services">Services</Link></li>
             <li><Link to="/about">About</Link></li>
             <li><Link to="/contact">Contact</Link></li>

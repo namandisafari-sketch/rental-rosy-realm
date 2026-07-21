@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/move-service")({
 });
 
 function MoveServicePage() {
-  const { data: companyId } = useCompanyId();
+  const { data: companyId, isLoading: companyLoading } = useCompanyId();
   const qc = useQueryClient();
 
   const [isActive, setIsActive] = useState(true);
@@ -84,8 +84,11 @@ function MoveServicePage() {
     onError: (e: any) => toast.error(e?.message || "Failed to save"),
   });
 
+  if (companyLoading) {
+    return <div className="flex h-96 items-center justify-center"><p className="text-muted-foreground">Loading company...</p></div>;
+  }
   if (!companyId) {
-    return <div className="flex h-96 items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
+    return <div className="flex h-96 items-center justify-center"><p className="text-muted-foreground">No company configured. Contact your administrator.</p></div>;
   }
 
   return (

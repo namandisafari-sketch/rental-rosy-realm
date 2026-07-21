@@ -13,8 +13,9 @@ import { SearchableSelect, type SearchableOption } from "@/components/ui/searcha
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GridDataCards, type GridCardField } from "@/components/data-grid-cards";
-import { Plus, Pencil, Search, Users, Phone, Mail, Eye, EyeOff, Copy, Key, ShieldAlert, Check, RefreshCw, Building2, Home, Layers, MapPin, CreditCard, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Search, Users, Phone, Mail, Eye, EyeOff, Copy, Key, ShieldAlert, Check, RefreshCw, Building2, Home, Layers, MapPin, CreditCard, AlertTriangle, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
+import { sendReminder } from "@/lib/sendEmails.functions";
 
 const ID_TYPE_OPTIONS = ["national_id", "passport", "drivers_license"].map((t) => ({ value: t, label: t === "drivers_license" ? "Driver's License" : t === "national_id" ? "National ID" : "Passport" }));
 const STATUS_OPTIONS = ["active", "inactive", "blacklisted"].map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }));
@@ -122,7 +123,7 @@ function TenantsPage() {
       if (tenantList.length === 0) return tenantList;
       const { data: leases } = await supabase
         .from("leases")
-        .select("tenant_id, monthly_rent, outstanding_balance, unit_id, units!inner(unit_number, floor_number, property_id, properties!inner(name))")
+        .select("id, tenant_id, monthly_rent, outstanding_balance, unit_id, units!inner(unit_number, floor_number, property_id, properties!inner(name))")
         .eq("status", "active")
         .in("tenant_id", tenantList.map((t: any) => t.id));
       const leaseMap = new Map((leases ?? []).map((l: any) => [l.tenant_id, l]));
@@ -236,6 +237,7 @@ function TenantsPage() {
   const updateMutation = useMutation({
     mutationFn: async (values: typeof form & { id: string }) => {
       const { id, property_id, unit_id, ...rest } = values;
+      if (!id) throw new Error(`Cannot update tenant: id is ${typeof id}`);
       const { error } = await supabase.from("tenants").update(rest).eq("id", id);
       if (error) throw error;
       if (unit_id) {
@@ -481,7 +483,6 @@ function TenantsPage() {
             ) : (
               <div className="grid gap-2">
                 {propertyUnits
-                  .filter((u: any) => u.status === "vacant" || u.id === form.unit_id)
                   .map((u: any) => {
                     const isSelected = form.unit_id === u.id;
                     return (
@@ -489,11 +490,9 @@ function TenantsPage() {
                         key={u.id}
                         className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm transition hover:bg-accent/10 ${
                           isSelected ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-input"
-                        } ${u.status !== "vacant" && !isSelected ? "cursor-not-allowed opacity-40" : ""}`}
+                        }`}
                         onClick={() => {
-                          if (u.status === "vacant" || isSelected) {
-                            setForm({ ...form, property_id: formPropertyId, unit_id: isSelected ? "" : u.id });
-                          }
+                          setForm({ ...form, property_id: formPropertyId, unit_id: isSelected ? "" : u.id });
                         }}
                       >
                         <input
@@ -712,10 +711,42 @@ function TenantsPage() {
         emptyMessage={search || statusFilter !== "all" ? "No matching tenants" : "No tenants yet"}
         emptyIcon={<Users className="h-10 w-10 text-muted-foreground" />}
         actions={(t) => (
-          <div className="flex w-full items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => openEdit(t)}>
-              <Pencil className="h-4 w-4 mr-1" /> Edit
-            </Button>
+          <div className="flex w-full flex-wrap items-center justify-between gap-1">
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={() => openEdit(t)}>
+                <Pencil className="h-4 w-4 mr-1" /> Edit
+              </Button>
+              {t.phone && (
+                <Button variant="ghost" size="sm" onClick={() => {
+                  const msg = `Hi ${t.full_name ?? "Tenant"}, this is Habico Property Managers. This is a reminder for your rent at ${t.lease?.units?.properties?.name ?? ""} - Unit ${t.lease?.units?.unit_number ?? ""}. ${Number(t.lease?.outstanding_balance) > 0 ? `Your outstanding balance is UGX ${Number(t.lease?.outstanding_balance).toLocaleString()}. ` : ""}Please pay at your earliest convenience. Thank you.`;
+                  window.open(`https://wa.me/${t.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(msg)}`, "_blank");
+                }}>
+                  <MessageSquare className="h-4 w-4 mr-1" /> WhatsApp
+                </Button>
+              )}
+              {t.email && t.lease && (
+                <Button variant="ghost" size="sm" onClick={async () => {
+                  try {
+                    const r = await sendReminder({
+                      to: t.email,
+                      tenantName: t.full_name ?? "Tenant",
+                      propertyName: t.lease?.units?.properties?.name ?? "Property",
+                      unitNumber: t.lease?.units?.unit_number ?? "",
+                      monthlyRent: Number(t.lease?.monthly_rent ?? 0),
+                      dueDate: "25th of the month",
+                      balance: Number(t.lease?.outstanding_balance ?? 0),
+                      whatsappLink: t.phone ? `https://wa.me/${t.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Hi Habico, I'm checking on my rent payment.")}` : "https://wa.me/256702239607",
+                    });
+                    if (r.success) toast.success("Reminder sent to tenant");
+                    else toast.error(r.error ?? "Failed to send reminder");
+                  } catch (e: any) {
+                    toast.error(e.message);
+                  }
+                }}>
+                  <Mail className="h-4 w-4 mr-1" /> Remind
+                </Button>
+              )}
+            </div>
             {t.status === "blacklisted" ? (
               <Button
                 variant="ghost"

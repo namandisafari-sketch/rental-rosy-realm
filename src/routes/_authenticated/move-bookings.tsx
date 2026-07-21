@@ -24,7 +24,7 @@ const statusColors: Record<string, string> = {
 
 function MoveBookingsPage() {
   const qc = useQueryClient();
-  const { data: companyId } = useCompanyId();
+  const { data: companyId, isLoading: companyLoading } = useCompanyId();
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["move-bookings", companyId],
@@ -52,8 +52,11 @@ function MoveBookingsPage() {
     onError: (e: any) => toast.error(e?.message || "Failed to update"),
   });
 
+  if (companyLoading) {
+    return <div className="flex h-96 items-center justify-center"><p className="text-muted-foreground">Loading company...</p></div>;
+  }
   if (!companyId) {
-    return <div className="flex h-96 items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
+    return <div className="flex h-96 items-center justify-center"><p className="text-muted-foreground">No company configured. Contact your administrator.</p></div>;
   }
 
   return (

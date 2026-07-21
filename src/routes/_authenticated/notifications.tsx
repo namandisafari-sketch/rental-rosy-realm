@@ -12,25 +12,34 @@ export const Route = createFileRoute("/_authenticated/notifications")({
   component: NotificationsPage,
 });
 
-function useNotifications(tenantId: string) {
-  return useQuery({
-    queryKey: ["notifications", tenantId],
+function NotificationsPage() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
+  const { data: tenantRecord } = useQuery({
+    queryKey: ["tenant-record-notif", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase.from("tenants").select("id").eq("auth_user_id", user.id).maybeSingle();
+      return (data as any) ?? null;
+    },
+    enabled: !!user,
+  });
+
+  const actualTenantId = (tenantRecord as any)?.id ?? "";
+
+  const { data: messages, isLoading } = useQuery({
+    queryKey: ["notifications", actualTenantId],
     queryFn: async () => {
       const { data } = await supabase
         .from("rental_messages")
         .select("*")
-        .eq("tenant_id", tenantId)
+        .eq("tenant_id", actualTenantId)
         .order("created_at", { ascending: false });
       return (data as any[]) ?? [];
     },
-    enabled: !!tenantId,
+    enabled: !!actualTenantId,
   });
-}
-
-function NotificationsPage() {
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const { data: messages, isLoading } = useNotifications(user?.id ?? "");
 
   const markRead = useMutation({
     mutationFn: async (id: string) => {
@@ -49,7 +58,7 @@ function NotificationsPage() {
       const { error } = await supabase
         .from("rental_messages")
         .update({ is_read: true, read_at: new Date().toISOString() })
-        .eq("tenant_id", user!.id)
+        .eq("tenant_id", actualTenantId)
         .eq("is_read", false);
       if (error) throw error;
     },

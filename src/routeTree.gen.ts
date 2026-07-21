@@ -14,6 +14,7 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RentRouteImport } from './routes/rent'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as LandRouteImport } from './routes/land'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CardRouteImport } from './routes/card'
@@ -22,6 +23,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ServicesIdRouteImport } from './routes/services.$id'
 import { Route as AuthenticatedTimesheetsRouteImport } from './routes/_authenticated/timesheets'
 import { Route as AuthenticatedTenantsRouteImport } from './routes/_authenticated/tenants'
 import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
@@ -54,6 +56,7 @@ import { Route as AuthenticatedProjectBudgetRouteImport } from './routes/_authen
 import { Route as AuthenticatedProgressPaymentsRouteImport } from './routes/_authenticated/progress-payments'
 import { Route as AuthenticatedPreventativeMaintenanceRouteImport } from './routes/_authenticated/preventative-maintenance'
 import { Route as AuthenticatedPendingRegistrationsRouteImport } from './routes/_authenticated/pending-registrations'
+import { Route as AuthenticatedPendingListingsRouteImport } from './routes/_authenticated/pending-listings'
 import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedPaymentSettingsRouteImport } from './routes/_authenticated/payment-settings'
 import { Route as AuthenticatedPaymentProofsRouteImport } from './routes/_authenticated/payment-proofs'
@@ -69,6 +72,7 @@ import { Route as AuthenticatedLienWaiversRouteImport } from './routes/_authenti
 import { Route as AuthenticatedLeasesRouteImport } from './routes/_authenticated/leases'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
+import { Route as AuthenticatedLandInquiriesRouteImport } from './routes/_authenticated/land-inquiries'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedFinancialReportsRouteImport } from './routes/_authenticated/financial-reports'
 import { Route as AuthenticatedExpensesRouteImport } from './routes/_authenticated/expenses'
@@ -115,6 +119,11 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LandRoute = LandRouteImport.update({
+  id: '/land',
+  path: '/land',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DownloadRoute = DownloadRouteImport.update({
   id: '/download',
   path: '/download',
@@ -153,6 +162,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesIdRoute = ServicesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ServicesRoute,
 } as any)
 const AuthenticatedTimesheetsRoute = AuthenticatedTimesheetsRouteImport.update({
   id: '/timesheets',
@@ -332,6 +346,12 @@ const AuthenticatedPendingRegistrationsRoute =
     path: '/pending-registrations',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPendingListingsRoute =
+  AuthenticatedPendingListingsRouteImport.update({
+    id: '/pending-listings',
+    path: '/pending-listings',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPaymentsRoute = AuthenticatedPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
@@ -417,6 +437,12 @@ const AuthenticatedLandlordsRoute = AuthenticatedLandlordsRouteImport.update({
   path: '/landlords',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedLandInquiriesRoute =
+  AuthenticatedLandInquiriesRouteImport.update({
+    id: '/land-inquiries',
+    path: '/land-inquiries',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
@@ -533,10 +559,11 @@ export interface FileRoutesByFullPath {
   '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/download': typeof DownloadRoute
+  '/land': typeof LandRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/rent': typeof RentRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/allowances': typeof AuthenticatedAllowancesRoute
   '/assets': typeof AuthenticatedAssetsRoute
@@ -557,6 +584,7 @@ export interface FileRoutesByFullPath {
   '/expenses': typeof AuthenticatedExpensesRoute
   '/financial-reports': typeof AuthenticatedFinancialReportsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
+  '/land-inquiries': typeof AuthenticatedLandInquiriesRoute
   '/landlords': typeof AuthenticatedLandlordsRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/leases': typeof AuthenticatedLeasesRoute
@@ -572,6 +600,7 @@ export interface FileRoutesByFullPath {
   '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/payment-settings': typeof AuthenticatedPaymentSettingsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
+  '/pending-listings': typeof AuthenticatedPendingListingsRoute
   '/pending-registrations': typeof AuthenticatedPendingRegistrationsRoute
   '/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
   '/progress-payments': typeof AuthenticatedProgressPaymentsRoute
@@ -604,6 +633,7 @@ export interface FileRoutesByFullPath {
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tenants': typeof AuthenticatedTenantsRoute
   '/timesheets': typeof AuthenticatedTimesheetsRoute
+  '/services/$id': typeof ServicesIdRoute
   '/properties/$id': typeof AuthenticatedPropertiesIdRoute
 }
 export interface FileRoutesByTo {
@@ -614,10 +644,11 @@ export interface FileRoutesByTo {
   '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/download': typeof DownloadRoute
+  '/land': typeof LandRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/rent': typeof RentRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/allowances': typeof AuthenticatedAllowancesRoute
   '/assets': typeof AuthenticatedAssetsRoute
@@ -638,6 +669,7 @@ export interface FileRoutesByTo {
   '/expenses': typeof AuthenticatedExpensesRoute
   '/financial-reports': typeof AuthenticatedFinancialReportsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
+  '/land-inquiries': typeof AuthenticatedLandInquiriesRoute
   '/landlords': typeof AuthenticatedLandlordsRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/leases': typeof AuthenticatedLeasesRoute
@@ -653,6 +685,7 @@ export interface FileRoutesByTo {
   '/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/payment-settings': typeof AuthenticatedPaymentSettingsRoute
   '/payments': typeof AuthenticatedPaymentsRoute
+  '/pending-listings': typeof AuthenticatedPendingListingsRoute
   '/pending-registrations': typeof AuthenticatedPendingRegistrationsRoute
   '/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
   '/progress-payments': typeof AuthenticatedProgressPaymentsRoute
@@ -685,6 +718,7 @@ export interface FileRoutesByTo {
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tenants': typeof AuthenticatedTenantsRoute
   '/timesheets': typeof AuthenticatedTimesheetsRoute
+  '/services/$id': typeof ServicesIdRoute
   '/properties/$id': typeof AuthenticatedPropertiesIdRoute
 }
 export interface FileRoutesById {
@@ -697,10 +731,11 @@ export interface FileRoutesById {
   '/card': typeof CardRoute
   '/contact': typeof ContactRoute
   '/download': typeof DownloadRoute
+  '/land': typeof LandRoute
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/rent': typeof RentRoute
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/allowances': typeof AuthenticatedAllowancesRoute
   '/_authenticated/assets': typeof AuthenticatedAssetsRoute
@@ -721,6 +756,7 @@ export interface FileRoutesById {
   '/_authenticated/expenses': typeof AuthenticatedExpensesRoute
   '/_authenticated/financial-reports': typeof AuthenticatedFinancialReportsRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
+  '/_authenticated/land-inquiries': typeof AuthenticatedLandInquiriesRoute
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/leases': typeof AuthenticatedLeasesRoute
@@ -736,6 +772,7 @@ export interface FileRoutesById {
   '/_authenticated/payment-proofs': typeof AuthenticatedPaymentProofsRoute
   '/_authenticated/payment-settings': typeof AuthenticatedPaymentSettingsRoute
   '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
+  '/_authenticated/pending-listings': typeof AuthenticatedPendingListingsRoute
   '/_authenticated/pending-registrations': typeof AuthenticatedPendingRegistrationsRoute
   '/_authenticated/preventative-maintenance': typeof AuthenticatedPreventativeMaintenanceRoute
   '/_authenticated/progress-payments': typeof AuthenticatedProgressPaymentsRoute
@@ -768,6 +805,7 @@ export interface FileRoutesById {
   '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
   '/_authenticated/tenants': typeof AuthenticatedTenantsRoute
   '/_authenticated/timesheets': typeof AuthenticatedTimesheetsRoute
+  '/services/$id': typeof ServicesIdRoute
   '/_authenticated/properties/$id': typeof AuthenticatedPropertiesIdRoute
 }
 export interface FileRouteTypes {
@@ -780,6 +818,7 @@ export interface FileRouteTypes {
     | '/card'
     | '/contact'
     | '/download'
+    | '/land'
     | '/pricing'
     | '/register'
     | '/rent'
@@ -804,6 +843,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/financial-reports'
     | '/inventory'
+    | '/land-inquiries'
     | '/landlords'
     | '/leads'
     | '/leases'
@@ -819,6 +859,7 @@ export interface FileRouteTypes {
     | '/payment-proofs'
     | '/payment-settings'
     | '/payments'
+    | '/pending-listings'
     | '/pending-registrations'
     | '/preventative-maintenance'
     | '/progress-payments'
@@ -851,6 +892,7 @@ export interface FileRouteTypes {
     | '/suppliers'
     | '/tenants'
     | '/timesheets'
+    | '/services/$id'
     | '/properties/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -861,6 +903,7 @@ export interface FileRouteTypes {
     | '/card'
     | '/contact'
     | '/download'
+    | '/land'
     | '/pricing'
     | '/register'
     | '/rent'
@@ -885,6 +928,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/financial-reports'
     | '/inventory'
+    | '/land-inquiries'
     | '/landlords'
     | '/leads'
     | '/leases'
@@ -900,6 +944,7 @@ export interface FileRouteTypes {
     | '/payment-proofs'
     | '/payment-settings'
     | '/payments'
+    | '/pending-listings'
     | '/pending-registrations'
     | '/preventative-maintenance'
     | '/progress-payments'
@@ -932,6 +977,7 @@ export interface FileRouteTypes {
     | '/suppliers'
     | '/tenants'
     | '/timesheets'
+    | '/services/$id'
     | '/properties/$id'
   id:
     | '__root__'
@@ -943,6 +989,7 @@ export interface FileRouteTypes {
     | '/card'
     | '/contact'
     | '/download'
+    | '/land'
     | '/pricing'
     | '/register'
     | '/rent'
@@ -967,6 +1014,7 @@ export interface FileRouteTypes {
     | '/_authenticated/expenses'
     | '/_authenticated/financial-reports'
     | '/_authenticated/inventory'
+    | '/_authenticated/land-inquiries'
     | '/_authenticated/landlords'
     | '/_authenticated/leads'
     | '/_authenticated/leases'
@@ -982,6 +1030,7 @@ export interface FileRouteTypes {
     | '/_authenticated/payment-proofs'
     | '/_authenticated/payment-settings'
     | '/_authenticated/payments'
+    | '/_authenticated/pending-listings'
     | '/_authenticated/pending-registrations'
     | '/_authenticated/preventative-maintenance'
     | '/_authenticated/progress-payments'
@@ -1014,6 +1063,7 @@ export interface FileRouteTypes {
     | '/_authenticated/suppliers'
     | '/_authenticated/tenants'
     | '/_authenticated/timesheets'
+    | '/services/$id'
     | '/_authenticated/properties/$id'
   fileRoutesById: FileRoutesById
 }
@@ -1026,10 +1076,11 @@ export interface RootRouteChildren {
   CardRoute: typeof CardRoute
   ContactRoute: typeof ContactRoute
   DownloadRoute: typeof DownloadRoute
+  LandRoute: typeof LandRoute
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
   RentRoute: typeof RentRoute
-  ServicesRoute: typeof ServicesRoute
+  ServicesRoute: typeof ServicesRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
@@ -1068,6 +1119,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/land': {
+      id: '/land'
+      path: '/land'
+      fullPath: '/land'
+      preLoaderRoute: typeof LandRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/download': {
@@ -1125,6 +1183,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/services/$id': {
+      id: '/services/$id'
+      path: '/$id'
+      fullPath: '/services/$id'
+      preLoaderRoute: typeof ServicesIdRouteImport
+      parentRoute: typeof ServicesRoute
     }
     '/_authenticated/timesheets': {
       id: '/_authenticated/timesheets'
@@ -1350,6 +1415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPendingRegistrationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/pending-listings': {
+      id: '/_authenticated/pending-listings'
+      path: '/pending-listings'
+      fullPath: '/pending-listings'
+      preLoaderRoute: typeof AuthenticatedPendingListingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/payments': {
       id: '/_authenticated/payments'
       path: '/payments'
@@ -1453,6 +1525,13 @@ declare module '@tanstack/react-router' {
       path: '/landlords'
       fullPath: '/landlords'
       preLoaderRoute: typeof AuthenticatedLandlordsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/land-inquiries': {
+      id: '/_authenticated/land-inquiries'
+      path: '/land-inquiries'
+      fullPath: '/land-inquiries'
+      preLoaderRoute: typeof AuthenticatedLandInquiriesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/inventory': {
@@ -1632,6 +1711,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedExpensesRoute: typeof AuthenticatedExpensesRoute
   AuthenticatedFinancialReportsRoute: typeof AuthenticatedFinancialReportsRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
+  AuthenticatedLandInquiriesRoute: typeof AuthenticatedLandInquiriesRoute
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedLeasesRoute: typeof AuthenticatedLeasesRoute
@@ -1647,6 +1727,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPaymentProofsRoute: typeof AuthenticatedPaymentProofsRoute
   AuthenticatedPaymentSettingsRoute: typeof AuthenticatedPaymentSettingsRoute
   AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
+  AuthenticatedPendingListingsRoute: typeof AuthenticatedPendingListingsRoute
   AuthenticatedPendingRegistrationsRoute: typeof AuthenticatedPendingRegistrationsRoute
   AuthenticatedPreventativeMaintenanceRoute: typeof AuthenticatedPreventativeMaintenanceRoute
   AuthenticatedProgressPaymentsRoute: typeof AuthenticatedProgressPaymentsRoute
@@ -1702,6 +1783,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedExpensesRoute: AuthenticatedExpensesRoute,
   AuthenticatedFinancialReportsRoute: AuthenticatedFinancialReportsRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
+  AuthenticatedLandInquiriesRoute: AuthenticatedLandInquiriesRoute,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedLeasesRoute: AuthenticatedLeasesRoute,
@@ -1717,6 +1799,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPaymentProofsRoute: AuthenticatedPaymentProofsRoute,
   AuthenticatedPaymentSettingsRoute: AuthenticatedPaymentSettingsRoute,
   AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
+  AuthenticatedPendingListingsRoute: AuthenticatedPendingListingsRoute,
   AuthenticatedPendingRegistrationsRoute:
     AuthenticatedPendingRegistrationsRoute,
   AuthenticatedPreventativeMaintenanceRoute:
@@ -1757,6 +1840,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface ServicesRouteChildren {
+  ServicesIdRoute: typeof ServicesIdRoute
+}
+
+const ServicesRouteChildren: ServicesRouteChildren = {
+  ServicesIdRoute: ServicesIdRoute,
+}
+
+const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
+  ServicesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -1766,22 +1861,13 @@ const rootRouteChildren: RootRouteChildren = {
   CardRoute: CardRoute,
   ContactRoute: ContactRoute,
   DownloadRoute: DownloadRoute,
+  LandRoute: LandRoute,
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
   RentRoute: RentRoute,
-  ServicesRoute: ServicesRoute,
+  ServicesRoute: ServicesRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCompanyId } from "@/hooks/use-company-id";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
@@ -58,9 +59,9 @@ function CircularScore({ score }: { score: number }) {
   );
 }
 
-function useTaxDashboardData() {
+function useTaxDashboardData(companyId?: string | null) {
   return useQuery({
-    queryKey: ["rental-tax-dashboard"],
+    queryKey: ["rental-tax-dashboard", companyId],
     queryFn: async () => {
       const now = new Date();
       const currentYear = now.getFullYear();
@@ -71,11 +72,21 @@ function useTaxDashboardData() {
       const daysToDeadline = Math.max(0, Math.ceil((taxYearEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
       const [paymentsRes, leasesRes, expensesRes, propertiesRes, unitsRes, checklistRes, alertsRes, stepsRes] = await Promise.all([
-        supabase.from("payments").select("amount, payment_date, payment_type, lease_id"),
-        supabase.from("leases").select("id, monthly_rent, status, unit_id").eq("status", "active"),
-        supabase.from("expenses").select("amount, expense_date, expense_categories(name)"),
-        supabase.from("properties").select("id, name, valuation_amount, last_valuation_date, depreciation_rate"),
-        supabase.from("units").select("id, monthly_rent, property_id, status"),
+        companyId
+          ? supabase.from("payments").select("amount, payment_date, payment_type, lease_id, leases!inner(unit_id, units!inner(company_id))").eq("leases.units.company_id", companyId)
+          : supabase.from("payments").select("amount, payment_date, payment_type, lease_id"),
+        companyId
+          ? supabase.from("leases").select("id, monthly_rent, status, unit_id, units!inner(company_id)").eq("status", "active").eq("units.company_id", companyId)
+          : supabase.from("leases").select("id, monthly_rent, status, unit_id").eq("status", "active"),
+        companyId
+          ? supabase.from("expenses").select("amount, expense_date, expense_categories(name)").eq("company_id", companyId)
+          : supabase.from("expenses").select("amount, expense_date, expense_categories(name)"),
+        companyId
+          ? supabase.from("properties").select("id, name, valuation_amount, last_valuation_date, depreciation_rate").eq("company_id", companyId)
+          : supabase.from("properties").select("id, name, valuation_amount, last_valuation_date, depreciation_rate"),
+        companyId
+          ? supabase.from("units").select("id, monthly_rent, property_id, status").eq("company_id", companyId)
+          : supabase.from("units").select("id, monthly_rent, property_id, status"),
         supabase.from("tax_checklist_items").select("*").order("sort_order"),
         supabase.from("tax_alerts").select("*").eq("is_active", true).order("created_at"),
         supabase.from("tax_next_steps").select("*").order("sort_order"),
@@ -227,7 +238,8 @@ function useTaxDashboardData() {
 
 function RentalTaxDashboard() {
   const qc = useQueryClient();
-  const { data: d, isLoading } = useTaxDashboardData();
+  const { data: companyId, isLoading: companyLoading } = useCompanyId();
+  const { data: d, isLoading } = useTaxDashboardData(companyId);
 
   const toggleChecklist = useMutation({
     mutationFn: async ({ id, checked }: { id: string; checked: boolean }) => {

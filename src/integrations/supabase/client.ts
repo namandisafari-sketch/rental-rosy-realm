@@ -27,6 +27,39 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 
+function getRememberMeStorage() {
+  if (typeof window === 'undefined') return undefined;
+  const isRemembered = localStorage.getItem('__habico_remember_me') !== 'false';
+  return {
+    getItem(key: string) {
+      return isRemembered
+        ? localStorage.getItem(key)
+        : sessionStorage.getItem(key);
+    },
+    setItem(key: string, value: string) {
+      if (isRemembered) {
+        localStorage.setItem(key, value);
+      } else {
+        sessionStorage.setItem(key, value);
+      }
+    },
+    removeItem(key: string) {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    },
+    get length() {
+      return isRemembered ? localStorage.length : sessionStorage.length;
+    },
+    key(index: number) {
+      return isRemembered ? localStorage.key(index) : sessionStorage.key(index);
+    },
+    clear() {
+      localStorage.clear();
+      sessionStorage.clear();
+    },
+  };
+}
+
 function createSupabaseClient() {
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "https://uraamzowxkffonnscfep.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_xpVnWmVrVNfx9nFwNuLrXA_bo9Xf8Xj";
@@ -36,7 +69,7 @@ function createSupabaseClient() {
       fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
     },
     auth: {
-      storage: typeof window !== 'undefined' ? localStorage : undefined,
+      storage: getRememberMeStorage(),
       persistSession: true,
       autoRefreshToken: true,
     }

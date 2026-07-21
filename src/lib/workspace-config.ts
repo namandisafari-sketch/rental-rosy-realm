@@ -143,13 +143,15 @@ const fullNav: WorkspaceNav = {
     { title: "Companies", url: "/companies", icon: Building, feature: "companies" },
     { title: "Subscription Plans", url: "/subscription-plans", icon: Crown, feature: "companies" },
     { title: "Pending Registrations", url: "/pending-registrations", icon: Clock, feature: "system" },
+    { title: "Pending Listings", url: "/pending-listings", icon: ClipboardList, feature: "system" },
+    { title: "Land Inquiries", url: "/land-inquiries", icon: MessageSquare, feature: "system" },
     { title: "Payment Settings", url: "/payment-settings", icon: Smartphone, feature: "system" },
     { title: "Dev Tools", url: "/dev-tools", icon: Settings, feature: "system" },
     { title: "Settings", url: "/settings", icon: Settings, feature: "settings" },
   ],
 };
 
-const allowedAll = [ ...rentalItems, ...servicesItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Companies", url: "/companies", icon: Building }, { title: "Subscription Plans", url: "/subscription-plans", icon: Crown }, { title: "Pending Registrations", url: "/pending-registrations", icon: Clock }, { title: "Payment Settings", url: "/payment-settings", icon: Smartphone }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
+const allowedAll = [ ...rentalItems, ...servicesItems, ...constructionItems, ...constructionFinancialItems, ...sopItems, ...reportItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Companies", url: "/companies", icon: Building }, { title: "Subscription Plans", url: "/subscription-plans", icon: Crown }, { title: "Pending Registrations", url: "/pending-registrations", icon: Clock }, { title: "Pending Listings", url: "/pending-listings", icon: ClipboardList }, { title: "Land Inquiries", url: "/land-inquiries", icon: MessageSquare }, { title: "Payment Settings", url: "/payment-settings", icon: Smartphone }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 const allowedConstruction = [...constructionItems, ...constructionFinancialItems, ...sopItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 const allowedRental = [...rentalItems, ...servicesItems, { title: "Dashboard", url: "/dashboard", icon: Home }, { title: "Settings", url: "/settings", icon: Settings } ].map(i => i.url);
 
