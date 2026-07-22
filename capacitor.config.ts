@@ -6,8 +6,7 @@ const config: CapacitorConfig = {
   webDir: '.vercel/output/static',
   backgroundColor: '#0f0f11',
   server: {
-    url: 'https://habico.ug',
-    cleartext: true,
+    androidScheme: 'https',
   },
   android: {
     buildOptions: {
