@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Habico Portal" }] }),
@@ -429,6 +430,7 @@ function useTenantDashboardData(authUserId: string) {
 function StaffDashboard() {
   const { data: d, isLoading } = useStaffDashboardData();
   const { user } = useAuth();
+  const role = useHighestRole();
 
   if (isLoading || !d) {
     return <div className="text-sm text-muted-foreground">Loading dashboard data\u2026</div>;
@@ -456,6 +458,7 @@ function StaffDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/dashboard" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-accent">Staff Dashboard</p>
@@ -899,6 +902,7 @@ function PayRentDialog({
 function TenantDashboard() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const role = useHighestRole();
   const { data: d, isLoading } = useTenantDashboardData(user?.id ?? "");
 
   if (isLoading || !d) {
@@ -911,6 +915,7 @@ function TenantDashboard() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      <PageTour route="/dashboard" role={role} />
       <div>
         <p className="text-xs font-bold uppercase tracking-widest text-accent">Tenant Dashboard</p>
         <h1 className="display text-3xl font-bold md:text-4xl">
@@ -1081,6 +1086,7 @@ function StatCard({ label, value, icon: Icon, trend }: { label: string; value: s
 function CompanyDashboard({ companyId }: { companyId: string }) {
   const { data: d, isLoading } = useCompanyDashboardData(companyId);
   const { user } = useAuth();
+  const role = useHighestRole();
 
   if (isLoading || !d) {
     return <div className="text-sm text-muted-foreground">Loading dashboard data\u2026</div>;
@@ -1095,6 +1101,7 @@ function CompanyDashboard({ companyId }: { companyId: string }) {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
+      <PageTour route="/dashboard" role={role} />
       {/* Plan banner */}
       {d.planStatus?.plan_id && (
         <div className="flex items-center gap-3 rounded-xl border bg-gradient-to-r from-accent/5 to-transparent p-4 text-sm">

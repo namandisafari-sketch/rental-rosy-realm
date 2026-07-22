@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import {
-  BRAND, PDF_MARGIN, headerBand, footerBand,
+  BRAND, PDF_MARGIN, headerBand, footerBand, loadLogo, drawWatermark,
   sectionTitle, detailRow, amountBox, brandedCard,
   hexToRgb,
 } from "./pdf-brand";
@@ -22,20 +22,25 @@ const typeLabel: Record<string, string> = {
   late_fee: "Late Fee", utility: "Utility",
 };
 
-function buildReceiptPdf(input: ReceiptPdfInput): jsPDF {
+async function buildReceiptPdf(input: ReceiptPdfInput): Promise<jsPDF> {
   const pdf = new jsPDF("p", "mm", "a4");
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
   const cx = pageW / 2;
   let y: number;
 
+  const logoDataUrl = await loadLogo();
+
   // ── Page border ──
   pdf.setDrawColor(...hexToRgb(BRAND.border));
   pdf.setLineWidth(0.3);
   pdf.rect(5, 5, pageW - 10, pageH - 10);
 
+  // ── Watermark ──
+  drawWatermark(pdf, pageW, pageH, logoDataUrl);
+
   // ── Header band ──
-  headerBand(pdf, pageW);
+  headerBand(pdf, pageW, logoDataUrl);
   y = 48;
 
   // ── "Official Receipt" ribbon ──
@@ -179,13 +184,13 @@ function buildReceiptPdf(input: ReceiptPdfInput): jsPDF {
   return pdf;
 }
 
-export function generateReceiptPdfBase64(input: ReceiptPdfInput): string {
-  const pdf = buildReceiptPdf(input);
+export async function generateReceiptPdfBase64(input: ReceiptPdfInput): Promise<string> {
+  const pdf = await buildReceiptPdf(input);
   const buf = Buffer.from(pdf.output("arraybuffer"));
   return buf.toString("base64");
 }
 
-export function generateReceiptPdfBlob(input: ReceiptPdfInput): Blob {
-  const pdf = buildReceiptPdf(input);
+export async function generateReceiptPdfBlob(input: ReceiptPdfInput): Promise<Blob> {
+  const pdf = await buildReceiptPdf(input);
   return new Blob([pdf.output("arraybuffer")], { type: "application/pdf" });
 }

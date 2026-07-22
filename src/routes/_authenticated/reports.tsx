@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { DollarSign, TrendingUp, Building2, AlertTriangle } from "lucide-react";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({ meta: [{ title: "Reports — Habico Portal" }] }),
@@ -18,6 +20,7 @@ function formatUGX(amount: number) {
 }
 
 function ReportsPage() {
+  const role = useHighestRole();
   const { data: payments = [] } = useQuery({
     queryKey: ["report-payments"],
     queryFn: async () => {
@@ -84,6 +87,7 @@ function ReportsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/reports" role={role} />
       <div>
         <div className="text-xs font-bold uppercase tracking-widest text-accent">Reports</div>
         <h1 className="display text-3xl font-bold">Financial overview</h1>

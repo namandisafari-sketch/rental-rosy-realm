@@ -8,6 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, FileText, Calculator, CalendarDays, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { useHighestRole } from "@/hooks/use-auth";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/rental-tax-dashboard")({
   head: () => ({ meta: [{ title: "URA Tax Compliance — Habico Portal" }] }),
@@ -238,6 +240,7 @@ function useTaxDashboardData(companyId?: string | null) {
 
 function RentalTaxDashboard() {
   const qc = useQueryClient();
+  const role = useHighestRole();
   const { data: companyId, isLoading: companyLoading } = useCompanyId();
   const { data: d, isLoading } = useTaxDashboardData(companyId);
 
@@ -284,6 +287,7 @@ function RentalTaxDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/rental-tax-dashboard" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-accent">URA Tax Compliance</p>

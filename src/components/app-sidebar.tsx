@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import { useState } from "react";
-import logoSrc from "@/assets/habico-logo.jpg";
+import logoSrc from "@/assets/habico-logo.png";
 
 function NavGroup({ label, items }: { label: string; items: { title: string; url: string; icon: any }[] }) {
   const path = useRouterState({ select: (s) => s.location.pathname });

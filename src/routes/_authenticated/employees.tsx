@@ -4,19 +4,22 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useHighestRole } from "@/hooks/use-auth";
+import { workflowConfigs } from "@/lib/workflow-actions";
+import { EntityCardGrid } from "@/components/entity-card-grid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Plus, Users, UserCheck, Clock, FileText, Loader2, Search } from "lucide-react";
+import { Plus, Users, UserCheck, Clock, FileText, Loader2, Pencil, Trash2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
+import { downloadStaffIdCardPdf, type StaffCardData } from "@/lib/generate-staff-id-pdf";
 
 export const Route = createFileRoute("/_authenticated/employees")({
   head: () => ({ meta: [{ title: "Employees — Habico Portal" }] }),
@@ -25,21 +28,7 @@ export const Route = createFileRoute("/_authenticated/employees")({
 
 const roleOptions = ["worker", "supervisor", "manager", "admin", "contractor"];
 const typeOptions = ["full_time", "part_time", "contract", "casual"];
-
-const roleColor: Record<string, string> = {
-  worker: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  supervisor: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  manager: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  admin: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  contractor: "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400",
-};
-
-const typeColor: Record<string, string> = {
-  full_time: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  part_time: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  contract: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-  casual: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
-};
+const statusOptions = ["active", "inactive"];
 
 function EmployeesPage() {
   const role = useHighestRole();
@@ -47,10 +36,7 @@ function EmployeesPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [filterRole, setFilterRole] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [search, setSearch] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({
     full_name: "", phone: "", email: "", role: "worker", employee_type: "full_time",
     daily_rate: "0", monthly_salary: "0", bank_account: "", tax_id: "", national_id: "",
@@ -119,6 +105,15 @@ function EmployeesPage() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const deleteEmployee = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("employees").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Employee deleted"); setDeleteId(null); qc.invalidateQueries({ queryKey: ["employees"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   const toggleStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase.from("employees").update({ status }).eq("id", id);
@@ -128,97 +123,47 @@ function EmployeesPage() {
     onError: (e) => toast.error((e as Error).message),
   });
 
-  const filtered = employees.filter((e: any) => {
-    if (filterRole && e.role !== filterRole) return false;
-    if (filterType && e.employee_type !== filterType) return false;
-    if (filterStatus && e.status !== filterStatus) return false;
-    if (search && !e.full_name?.toLowerCase().includes(search.toLowerCase()) && !e.phone?.includes(search)) return false;
-    return true;
-  });
-
   const totalEmployees = employees.length;
   const activeEmployees = employees.filter((e: any) => e.status === "active").length;
   const dailyWorkers = employees.filter((e: any) => e.employee_type === "casual" || e.employee_type === "part_time").length;
   const onContract = employees.filter((e: any) => e.employee_type === "contract").length;
 
+  const cfg = workflowConfigs.employees;
+
+  async function handleDownloadStaffId(item: any) {
+    try {
+      const empId = `HAB-${new Date().getFullYear()}-${String(item.id?.slice(0, 4) || "0000").replace(/[^0-9]/g, "").padStart(4, "0")}`;
+      const cardData: StaffCardData = {
+        fullName: item.full_name || "Unknown",
+        jobTitle: item.role || "Staff",
+        employeeId: empId,
+        department: item.department || "General",
+        bloodGroup: item.blood_group || "—",
+        accessLevel: item.access_level || "Site & Office — All Zones",
+        nationalId: item.national_id || "—",
+        dateJoined: item.created_at ? new Date(item.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—",
+        issueDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+        validUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+        emergencyContact: item.emergency_contact || "—",
+        emergencyPhone: item.emergency_phone || "—",
+        reportingOffice: item.reporting_office || "Habico Head Office",
+        photoDataUrl: null,
+      };
+      await downloadStaffIdCardPdf(cardData);
+      toast.success("Staff ID card PDF downloaded");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/employees" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">People</div>
           <h1 className="display text-3xl font-bold">Employees</h1>
         </div>
-        {isStaff && (
-          <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditing(null); resetForm(); } setOpen(v); }}>
-            <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />Add employee</Button></DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-              <DialogHeader><DialogTitle>{editing ? "Edit employee" : "Add an employee"}</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Personal Info</h3></div>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Full name *</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Enter full name" /></div>
-                      <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="e.g. +256 700 000 000" /></div>
-                    </div>
-                    <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="employee@example.com" /></div>
-                    <div><Label>National ID</Label><Input value={form.national_id} onChange={(e) => setForm({ ...form, national_id: e.target.value })} placeholder="National identification number" /></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Employment</h3></div>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Role *</Label>
-                        <SearchableSelect
-                          value={form.role}
-                          onValueChange={(v) => setForm({ ...form, role: v })}
-                          placeholder="Select role"
-                          options={roleOptions.map((r) => ({ value: r, label: r.replace("_", " ") }))}
-                        />
-                      </div>
-                      <div><Label>Type *</Label>
-                        <SearchableSelect
-                          value={form.employee_type}
-                          onValueChange={(v) => setForm({ ...form, employee_type: v })}
-                          placeholder="Select type"
-                          options={typeOptions.map((t) => ({ value: t, label: t.replace("_", " ") }))}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Daily rate (UGX)</Label><Input type="number" value={form.daily_rate} onChange={(e) => setForm({ ...form, daily_rate: e.target.value })} placeholder="0" /></div>
-                      <div><Label>Monthly salary (UGX)</Label><Input type="number" value={form.monthly_salary} onChange={(e) => setForm({ ...form, monthly_salary: e.target.value })} placeholder="0" /></div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div><Label>Bank account</Label><Input value={form.bank_account} onChange={(e) => setForm({ ...form, bank_account: e.target.value })} placeholder="Account number" /></div>
-                      <div><Label>Tax ID</Label><Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} placeholder="Tax identification number" /></div>
-                    </div>
-                    <div><Label>Hire date</Label><Input type="date" value={form.hire_date} onChange={(e) => setForm({ ...form, hire_date: e.target.value })} /></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Emergency Contact</h3></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Contact name</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} placeholder="Full name" /></div>
-                    <div><Label>Emergency phone</Label><Input value={form.emergency_phone} onChange={(e) => setForm({ ...form, emergency_phone: e.target.value })} placeholder="e.g. +256 700 000 000" /></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
-                  <div><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes or remarks" /></div>
-                </div>
-              </div>
-              <DialogFooter className="gap-2">
-                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                <Button onClick={() => (editing ? update : create).mutate()} disabled={!form.full_name || create.isPending || update.isPending}>
-                  {(create.isPending || update.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editing ? "Save" : "Create"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -240,91 +185,128 @@ function EmployeesPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <CardTitle className="display">All employees</CardTitle>
-            {isStaff && (
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search name or phone…" className="w-48 pl-8" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <EntityCardGrid
+        data={employees}
+        isLoading={isLoading}
+        workflow={cfg}
+        searchFields={["full_name", "phone", "email"]}
+        filterField="status"
+        filterOptions={statusOptions.map((s) => ({ label: s.replace("_", " "), value: s }))}
+        keyExtractor={(item) => item.id}
+        titleField="full_name"
+        subtitleField="phone"
+        statusField="status"
+        metricFields={cfg.metricFields}
+        onCreateNew={isStaff ? () => { resetForm(); setOpen(true); } : undefined}
+        createLabel="Add Employee"
+        workflowButtons={(item) => {
+          const actions = cfg.actions.filter((a) => !a.precondition || a.precondition(item));
+          return actions.map((a) => ({
+            label: a.label,
+            icon: a.icon,
+            to: a.paramKey ? `${a.to}?${a.paramKey}=${item.id}` : a.to,
+            variant: "outline" as const,
+          }));
+        }}
+        cardActions={(item) => isStaff ? (
+          <>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={(e) => { e.stopPropagation(); handleDownloadStaffId(item); }}>
+              <CreditCard className="mr-1 h-3 w-3" /> Staff ID
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openEdit(item)}>
+              <Pencil className="mr-1 h-3 w-3" /> Edit
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={(e) => { e.stopPropagation(); toggleStatus.mutate({ id: item.id, status: item.status === "active" ? "inactive" : "active" }); }}>
+              <Switch checked={item.status === "active"} className="pointer-events-none scale-75" />
+            </Button>
+            <AlertDialog open={deleteId === item.id} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}>
+                  <Trash2 className="mr-1 h-3 w-3" /> Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader><AlertDialogTitle>Delete employee?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{item.full_name}". This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteEmployee.mutate(item.id)} disabled={deleteEmployee.isPending}>
+                    {deleteEmployee.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        ) : undefined}
+      />
+
+      <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditing(null); resetForm(); } setOpen(v); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>{editing ? "Edit employee" : "Add an employee"}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Personal Info</h3></div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Full name *</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Enter full name" /></div>
+                  <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="e.g. +256 700 000 000" /></div>
                 </div>
-                <SearchableSelect
-                  value={filterRole}
-                  onValueChange={setFilterRole}
-                  placeholder="All roles"
-                  options={[
-                    { value: "", label: "All roles" },
-                    ...roleOptions.map((r) => ({ value: r, label: r.replace("_", " ") }))
-                  ]}
-                />
-                <SearchableSelect
-                  value={filterType}
-                  onValueChange={setFilterType}
-                  placeholder="All types"
-                  options={[
-                    { value: "", label: "All types" },
-                    ...typeOptions.map((t) => ({ value: t, label: t.replace("_", " ") }))
-                  ]}
-                />
-                <SearchableSelect
-                  value={filterStatus}
-                  onValueChange={setFilterStatus}
-                  placeholder="All status"
-                  options={[
-                    { value: "", label: "All status" },
-                    { value: "active", label: "Active" },
-                    { value: "inactive", label: "Inactive" }
-                  ]}
-                />
+                <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="employee@example.com" /></div>
+                <div><Label>National ID</Label><Input value={form.national_id} onChange={(e) => setForm({ ...form, national_id: e.target.value })} placeholder="National identification number" /></div>
               </div>
-            )}
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Employment</h3></div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Role *</Label>
+                    <SearchableSelect
+                      value={form.role}
+                      onValueChange={(v) => setForm({ ...form, role: v })}
+                      placeholder="Select role"
+                      options={roleOptions.map((r) => ({ value: r, label: r.replace("_", " ") }))}
+                    />
+                  </div>
+                  <div><Label>Type *</Label>
+                    <SearchableSelect
+                      value={form.employee_type}
+                      onValueChange={(v) => setForm({ ...form, employee_type: v })}
+                      placeholder="Select type"
+                      options={typeOptions.map((t) => ({ value: t, label: t.replace("_", " ") }))}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Daily rate (UGX)</Label><Input type="number" value={form.daily_rate} onChange={(e) => setForm({ ...form, daily_rate: e.target.value })} placeholder="0" /></div>
+                  <div><Label>Monthly salary (UGX)</Label><Input type="number" value={form.monthly_salary} onChange={(e) => setForm({ ...form, monthly_salary: e.target.value })} placeholder="0" /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Bank account</Label><Input value={form.bank_account} onChange={(e) => setForm({ ...form, bank_account: e.target.value })} placeholder="Account number" /></div>
+                  <div><Label>Tax ID</Label><Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} placeholder="Tax identification number" /></div>
+                </div>
+                <div><Label>Hire date</Label><Input type="date" value={form.hire_date} onChange={(e) => setForm({ ...form, hire_date: e.target.value })} /></div>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Emergency Contact</h3></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Contact name</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} placeholder="Full name" /></div>
+                <div><Label>Emergency phone</Label><Input value={form.emergency_phone} onChange={(e) => setForm({ ...form, emergency_phone: e.target.value })} placeholder="e.g. +256 700 000 000" /></div>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
+              <div><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes or remarks" /></div>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-          ) : filtered.length === 0 ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">No employees found.</div>
-          ) : (
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Full Name</TableHead><TableHead>Phone</TableHead><TableHead>Role</TableHead><TableHead>Type</TableHead><TableHead>Rate / Salary</TableHead><TableHead>Status</TableHead>
-                {isStaff && <TableHead className="text-right">Toggle</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {filtered.map((e: any) => (
-                  <TableRow key={e.id} className={isStaff ? "cursor-pointer" : ""} onClick={() => isStaff && openEdit(e)}>
-                    <TableCell className="font-medium">{e.full_name}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{e.phone ?? "—"}</TableCell>
-                    <TableCell><Badge className="border-0" variant="outline">{e.role}</Badge></TableCell>
-                    <TableCell><Badge className="border-0" variant="outline">{e.employee_type?.replace("_", " ")}</Badge></TableCell>
-                    <TableCell className="text-sm">
-                      {Number(e.daily_rate) > 0 && <div>UGX {Number(e.daily_rate).toLocaleString()}/day</div>}
-                      {Number(e.monthly_salary) > 0 && <div>UGX {Number(e.monthly_salary).toLocaleString()}/mo</div>}
-                      {Number(e.daily_rate) === 0 && Number(e.monthly_salary) === 0 && <span className="text-muted-foreground">—</span>}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={cn("border-0", e.status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400")} variant="outline">
-                        {e.status}
-                      </Badge>
-                    </TableCell>
-                    {isStaff && (
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <Switch
-                          checked={e.status === "active"}
-                          onCheckedChange={(v) => toggleStatus.mutate({ id: e.id, status: v ? "active" : "inactive" })}
-                        />
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+          <DialogFooter className="gap-2">
+            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+            <Button onClick={() => (editing ? update : create).mutate()} disabled={!form.full_name || create.isPending || update.isPending}>
+              {(create.isPending || update.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editing ? "Save" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

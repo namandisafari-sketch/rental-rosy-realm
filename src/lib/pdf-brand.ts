@@ -1,3 +1,5 @@
+import logoPng from "@/assets/habico-logo.png";
+
 export const BRAND = {
   primary: "#1e293b",
   primaryLight: "#334155",
@@ -18,23 +20,71 @@ export const BRAND = {
 export const PDF_MARGIN = 15;
 export const CONTENT_WIDTH = 180;
 
-export function headerBand(pdf: any, pageW: number) {
+let _logoDataUrl: string | null = null;
+
+export async function loadLogo(): Promise<string> {
+  if (_logoDataUrl) return _logoDataUrl;
+  try {
+    const resp = await fetch(logoPng);
+    const blob = await resp.blob();
+    const reader = new FileReader();
+    _logoDataUrl = await new Promise<string>((resolve) => {
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    _logoDataUrl = "";
+  }
+  return _logoDataUrl;
+}
+
+export function headerBand(pdf: any, pageW: number, logoDataUrl?: string | null) {
   const h = 36;
   pdf.setFillColor(...hexToRgb(BRAND.headerBg));
   pdf.rect(0, 0, pageW, h, "F");
+
+  const logoX = PDF_MARGIN;
+  const logoY = 4;
+  const logoSize = 26;
+
+  if (logoDataUrl) {
+    try {
+      pdf.addImage(logoDataUrl, "PNG", logoX, logoY, logoSize, logoSize);
+    } catch {}
+  }
+
+  const textX = logoX + logoSize + 5;
   pdf.setFontSize(16);
   pdf.setTextColor(...hexToRgb(BRAND.white));
   pdf.setFont("helvetica", "bold");
-  pdf.text("HABICO", PDF_MARGIN, 16);
+  pdf.text("HABICO", textX, 16);
   pdf.setFontSize(7);
   pdf.setFont("helvetica", "normal");
-  pdf.text("PROPERTY MANAGERS", PDF_MARGIN, 24);
+  pdf.text("PROPERTY MANAGERS", textX, 24);
   pdf.setFontSize(6);
   pdf.setTextColor(...hexToRgb(BRAND.muted));
-  pdf.text("KAMPALA, UGANDA", PDF_MARGIN, 30);
+  pdf.text("KAMPALA, UGANDA", textX, 30);
+
   pdf.setDrawColor(...hexToRgb(BRAND.accent));
   pdf.setLineWidth(1.5);
   pdf.line(0, h, pageW, h);
+}
+
+export function drawWatermark(pdf: any, pageW: number, pageH: number, logoDataUrl?: string | null) {
+  if (!logoDataUrl) return;
+  try {
+    const wmSize = 70;
+    const wmX = (pageW - wmSize) / 2;
+    const wmY = (pageH - wmSize) / 2;
+    // Try GState opacity; if it fails, draw at full opacity (still visible)
+    try {
+      pdf.setGState(new pdf.GState({ opacity: 0.08 }));
+    } catch {}
+    pdf.addImage(logoDataUrl, "PNG", wmX, wmY, wmSize, wmSize);
+    try {
+      pdf.setGState(new pdf.GState({ opacity: 1 }));
+    } catch {}
+  } catch {}
 }
 
 export function footerBand(pdf: any, pageW: number, pageH: number) {

@@ -16,6 +16,7 @@ import { GridDataCards, type GridCardField } from "@/components/data-grid-cards"
 import { Plus, Pencil, Search, Users, Phone, Mail, Eye, EyeOff, Copy, Key, ShieldAlert, Check, RefreshCw, Building2, Home, Layers, MapPin, CreditCard, AlertTriangle, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { sendReminder } from "@/lib/sendEmails.functions";
+import { PageTour } from "@/components/page-tour";
 
 const ID_TYPE_OPTIONS = ["national_id", "passport", "drivers_license"].map((t) => ({ value: t, label: t === "drivers_license" ? "Driver's License" : t === "national_id" ? "National ID" : "Passport" }));
 const STATUS_OPTIONS = ["active", "inactive", "blacklisted"].map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }));
@@ -617,6 +618,7 @@ function TenantsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/tenants" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">People</div>

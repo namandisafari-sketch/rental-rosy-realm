@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useHighestRole } from "@/hooks/use-auth";
+import { workflowConfigs } from "@/lib/workflow-actions";
+import { EntityCardGrid } from "@/components/entity-card-grid";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,23 +13,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, FileSignature, TrendingUp, Loader2 } from "lucide-react";
+import { Plus, FileSignature, TrendingUp, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/lien-waivers")({
   head: () => ({ meta: [{ title: "Lien Waivers — Habico Portal" }] }),
   component: LienWaiversPage,
 });
-
-const statusColor: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  signed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  received: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-};
 
 const statusOptions = ["pending", "signed", "received"];
 const waiverTypeOptions = ["partial", "final"];
@@ -107,67 +103,16 @@ function LienWaiversPage() {
   const signedWaivers = waivers.filter((p: any) => p.status === "signed" || p.status === "received").length;
   const pendingWaivers = waivers.filter((p: any) => p.status === "pending").length;
 
+  const cfg = workflowConfigs["lien-waivers"];
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/lien-waivers" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Financial Management</div>
           <h1 className="display text-3xl font-bold">Lien Waivers</h1>
         </div>
-        {isStaff && (
-          <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditing(null); resetForm(); } setOpen(v); }}>
-            <DialogTrigger asChild><Button className="bg-accent text-accent-foreground hover:bg-accent/90"><Plus className="mr-2 h-4 w-4" />{editing ? "Edit lien waiver" : "New lien waiver"}</Button></DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-              <DialogHeader><DialogTitle>{editing ? "Edit lien waiver" : "Create a lien waiver"}</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Waiver Information</h3></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Waiver type <span className="text-destructive">*</span></Label>
-                      <SearchableSelect
-                        value={form.waiver_type}
-                        onValueChange={(v) => setForm({ ...form, waiver_type: v })}
-                        placeholder="Select waiver type"
-                        options={waiverTypeOptions.map((s) => ({ value: s, label: s }))}
-                      />
-                    </div>
-                    <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} placeholder="Reference project ID" /></div>
-                  </div>
-                  <div className="mt-3"><Label>Supplier ID</Label><Input value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} placeholder="Supplier or subcontractor name" /></div>
-                </div>
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Financial</h3></div>
-                  <div><Label>Amount (UGX) <span className="text-destructive">*</span></Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="Waiver amount" /></div>
-                </div>
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Status &amp; Dates</h3></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Status</Label>
-                      <SearchableSelect
-                        value={form.status}
-                        onValueChange={(v) => setForm({ ...form, status: v })}
-                        placeholder="Select status"
-                        options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
-                      />
-                    </div>
-                    <div><Label>Signed date</Label><Input type="date" value={form.signed_date} onChange={(e) => setForm({ ...form, signed_date: e.target.value })} /></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
-                  <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes about this waiver" /></div>
-                </div>
-              </div>
-              <DialogFooter className="gap-2">
-                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                <Button onClick={() => (editing ? update : create).mutate()} disabled={create.isPending || update.isPending}>
-                  {(create.isPending || update.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editing ? "Save" : "Create"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -185,51 +130,105 @@ function LienWaiversPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="display">All lien waivers</CardTitle></CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-          ) : waivers.length === 0 ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">No lien waivers yet. {isStaff ? "Create your first lien waiver." : ""}</div>
-          ) : (
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Type</TableHead><TableHead>Supplier</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Status</TableHead><TableHead>Signed date</TableHead>
-                {isStaff && <TableHead className="text-right">Actions</TableHead>}
-              </TableRow></TableHeader>
-              <TableBody>
-                {waivers.map((p: any) => (
-                  <TableRow key={p.id} className={isStaff ? "cursor-pointer" : ""} onClick={() => isStaff && openEdit(p)}>
-                    <TableCell className="font-medium">{p.waiver_type}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.supplier_id ?? "—"}</TableCell>
-                    <TableCell className="text-right">UGX {Number(p.amount || 0).toLocaleString()}</TableCell>
-                    <TableCell><Badge className={cn("border-0", statusColor[p.status])} variant="outline">{p.status}</Badge></TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{p.signed_date ?? "—"}</TableCell>
-                    {isStaff && (
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <AlertDialog open={deleteId === p.id} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
-                          <AlertDialogTrigger asChild><Button variant="destructive" size="sm" onClick={() => setDeleteId(p.id)}>Delete</Button></AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Delete lien waiver?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this lien waiver. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteWaiver.mutate(p.id)} disabled={deleteWaiver.isPending}>
-                                {deleteWaiver.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <EntityCardGrid
+        data={waivers}
+        isLoading={isLoading}
+        workflow={cfg}
+        searchFields={["waiver_type", "supplier_id"]}
+        filterField="status"
+        filterOptions={statusOptions.map((s) => ({ label: s.replace("_", " "), value: s }))}
+        keyExtractor={(item) => item.id}
+        titleField="waiver_type"
+        subtitleField="supplier_id"
+        statusField="status"
+        metricFields={cfg.metricFields}
+        onCreateNew={isStaff ? () => { resetForm(); setOpen(true); } : undefined}
+        createLabel="New Lien Waiver"
+        workflowButtons={(item) => {
+          const actions = cfg.actions.filter((a) => !a.precondition || a.precondition(item));
+          return actions.map((a) => ({
+            label: a.label,
+            icon: a.icon,
+            to: a.paramKey ? `${a.to}?${a.paramKey}=${item.id}` : a.to,
+            variant: "outline" as const,
+          }));
+        }}
+        cardActions={(item) => isStaff ? (
+          <>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openEdit(item)}>
+              <Pencil className="mr-1 h-3 w-3" /> Edit
+            </Button>
+            <AlertDialog open={deleteId === item.id} onOpenChange={(v) => { if (!v) setDeleteId(null); }}>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}>
+                  <Trash2 className="mr-1 h-3 w-3" /> Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader><AlertDialogTitle>Delete lien waiver?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this lien waiver. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteWaiver.mutate(item.id)} disabled={deleteWaiver.isPending}>
+                    {deleteWaiver.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        ) : undefined}
+      />
+
+      <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditing(null); resetForm(); } setOpen(v); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>{editing ? "Edit lien waiver" : "Create a lien waiver"}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Waiver Information</h3></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Waiver type <span className="text-destructive">*</span></Label>
+                  <SearchableSelect
+                    value={form.waiver_type}
+                    onValueChange={(v) => setForm({ ...form, waiver_type: v })}
+                    placeholder="Select waiver type"
+                    options={waiverTypeOptions.map((s) => ({ value: s, label: s }))}
+                  />
+                </div>
+                <div><Label>Project ID</Label><Input value={form.project_id} onChange={(e) => setForm({ ...form, project_id: e.target.value })} placeholder="Reference project ID" /></div>
+              </div>
+              <div className="mt-3"><Label>Supplier ID</Label><Input value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} placeholder="Supplier or subcontractor name" /></div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Financial</h3></div>
+              <div><Label>Amount (UGX) <span className="text-destructive">*</span></Label><Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="Waiver amount" /></div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Status &amp; Dates</h3></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Status</Label>
+                  <SearchableSelect
+                    value={form.status}
+                    onValueChange={(v) => setForm({ ...form, status: v })}
+                    placeholder="Select status"
+                    options={statusOptions.map((s) => ({ value: s, label: s.replace("_", " ") }))}
+                  />
+                </div>
+                <div><Label>Signed date</Label><Input type="date" value={form.signed_date} onChange={(e) => setForm({ ...form, signed_date: e.target.value })} /></div>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
+              <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes about this waiver" /></div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+            <Button onClick={() => (editing ? update : create).mutate()} disabled={create.isPending || update.isPending}>
+              {(create.isPending || update.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editing ? "Save" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

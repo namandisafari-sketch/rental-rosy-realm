@@ -8,8 +8,6 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://habico.ug',
     cleartext: true,
-
-    leyeyteetyruryuryurguhuhuhguib huihrhhriouhrophurhuhugbhoihfihytin  mand are one of the best people  
   },
   android: {
     buildOptions: {

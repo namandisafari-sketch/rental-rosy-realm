@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, XCircle, Eye, Receipt, TrendingUp } from "lucide-react";
+import { EntityCardGrid } from "@/components/entity-card-grid";
+import { CheckCircle, XCircle, Eye, Receipt, TrendingUp, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/payment-proofs")({
   component: PaymentProofs,
@@ -176,6 +177,7 @@ function PaymentProofs() {
 
   return (
     <div className="space-y-6 p-6">
+      <PageTour route="/payment-proofs" role={role} />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Payment Proofs</h1>
       </div>
@@ -234,147 +236,128 @@ function PaymentProofs() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading payment proofs...</div>
-      ) : currentTabProofs.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">No {tab} payment proofs.</div>
-      ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Payer Name</TableHead>
-                <TableHead>Provider</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {currentTabProofs.map((proof) => (
-                <TableRow key={proof.id}>
-                  <TableCell className="font-medium">{proof.payer_name}</TableCell>
-                  <TableCell>{providerBadge(proof.payment_provider)}</TableCell>
-                  <TableCell>{formatUGX(Number(proof.amount))}</TableCell>
-                  <TableCell>{formatDate(proof.payment_date)}</TableCell>
-                  <TableCell>{statusBadge(proof.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDetailProof(proof)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-lg">
-                          <DialogHeader>
-                            <DialogTitle>Payment Proof Detail</DialogTitle>
-                          </DialogHeader>
-                          {detailProof && (
-                            <div className="space-y-4 text-sm">
-                              <div>
-                                <div className="border-b pb-2 mb-3"><h3 className="text-sm font-semibold">Payment Info</h3></div>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <Label>Payer Name</Label>
-                                    <p className="font-medium">{detailProof.payer_name}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Provider</Label>
-                                    <div className="mt-1">{providerBadge(detailProof.payment_provider)}</div>
-                                  </div>
-                                  <div>
-                                    <Label>Transaction Reference</Label>
-                                    <p className="font-mono text-xs">{detailProof.transaction_reference}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Amount</Label>
-                                    <p className="font-semibold">{formatUGX(Number(detailProof.amount))}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Payment Date</Label>
-                                    <p>{formatDate(detailProof.payment_date)}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Status</Label>
-                                    <div className="mt-1">{statusBadge(detailProof.status)}</div>
-                                  </div>
-                                </div>
-                              </div>
-                              {detailProof.notes && (
-                                <div>
-                                  <div className="border-b pb-2 mb-3"><h3 className="text-sm font-semibold">Notes</h3></div>
-                                  <p>{detailProof.notes}</p>
-                                </div>
-                              )}
-                              <div>
-                                <div className="border-b pb-2 mb-3"><h3 className="text-sm font-semibold">Proof Details</h3></div>
-                                {detailProof.proof_image_url && (
-                                  <div className="mb-3">
-                                    <Label>Proof Image</Label>
-                                    <img
-                                      src={detailProof.proof_image_url}
-                                      alt="Payment proof"
-                                      className="mt-1 rounded border max-h-64 object-contain"
-                                    />
-                                  </div>
-                                )}
-                                {detailProof.rejection_reason && (
-                                  <div className="mb-2">
-                                    <Label>Rejection Reason</Label>
-                                    <p className="mt-1 text-red-600">{detailProof.rejection_reason}</p>
-                                  </div>
-                                )}
-                                {detailProof.verified_at && (
-                                  <div className="text-xs text-muted-foreground">
-                                    Verified at: {new Date(detailProof.verified_at).toLocaleString()}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </DialogContent>
-                      </Dialog>
-
-                      {proof.status === "pending" && (
-                        <>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => verifyMutation.mutate(proof.id)}
-                            disabled={verifyMutation.isPending}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Verify
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              setRejectId(proof.id);
-                              setRejectReason("");
-                              setRejectOpen(true);
-                            }}
-                            disabled={rejectMutation.isPending}
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
-                        </>
+      <EntityCardGrid
+        data={currentTabProofs}
+        isLoading={isLoading}
+        searchFields={["payer_name", "transaction_reference"]}
+        keyExtractor={(item) => item.id}
+        titleField="payer_name"
+        subtitleField="transaction_reference"
+        statusField="status"
+        metricFields={[
+          { key: "amount", label: "Amount", format: "currency" },
+          { key: "payment_date", label: "Date", format: "date" },
+        ]}
+        emptyMessage={`No ${tab} payment proofs.`}
+        cardActions={(proof) => (
+          <>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setDetailProof(proof)}>
+                  <Eye className="h-3 w-3 mr-1" /> View
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Payment Proof Detail</DialogTitle>
+                </DialogHeader>
+                {detailProof && (
+                  <div className="space-y-4 text-sm">
+                    <div>
+                      <div className="border-b pb-2 mb-3"><h3 className="text-sm font-semibold">Payment Info</h3></div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label>Payer Name</Label>
+                          <p className="font-medium">{detailProof.payer_name}</p>
+                        </div>
+                        <div>
+                          <Label>Provider</Label>
+                          <div className="mt-1">{providerBadge(detailProof.payment_provider)}</div>
+                        </div>
+                        <div>
+                          <Label>Transaction Reference</Label>
+                          <p className="font-mono text-xs">{detailProof.transaction_reference}</p>
+                        </div>
+                        <div>
+                          <Label>Amount</Label>
+                          <p className="font-semibold">{formatUGX(Number(detailProof.amount))}</p>
+                        </div>
+                        <div>
+                          <Label>Payment Date</Label>
+                          <p>{formatDate(detailProof.payment_date)}</p>
+                        </div>
+                        <div>
+                          <Label>Status</Label>
+                          <div className="mt-1">{statusBadge(detailProof.status)}</div>
+                        </div>
+                      </div>
+                    </div>
+                    {detailProof.notes && (
+                      <div>
+                        <div className="border-b pb-2 mb-3"><h3 className="text-sm font-semibold">Notes</h3></div>
+                        <p>{detailProof.notes}</p>
+                      </div>
+                    )}
+                    <div>
+                      <div className="border-b pb-2 mb-3"><h3 className="text-sm font-semibold">Proof Details</h3></div>
+                      {detailProof.proof_image_url && (
+                        <div className="mb-3">
+                          <Label>Proof Image</Label>
+                          <img
+                            src={detailProof.proof_image_url}
+                            alt="Payment proof"
+                            className="mt-1 rounded border max-h-64 object-contain"
+                          />
+                        </div>
+                      )}
+                      {detailProof.rejection_reason && (
+                        <div className="mb-2">
+                          <Label>Rejection Reason</Label>
+                          <p className="mt-1 text-red-600">{detailProof.rejection_reason}</p>
+                        </div>
+                      )}
+                      {detailProof.verified_at && (
+                        <div className="text-xs text-muted-foreground">
+                          Verified at: {new Date(detailProof.verified_at).toLocaleString()}
+                        </div>
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {proof.status === "pending" && (
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => verifyMutation.mutate(proof.id)}
+                  disabled={verifyMutation.isPending}
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Verify
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => {
+                    setRejectId(proof.id);
+                    setRejectReason("");
+                    setRejectOpen(true);
+                  }}
+                  disabled={rejectMutation.isPending}
+                >
+                  <XCircle className="h-3 w-3 mr-1" />
+                  Reject
+                </Button>
+              </>
+            )}
+          </>
+        )}
+      />
 
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>

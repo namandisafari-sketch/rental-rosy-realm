@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EntityCardGrid } from "@/components/entity-card-grid";
 import { Plus, Pencil, Trash2, Receipt, Printer, AlertTriangle, CreditCard, Mail, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { StripePaymentForm } from "@/components/ui/stripe-payment-form";
@@ -20,6 +20,7 @@ import { createPaymentIntent } from "@/lib/createPaymentIntent.functions";
 import { recordStripePayment } from "@/lib/recordStripePayment.functions";
 import { sendReceipt } from "@/lib/sendEmails.functions";
 import { generateReceiptPdfBase64 } from "@/lib/generate-receipt-pdf";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/payments")({
   head: () => ({ meta: [{ title: "Payments — Habico Portal" }] }),
@@ -295,6 +296,7 @@ function PaymentsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/payments" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Finance</div>
@@ -552,92 +554,54 @@ function PaymentsPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="display">Payment history</CardTitle></CardHeader>
-        <CardContent>
-          {payments.length === 0 ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">No payments yet.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Tenant</TableHead>
-                    <TableHead>Property · Unit</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Arrears</TableHead>
-                    {isStaff && <TableHead className="w-32">Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payments.map((p: any) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="whitespace-nowrap">{p.payment_date}</TableCell>
-                      <TableCell>{p.tenant?.full_name ?? p.tenant?.email ?? "—"}</TableCell>
-                      <TableCell>{p.leases?.units?.properties?.name} · {p.leases?.units?.unit_number}</TableCell>
-                      <TableCell>
-                        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
-                          {{ rent: "Rent", deposit: "Deposit", late_fee: "Late Fee", utility: "Utility", other: "Other" }[p.payment_type] ?? "Rent"}
-                        </span>
-                      </TableCell>
-                      <TableCell>{p.period_label ?? "—"}</TableCell>
-                      <TableCell>
-                        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{p.method}</span>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold whitespace-nowrap">
-                        UGX {Number(p.amount).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right text-red-500 text-sm">
-                        {Number(p.leases?.outstanding_balance ?? 0) > 0 ? `UGX ${Number(p.leases?.outstanding_balance).toLocaleString()}` : "—"}
-                      </TableCell>
-                      {isStaff && (
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" title="Edit" onClick={() => openEdit(p)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" title="Receipt" onClick={() => openReceipt(p)}>
-                              <Receipt className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog open={voidId === p.id} onOpenChange={(o) => !o && setVoidId(null)}>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" title="Void" onClick={() => setVoidId(p.id)}>
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Void payment?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will permanently delete this payment record. This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-destructive text-destructive-foreground"
-                                    onClick={() => remove.mutate(p.id)}
-                                  >
-                                    Void
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <EntityCardGrid
+        data={payments}
+        isLoading={false}
+        searchFields={["tenant", "property", "unit", "reference"]}
+        keyExtractor={(item) => item.id}
+        titleField="tenant"
+        subtitleField="property"
+        metricFields={[
+          { key: "amount", label: "Amount", format: "currency" },
+          { key: "payment_date", label: "Date", format: "date" },
+          { key: "method", label: "Method" },
+        ]}
+        emptyMessage="No payments yet."
+        cardActions={(p) => isStaff ? (
+          <>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openEdit(p)}>
+              <Pencil className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openReceipt(p)}>
+              <Receipt className="h-3 w-3" />
+            </Button>
+            <AlertDialog open={voidId === p.id} onOpenChange={(o) => !o && setVoidId(null)}>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => setVoidId(p.id)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Void payment?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete this payment record. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground"
+                    onClick={() => remove.mutate(p.id)}
+                  >
+                    Void
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        ) : undefined}
+      />
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
@@ -711,7 +675,7 @@ function PaymentsPage() {
               <Button variant="outline" size="sm" onClick={async () => {
                 if (!receiptPayment) return;
                 try {
-                  const pdfBase64 = generateReceiptPdfBase64({
+                  const pdfBase64 = await generateReceiptPdfBase64({
                     receiptNo: receiptPayment.reference ?? `PAY-${receiptPayment.id?.slice(0, 8)}`,
                     date: receiptPayment.payment_date,
                     tenantName: receiptPayment.tenant?.full_name ?? receiptPayment.tenant?.email ?? "Tenant",

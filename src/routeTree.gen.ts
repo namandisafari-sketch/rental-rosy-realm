@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RentRouteImport } from './routes/rent'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as QboCallbackRouteImport } from './routes/qbo-callback'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LandRouteImport } from './routes/land'
 import { Route as DownloadRouteImport } from './routes/download'
@@ -24,6 +25,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServicesIdRouteImport } from './routes/services.$id'
+import { Route as AuthenticatedVendorPaymentsRouteImport } from './routes/_authenticated/vendor-payments'
 import { Route as AuthenticatedTimesheetsRouteImport } from './routes/_authenticated/timesheets'
 import { Route as AuthenticatedTenantsRouteImport } from './routes/_authenticated/tenants'
 import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
@@ -42,6 +44,7 @@ import { Route as AuthenticatedRentalMessagesRouteImport } from './routes/_authe
 import { Route as AuthenticatedRentalIdCardsRouteImport } from './routes/_authenticated/rental-id-cards'
 import { Route as AuthenticatedRecurringBillingRouteImport } from './routes/_authenticated/recurring-billing'
 import { Route as AuthenticatedReceiptsRouteImport } from './routes/_authenticated/receipts'
+import { Route as AuthenticatedQuotationsRouteImport } from './routes/_authenticated/quotations'
 import { Route as AuthenticatedPurchaseOrdersRouteImport } from './routes/_authenticated/purchase-orders'
 import { Route as AuthenticatedPunchListRouteImport } from './routes/_authenticated/punch-list'
 import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
@@ -74,6 +77,7 @@ import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedLandlordsRouteImport } from './routes/_authenticated/landlords'
 import { Route as AuthenticatedLandInquiriesRouteImport } from './routes/_authenticated/land-inquiries'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
+import { Route as AuthenticatedHabicoFinanceRouteImport } from './routes/_authenticated/habico-finance'
 import { Route as AuthenticatedFinancialReportsRouteImport } from './routes/_authenticated/financial-reports'
 import { Route as AuthenticatedExpensesRouteImport } from './routes/_authenticated/expenses'
 import { Route as AuthenticatedEstimatesRouteImport } from './routes/_authenticated/estimates'
@@ -85,6 +89,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDailyLogsRouteImport } from './routes/_authenticated/daily-logs'
 import { Route as AuthenticatedCostCodesRouteImport } from './routes/_authenticated/cost-codes'
 import { Route as AuthenticatedConstructionInvoicesRouteImport } from './routes/_authenticated/construction-invoices'
+import { Route as AuthenticatedConstructionFinanceRouteImport } from './routes/_authenticated/construction-finance'
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedCommitmentLogRouteImport } from './routes/_authenticated/commitment-log'
 import { Route as AuthenticatedChangeOrdersRouteImport } from './routes/_authenticated/change-orders'
@@ -112,6 +117,11 @@ const RentRoute = RentRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QboCallbackRoute = QboCallbackRouteImport.update({
+  id: '/qbo-callback',
+  path: '/qbo-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -168,6 +178,12 @@ const ServicesIdRoute = ServicesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ServicesRoute,
 } as any)
+const AuthenticatedVendorPaymentsRoute =
+  AuthenticatedVendorPaymentsRouteImport.update({
+    id: '/vendor-payments',
+    path: '/vendor-payments',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedTimesheetsRoute = AuthenticatedTimesheetsRouteImport.update({
   id: '/timesheets',
   path: '/timesheets',
@@ -264,6 +280,11 @@ const AuthenticatedRecurringBillingRoute =
 const AuthenticatedReceiptsRoute = AuthenticatedReceiptsRouteImport.update({
   id: '/receipts',
   path: '/receipts',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedQuotationsRoute = AuthenticatedQuotationsRouteImport.update({
+  id: '/quotations',
+  path: '/quotations',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPurchaseOrdersRoute =
@@ -448,6 +469,12 @@ const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedHabicoFinanceRoute =
+  AuthenticatedHabicoFinanceRouteImport.update({
+    id: '/habico-finance',
+    path: '/habico-finance',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinancialReportsRoute =
   AuthenticatedFinancialReportsRouteImport.update({
     id: '/financial-reports',
@@ -506,6 +533,12 @@ const AuthenticatedConstructionInvoicesRoute =
     path: '/construction-invoices',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedConstructionFinanceRoute =
+  AuthenticatedConstructionFinanceRouteImport.update({
+    id: '/construction-finance',
+    path: '/construction-finance',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCompaniesRoute = AuthenticatedCompaniesRouteImport.update({
   id: '/companies',
   path: '/companies',
@@ -561,6 +594,7 @@ export interface FileRoutesByFullPath {
   '/download': typeof DownloadRoute
   '/land': typeof LandRoute
   '/pricing': typeof PricingRoute
+  '/qbo-callback': typeof QboCallbackRoute
   '/register': typeof RegisterRoute
   '/rent': typeof RentRoute
   '/services': typeof ServicesRouteWithChildren
@@ -572,6 +606,7 @@ export interface FileRoutesByFullPath {
   '/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/commitment-log': typeof AuthenticatedCommitmentLogRoute
   '/companies': typeof AuthenticatedCompaniesRoute
+  '/construction-finance': typeof AuthenticatedConstructionFinanceRoute
   '/construction-invoices': typeof AuthenticatedConstructionInvoicesRoute
   '/cost-codes': typeof AuthenticatedCostCodesRoute
   '/daily-logs': typeof AuthenticatedDailyLogsRoute
@@ -583,6 +618,7 @@ export interface FileRoutesByFullPath {
   '/estimates': typeof AuthenticatedEstimatesRoute
   '/expenses': typeof AuthenticatedExpensesRoute
   '/financial-reports': typeof AuthenticatedFinancialReportsRoute
+  '/habico-finance': typeof AuthenticatedHabicoFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/land-inquiries': typeof AuthenticatedLandInquiriesRoute
   '/landlords': typeof AuthenticatedLandlordsRoute
@@ -615,6 +651,7 @@ export interface FileRoutesByFullPath {
   '/proposals': typeof AuthenticatedProposalsRoute
   '/punch-list': typeof AuthenticatedPunchListRoute
   '/purchase-orders': typeof AuthenticatedPurchaseOrdersRoute
+  '/quotations': typeof AuthenticatedQuotationsRoute
   '/receipts': typeof AuthenticatedReceiptsRoute
   '/recurring-billing': typeof AuthenticatedRecurringBillingRoute
   '/rental-id-cards': typeof AuthenticatedRentalIdCardsRoute
@@ -633,6 +670,7 @@ export interface FileRoutesByFullPath {
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tenants': typeof AuthenticatedTenantsRoute
   '/timesheets': typeof AuthenticatedTimesheetsRoute
+  '/vendor-payments': typeof AuthenticatedVendorPaymentsRoute
   '/services/$id': typeof ServicesIdRoute
   '/properties/$id': typeof AuthenticatedPropertiesIdRoute
 }
@@ -646,6 +684,7 @@ export interface FileRoutesByTo {
   '/download': typeof DownloadRoute
   '/land': typeof LandRoute
   '/pricing': typeof PricingRoute
+  '/qbo-callback': typeof QboCallbackRoute
   '/register': typeof RegisterRoute
   '/rent': typeof RentRoute
   '/services': typeof ServicesRouteWithChildren
@@ -657,6 +696,7 @@ export interface FileRoutesByTo {
   '/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/commitment-log': typeof AuthenticatedCommitmentLogRoute
   '/companies': typeof AuthenticatedCompaniesRoute
+  '/construction-finance': typeof AuthenticatedConstructionFinanceRoute
   '/construction-invoices': typeof AuthenticatedConstructionInvoicesRoute
   '/cost-codes': typeof AuthenticatedCostCodesRoute
   '/daily-logs': typeof AuthenticatedDailyLogsRoute
@@ -668,6 +708,7 @@ export interface FileRoutesByTo {
   '/estimates': typeof AuthenticatedEstimatesRoute
   '/expenses': typeof AuthenticatedExpensesRoute
   '/financial-reports': typeof AuthenticatedFinancialReportsRoute
+  '/habico-finance': typeof AuthenticatedHabicoFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/land-inquiries': typeof AuthenticatedLandInquiriesRoute
   '/landlords': typeof AuthenticatedLandlordsRoute
@@ -700,6 +741,7 @@ export interface FileRoutesByTo {
   '/proposals': typeof AuthenticatedProposalsRoute
   '/punch-list': typeof AuthenticatedPunchListRoute
   '/purchase-orders': typeof AuthenticatedPurchaseOrdersRoute
+  '/quotations': typeof AuthenticatedQuotationsRoute
   '/receipts': typeof AuthenticatedReceiptsRoute
   '/recurring-billing': typeof AuthenticatedRecurringBillingRoute
   '/rental-id-cards': typeof AuthenticatedRentalIdCardsRoute
@@ -718,6 +760,7 @@ export interface FileRoutesByTo {
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/tenants': typeof AuthenticatedTenantsRoute
   '/timesheets': typeof AuthenticatedTimesheetsRoute
+  '/vendor-payments': typeof AuthenticatedVendorPaymentsRoute
   '/services/$id': typeof ServicesIdRoute
   '/properties/$id': typeof AuthenticatedPropertiesIdRoute
 }
@@ -733,6 +776,7 @@ export interface FileRoutesById {
   '/download': typeof DownloadRoute
   '/land': typeof LandRoute
   '/pricing': typeof PricingRoute
+  '/qbo-callback': typeof QboCallbackRoute
   '/register': typeof RegisterRoute
   '/rent': typeof RentRoute
   '/services': typeof ServicesRouteWithChildren
@@ -744,6 +788,7 @@ export interface FileRoutesById {
   '/_authenticated/change-orders': typeof AuthenticatedChangeOrdersRoute
   '/_authenticated/commitment-log': typeof AuthenticatedCommitmentLogRoute
   '/_authenticated/companies': typeof AuthenticatedCompaniesRoute
+  '/_authenticated/construction-finance': typeof AuthenticatedConstructionFinanceRoute
   '/_authenticated/construction-invoices': typeof AuthenticatedConstructionInvoicesRoute
   '/_authenticated/cost-codes': typeof AuthenticatedCostCodesRoute
   '/_authenticated/daily-logs': typeof AuthenticatedDailyLogsRoute
@@ -755,6 +800,7 @@ export interface FileRoutesById {
   '/_authenticated/estimates': typeof AuthenticatedEstimatesRoute
   '/_authenticated/expenses': typeof AuthenticatedExpensesRoute
   '/_authenticated/financial-reports': typeof AuthenticatedFinancialReportsRoute
+  '/_authenticated/habico-finance': typeof AuthenticatedHabicoFinanceRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/land-inquiries': typeof AuthenticatedLandInquiriesRoute
   '/_authenticated/landlords': typeof AuthenticatedLandlordsRoute
@@ -787,6 +833,7 @@ export interface FileRoutesById {
   '/_authenticated/proposals': typeof AuthenticatedProposalsRoute
   '/_authenticated/punch-list': typeof AuthenticatedPunchListRoute
   '/_authenticated/purchase-orders': typeof AuthenticatedPurchaseOrdersRoute
+  '/_authenticated/quotations': typeof AuthenticatedQuotationsRoute
   '/_authenticated/receipts': typeof AuthenticatedReceiptsRoute
   '/_authenticated/recurring-billing': typeof AuthenticatedRecurringBillingRoute
   '/_authenticated/rental-id-cards': typeof AuthenticatedRentalIdCardsRoute
@@ -805,6 +852,7 @@ export interface FileRoutesById {
   '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
   '/_authenticated/tenants': typeof AuthenticatedTenantsRoute
   '/_authenticated/timesheets': typeof AuthenticatedTimesheetsRoute
+  '/_authenticated/vendor-payments': typeof AuthenticatedVendorPaymentsRoute
   '/services/$id': typeof ServicesIdRoute
   '/_authenticated/properties/$id': typeof AuthenticatedPropertiesIdRoute
 }
@@ -820,6 +868,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/land'
     | '/pricing'
+    | '/qbo-callback'
     | '/register'
     | '/rent'
     | '/services'
@@ -831,6 +880,7 @@ export interface FileRouteTypes {
     | '/change-orders'
     | '/commitment-log'
     | '/companies'
+    | '/construction-finance'
     | '/construction-invoices'
     | '/cost-codes'
     | '/daily-logs'
@@ -842,6 +892,7 @@ export interface FileRouteTypes {
     | '/estimates'
     | '/expenses'
     | '/financial-reports'
+    | '/habico-finance'
     | '/inventory'
     | '/land-inquiries'
     | '/landlords'
@@ -874,6 +925,7 @@ export interface FileRouteTypes {
     | '/proposals'
     | '/punch-list'
     | '/purchase-orders'
+    | '/quotations'
     | '/receipts'
     | '/recurring-billing'
     | '/rental-id-cards'
@@ -892,6 +944,7 @@ export interface FileRouteTypes {
     | '/suppliers'
     | '/tenants'
     | '/timesheets'
+    | '/vendor-payments'
     | '/services/$id'
     | '/properties/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -905,6 +958,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/land'
     | '/pricing'
+    | '/qbo-callback'
     | '/register'
     | '/rent'
     | '/services'
@@ -916,6 +970,7 @@ export interface FileRouteTypes {
     | '/change-orders'
     | '/commitment-log'
     | '/companies'
+    | '/construction-finance'
     | '/construction-invoices'
     | '/cost-codes'
     | '/daily-logs'
@@ -927,6 +982,7 @@ export interface FileRouteTypes {
     | '/estimates'
     | '/expenses'
     | '/financial-reports'
+    | '/habico-finance'
     | '/inventory'
     | '/land-inquiries'
     | '/landlords'
@@ -959,6 +1015,7 @@ export interface FileRouteTypes {
     | '/proposals'
     | '/punch-list'
     | '/purchase-orders'
+    | '/quotations'
     | '/receipts'
     | '/recurring-billing'
     | '/rental-id-cards'
@@ -977,6 +1034,7 @@ export interface FileRouteTypes {
     | '/suppliers'
     | '/tenants'
     | '/timesheets'
+    | '/vendor-payments'
     | '/services/$id'
     | '/properties/$id'
   id:
@@ -991,6 +1049,7 @@ export interface FileRouteTypes {
     | '/download'
     | '/land'
     | '/pricing'
+    | '/qbo-callback'
     | '/register'
     | '/rent'
     | '/services'
@@ -1002,6 +1061,7 @@ export interface FileRouteTypes {
     | '/_authenticated/change-orders'
     | '/_authenticated/commitment-log'
     | '/_authenticated/companies'
+    | '/_authenticated/construction-finance'
     | '/_authenticated/construction-invoices'
     | '/_authenticated/cost-codes'
     | '/_authenticated/daily-logs'
@@ -1013,6 +1073,7 @@ export interface FileRouteTypes {
     | '/_authenticated/estimates'
     | '/_authenticated/expenses'
     | '/_authenticated/financial-reports'
+    | '/_authenticated/habico-finance'
     | '/_authenticated/inventory'
     | '/_authenticated/land-inquiries'
     | '/_authenticated/landlords'
@@ -1045,6 +1106,7 @@ export interface FileRouteTypes {
     | '/_authenticated/proposals'
     | '/_authenticated/punch-list'
     | '/_authenticated/purchase-orders'
+    | '/_authenticated/quotations'
     | '/_authenticated/receipts'
     | '/_authenticated/recurring-billing'
     | '/_authenticated/rental-id-cards'
@@ -1063,6 +1125,7 @@ export interface FileRouteTypes {
     | '/_authenticated/suppliers'
     | '/_authenticated/tenants'
     | '/_authenticated/timesheets'
+    | '/_authenticated/vendor-payments'
     | '/services/$id'
     | '/_authenticated/properties/$id'
   fileRoutesById: FileRoutesById
@@ -1078,6 +1141,7 @@ export interface RootRouteChildren {
   DownloadRoute: typeof DownloadRoute
   LandRoute: typeof LandRoute
   PricingRoute: typeof PricingRoute
+  QboCallbackRoute: typeof QboCallbackRoute
   RegisterRoute: typeof RegisterRoute
   RentRoute: typeof RentRoute
   ServicesRoute: typeof ServicesRouteWithChildren
@@ -1112,6 +1176,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/qbo-callback': {
+      id: '/qbo-callback'
+      path: '/qbo-callback'
+      fullPath: '/qbo-callback'
+      preLoaderRoute: typeof QboCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -1190,6 +1261,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/services/$id'
       preLoaderRoute: typeof ServicesIdRouteImport
       parentRoute: typeof ServicesRoute
+    }
+    '/_authenticated/vendor-payments': {
+      id: '/_authenticated/vendor-payments'
+      path: '/vendor-payments'
+      fullPath: '/vendor-payments'
+      preLoaderRoute: typeof AuthenticatedVendorPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/timesheets': {
       id: '/_authenticated/timesheets'
@@ -1315,6 +1393,13 @@ declare module '@tanstack/react-router' {
       path: '/receipts'
       fullPath: '/receipts'
       preLoaderRoute: typeof AuthenticatedReceiptsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/quotations': {
+      id: '/_authenticated/quotations'
+      path: '/quotations'
+      fullPath: '/quotations'
+      preLoaderRoute: typeof AuthenticatedQuotationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/purchase-orders': {
@@ -1541,6 +1626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/habico-finance': {
+      id: '/_authenticated/habico-finance'
+      path: '/habico-finance'
+      fullPath: '/habico-finance'
+      preLoaderRoute: typeof AuthenticatedHabicoFinanceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/financial-reports': {
       id: '/_authenticated/financial-reports'
       path: '/financial-reports'
@@ -1616,6 +1708,13 @@ declare module '@tanstack/react-router' {
       path: '/construction-invoices'
       fullPath: '/construction-invoices'
       preLoaderRoute: typeof AuthenticatedConstructionInvoicesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/construction-finance': {
+      id: '/_authenticated/construction-finance'
+      path: '/construction-finance'
+      fullPath: '/construction-finance'
+      preLoaderRoute: typeof AuthenticatedConstructionFinanceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/companies': {
@@ -1699,6 +1798,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedChangeOrdersRoute: typeof AuthenticatedChangeOrdersRoute
   AuthenticatedCommitmentLogRoute: typeof AuthenticatedCommitmentLogRoute
   AuthenticatedCompaniesRoute: typeof AuthenticatedCompaniesRoute
+  AuthenticatedConstructionFinanceRoute: typeof AuthenticatedConstructionFinanceRoute
   AuthenticatedConstructionInvoicesRoute: typeof AuthenticatedConstructionInvoicesRoute
   AuthenticatedCostCodesRoute: typeof AuthenticatedCostCodesRoute
   AuthenticatedDailyLogsRoute: typeof AuthenticatedDailyLogsRoute
@@ -1710,6 +1810,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEstimatesRoute: typeof AuthenticatedEstimatesRoute
   AuthenticatedExpensesRoute: typeof AuthenticatedExpensesRoute
   AuthenticatedFinancialReportsRoute: typeof AuthenticatedFinancialReportsRoute
+  AuthenticatedHabicoFinanceRoute: typeof AuthenticatedHabicoFinanceRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLandInquiriesRoute: typeof AuthenticatedLandInquiriesRoute
   AuthenticatedLandlordsRoute: typeof AuthenticatedLandlordsRoute
@@ -1742,6 +1843,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRoute
   AuthenticatedPunchListRoute: typeof AuthenticatedPunchListRoute
   AuthenticatedPurchaseOrdersRoute: typeof AuthenticatedPurchaseOrdersRoute
+  AuthenticatedQuotationsRoute: typeof AuthenticatedQuotationsRoute
   AuthenticatedReceiptsRoute: typeof AuthenticatedReceiptsRoute
   AuthenticatedRecurringBillingRoute: typeof AuthenticatedRecurringBillingRoute
   AuthenticatedRentalIdCardsRoute: typeof AuthenticatedRentalIdCardsRoute
@@ -1760,6 +1862,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
   AuthenticatedTenantsRoute: typeof AuthenticatedTenantsRoute
   AuthenticatedTimesheetsRoute: typeof AuthenticatedTimesheetsRoute
+  AuthenticatedVendorPaymentsRoute: typeof AuthenticatedVendorPaymentsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -1770,6 +1873,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedChangeOrdersRoute: AuthenticatedChangeOrdersRoute,
   AuthenticatedCommitmentLogRoute: AuthenticatedCommitmentLogRoute,
   AuthenticatedCompaniesRoute: AuthenticatedCompaniesRoute,
+  AuthenticatedConstructionFinanceRoute: AuthenticatedConstructionFinanceRoute,
   AuthenticatedConstructionInvoicesRoute:
     AuthenticatedConstructionInvoicesRoute,
   AuthenticatedCostCodesRoute: AuthenticatedCostCodesRoute,
@@ -1782,6 +1886,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEstimatesRoute: AuthenticatedEstimatesRoute,
   AuthenticatedExpensesRoute: AuthenticatedExpensesRoute,
   AuthenticatedFinancialReportsRoute: AuthenticatedFinancialReportsRoute,
+  AuthenticatedHabicoFinanceRoute: AuthenticatedHabicoFinanceRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLandInquiriesRoute: AuthenticatedLandInquiriesRoute,
   AuthenticatedLandlordsRoute: AuthenticatedLandlordsRoute,
@@ -1816,6 +1921,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProposalsRoute: AuthenticatedProposalsRoute,
   AuthenticatedPunchListRoute: AuthenticatedPunchListRoute,
   AuthenticatedPurchaseOrdersRoute: AuthenticatedPurchaseOrdersRoute,
+  AuthenticatedQuotationsRoute: AuthenticatedQuotationsRoute,
   AuthenticatedReceiptsRoute: AuthenticatedReceiptsRoute,
   AuthenticatedRecurringBillingRoute: AuthenticatedRecurringBillingRoute,
   AuthenticatedRentalIdCardsRoute: AuthenticatedRentalIdCardsRoute,
@@ -1834,6 +1940,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,
   AuthenticatedTenantsRoute: AuthenticatedTenantsRoute,
   AuthenticatedTimesheetsRoute: AuthenticatedTimesheetsRoute,
+  AuthenticatedVendorPaymentsRoute: AuthenticatedVendorPaymentsRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -1863,6 +1970,7 @@ const rootRouteChildren: RootRouteChildren = {
   DownloadRoute: DownloadRoute,
   LandRoute: LandRoute,
   PricingRoute: PricingRoute,
+  QboCallbackRoute: QboCallbackRoute,
   RegisterRoute: RegisterRoute,
   RentRoute: RentRoute,
   ServicesRoute: ServicesRouteWithChildren,
@@ -1871,3 +1979,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

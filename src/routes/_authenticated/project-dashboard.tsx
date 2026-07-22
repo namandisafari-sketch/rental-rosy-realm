@@ -15,6 +15,7 @@ import {
   FileText, HardHat, Loader2, MessageSquare, Target, TrendingDown,
   TrendingUp, ArrowRight, CalendarDays,
 } from "lucide-react";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/project-dashboard")({
   head: () => ({ meta: [{ title: "Project Dashboard — Habico Portal" }] }),
@@ -151,6 +152,7 @@ function ProjectDashboardPage() {
   if (!projectId && !isLoading) {
     return (
       <div className="mx-auto max-w-7xl space-y-6">
+        <PageTour route="/project-dashboard" role={role} />
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Operations</div>
           <h1 className="display text-3xl font-bold">Project Dashboard</h1>
@@ -166,6 +168,7 @@ function ProjectDashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/project-dashboard" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Operations</div>

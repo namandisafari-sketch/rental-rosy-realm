@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import {
-  BRAND, PDF_MARGIN, headerBand, footerBand,
+  BRAND, PDF_MARGIN, headerBand, footerBand, loadLogo, drawWatermark,
   sectionTitle, detailRow, brandedCard, amountBox,
   hexToRgb,
 } from "./pdf-brand";
@@ -26,20 +26,25 @@ export interface FinancialReportPdfInput {
   }[];
 }
 
-export function generateFinancialReportPdf(data: FinancialReportPdfInput): jsPDF {
+export async function generateFinancialReportPdf(data: FinancialReportPdfInput): Promise<jsPDF> {
   const pdf = new jsPDF("p", "mm", "a4");
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
   const cx = pageW / 2;
   let y: number;
 
+  const logoDataUrl = await loadLogo();
+
   // ── Page border ──
   pdf.setDrawColor(...hexToRgb(BRAND.border));
   pdf.setLineWidth(0.3);
   pdf.rect(5, 5, pageW - 10, pageH - 10);
 
+  // ── Watermark ──
+  drawWatermark(pdf, pageW, pageH, logoDataUrl);
+
   // ── Header band ──
-  headerBand(pdf, pageW);
+  headerBand(pdf, pageW, logoDataUrl);
   y = 48;
 
   // ── Title ──

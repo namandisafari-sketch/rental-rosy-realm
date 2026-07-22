@@ -13,9 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, QrCode, Copy, Trash2, ToggleLeft, ToggleRight, Image as ImageIcon } from "lucide-react";
+import { EntityCardGrid } from "@/components/entity-card-grid";
+import { Plus, QrCode, Copy, Trash2, Pencil, ToggleLeft, ToggleRight, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/listing-banners")({
   head: () => ({ meta: [{ title: "Listing Banners — Habico Portal" }] }),
@@ -179,6 +180,7 @@ function ListingBannersPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/listing-banners" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Marketing</div>
@@ -251,94 +253,53 @@ function ListingBannersPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Property</TableHead>
-                <TableHead>Active</TableHead>
-                <TableHead>QR Scans</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center">Loading...</TableCell>
-                </TableRow>
-              ) : banners.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No banners found</TableCell>
-                </TableRow>
-              ) : (
-                banners.map((b: any) => (
-                  <TableRow key={b.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {b.banner_image_url ? (
-                          <img src={b.banner_image_url} alt="" className="h-8 w-12 rounded object-cover" />
-                        ) : (
-                          <div className="flex h-8 w-12 items-center justify-center rounded bg-muted">
-                            <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
-                        {b.title}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{b.property?.name ?? "—"}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleMutation.mutate({ id: b.id, is_active: !b.is_active })}
-                        title={b.is_active ? "Deactivate" : "Activate"}
-                      >
-                        {b.is_active ? <ToggleRight className="h-5 w-5 text-green-500" /> : <ToggleLeft className="h-5 w-5 text-muted-foreground" />}
-                      </Button>
-                    </TableCell>
-                    <TableCell className="text-sm">{b.qr_scans ?? 0}</TableCell>
-                    <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground" title={b.slug}>{b.slug}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setQrBanner(b)} title="Show QR">
-                          <QrCode className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => copyUrl(b.slug)} title="Copy URL">
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog open={deleteTarget?.id === b.id} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(b)} title="Delete">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Banner</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete the banner "{b.title}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteMutation.mutate(b.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                {deleteMutation.isPending ? "Deleting..." : "Delete"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <EntityCardGrid
+        data={banners}
+        isLoading={isLoading}
+        searchFields={["title"]}
+        keyExtractor={(item) => item.id}
+        titleField="title"
+        subtitleField="property"
+        metricFields={[
+          { key: "qr_scans", label: "QR Scans", format: "number" },
+        ]}
+        onCreateNew={isStaff ? () => setCreateOpen(true) : undefined}
+        createLabel="Create Banner"
+        cardActions={(b) => (
+          <>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setQrBanner(b)} title="Show QR">
+              <QrCode className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => copyUrl(b.slug)} title="Copy URL">
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => toggleMutation.mutate({ id: b.id, is_active: !b.is_active })} title={b.is_active ? "Deactivate" : "Activate"}>
+              {b.is_active ? <ToggleRight className="h-3 w-3 text-green-500" /> : <ToggleLeft className="h-3 w-3 text-muted-foreground" />}
+            </Button>
+            <AlertDialog open={deleteTarget?.id === b.id} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => setDeleteTarget(b)} title="Delete">
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Banner</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete the banner "{b.title}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteMutation.mutate(b.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
+        )}
+      />
 
       <Dialog open={!!qrBanner} onOpenChange={(o) => { if (!o) setQrBanner(null); }}>
         <DialogContent className="sm:max-w-sm">

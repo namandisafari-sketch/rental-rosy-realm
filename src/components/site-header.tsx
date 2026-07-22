@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import AppStoreBadges from "@/components/app-store-badges";
-import logoSrc from "@/assets/habico-logo.jpg";
+import logoSrc from "@/assets/habico-logo.png";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);

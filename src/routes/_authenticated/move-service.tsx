@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompanyId } from "@/hooks/use-company-id";
+import { useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeftRight, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/move-service")({
   head: () => ({ meta: [{ title: "Move Service — Habico Portal" }] }),
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/move-service")({
 
 function MoveServicePage() {
   const { data: companyId, isLoading: companyLoading } = useCompanyId();
+  const role = useHighestRole();
   const qc = useQueryClient();
 
   const [isActive, setIsActive] = useState(true);
@@ -93,6 +96,7 @@ function MoveServicePage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      <PageTour route="/move-service" role={role} />
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Services</div>

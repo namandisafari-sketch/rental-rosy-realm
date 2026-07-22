@@ -14,6 +14,7 @@ import { SearchableSelect, type SearchableOption } from "@/components/ui/searcha
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Wrench, Image, X } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/maintenance")({
   component: MaintenancePage,
@@ -281,6 +282,7 @@ function MaintenancePage() {
 
   return (
     <div className="space-y-6 p-6">
+      <PageTour route="/maintenance" role={role} />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Maintenance</h1>
         <Button onClick={() => setDialogOpen(true)}>

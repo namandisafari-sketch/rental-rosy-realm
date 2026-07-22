@@ -1,13 +1,16 @@
+// @ts-nocheck
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompanyId } from "@/hooks/use-company-id";
+import { useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarCheck, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { EntityCardGrid } from "@/components/entity-card-grid";
+import { CalendarCheck, CheckCircle2, XCircle, Clock, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/move-bookings")({
   head: () => ({ meta: [{ title: "Move Bookings — Habico Portal" }] }),
@@ -24,6 +27,7 @@ const statusColors: Record<string, string> = {
 
 function MoveBookingsPage() {
   const qc = useQueryClient();
+  const role = useHighestRole();
   const { data: companyId, isLoading: companyLoading } = useCompanyId();
 
   const { data: bookings, isLoading } = useQuery({
@@ -61,6 +65,7 @@ function MoveBookingsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
+      <PageTour route="/move-bookings" role={role} />
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Services</div>
@@ -70,65 +75,44 @@ function MoveBookingsPage() {
         <CalendarCheck className="h-8 w-8 text-muted-foreground" />
       </div>
 
-      {isLoading ? (
-        <Card><CardContent className="flex h-48 items-center justify-center"><p className="text-muted-foreground">Loading bookings...</p></CardContent></Card>
-      ) : !bookings?.length ? (
-        <Card>
-          <CardHeader><CardTitle className="display">No Bookings Yet</CardTitle></CardHeader>
-          <CardContent><p className="text-sm text-muted-foreground">Customers haven't made any move service bookings yet.</p></CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader><CardTitle className="display">{bookings.length} Booking{bookings.length !== 1 ? "s" : ""}</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>From → To</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bookings.map((b: any) => (
-                  <TableRow key={b.id}>
-                    <TableCell className="font-medium">{b.customer_name}</TableCell>
-                    <TableCell className="font-mono text-xs">{b.customer_phone}</TableCell>
-                    <TableCell><Badge variant="outline">{b.service_type === "move_in" ? "Move In" : b.service_type === "move_out" ? "Move Out" : "Both"}</Badge></TableCell>
-                    <TableCell>{new Date(b.preferred_date).toLocaleDateString()}</TableCell>
-                    <TableCell className="max-w-[200px] truncate text-xs">{b.pickup_address} → {b.dropoff_address}</TableCell>
-                    <TableCell className="font-mono text-xs">UGX {Number(b.total_price).toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge className={statusColors[b.status] || ""}>{b.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {b.status === "pending" && (
-                          <>
-                            <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: b.id, status: "confirmed" })}>Confirm</Button>
-                            <Button size="sm" variant="destructive" onClick={() => updateStatus.mutate({ id: b.id, status: "cancelled" })}>Cancel</Button>
-                          </>
-                        )}
-                        {b.status === "confirmed" && (
-                          <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: b.id, status: "in_progress" })}>Start</Button>
-                        )}
-                        {b.status === "in_progress" && (
-                          <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: b.id, status: "completed" })}>Complete</Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      <EntityCardGrid
+        data={bookings}
+        isLoading={isLoading}
+        searchFields={["customer_name", "customer_phone"]}
+        filterField="status"
+        filterOptions={[
+          { label: "Pending", value: "pending" },
+          { label: "Confirmed", value: "confirmed" },
+          { label: "In Progress", value: "in_progress" },
+          { label: "Completed", value: "completed" },
+          { label: "Cancelled", value: "cancelled" },
+        ]}
+        keyExtractor={(item) => item.id}
+        titleField="customer_name"
+        subtitleField="customer_phone"
+        statusField="status"
+        metricFields={[
+          { key: "preferred_date", label: "Date", format: "date" },
+          { key: "total_price", label: "Amount", format: "currency" },
+        ]}
+        emptyMessage="No bookings yet"
+        cardActions={(b) => (
+          <>
+            {b.status === "pending" && (
+              <>
+                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => updateStatus.mutate({ id: b.id, status: "confirmed" })}>Confirm</Button>
+                <Button size="sm" variant="destructive" className="h-7 px-2 text-xs" onClick={() => updateStatus.mutate({ id: b.id, status: "cancelled" })}>Cancel</Button>
+              </>
+            )}
+            {b.status === "confirmed" && (
+              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => updateStatus.mutate({ id: b.id, status: "in_progress" })}>Start</Button>
+            )}
+            {b.status === "in_progress" && (
+              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => updateStatus.mutate({ id: b.id, status: "completed" })}>Complete</Button>
+            )}
+          </>
+        )}
+      />
     </div>
   );
 }

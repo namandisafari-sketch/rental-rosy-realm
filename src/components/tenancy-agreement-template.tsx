@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2, Phone, Mail, MapPin } from "lucide-react";
 import jsPDF from "jspdf";
 import { toPng } from "html-to-image";
-import habicoLogo from "@/assets/habico-logo.jpg";
+import habicoLogo from "@/assets/habico-logo.png";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CompanyBranding } from "@/hooks/use-company-branding";

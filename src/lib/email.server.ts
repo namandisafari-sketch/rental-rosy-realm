@@ -15,7 +15,21 @@ const APP_URL = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "https://www.habico.ug";
 
+const LOGO_DATA_URL = (() => {
+  try {
+    const fs = require("fs") as typeof import("fs");
+    const path = require("path") as typeof import("path");
+    const logoPath = path.join(process.cwd(), "public", "habico-logo.png");
+    if (fs.existsSync(logoPath)) {
+      const buf = fs.readFileSync(logoPath);
+      return `data:image/png;base64,${buf.toString("base64")}`;
+    }
+  } catch {}
+  return "";
+})();
+
 function brandedWrapper(title: string, body: string) {
+  const logoSrc = LOGO_DATA_URL || `${APP_URL}/habico-logo.png`;
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -31,7 +45,7 @@ function brandedWrapper(title: string, body: string) {
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
-                    <img src="${APP_URL}/habico-logo.jpg" alt="Habico" width="160" height="90" style="display:block;border:0;outline:none;border-radius:4px;" />
+                    <img src="${logoSrc}" alt="Habico" width="160" height="90" style="display:block;border:0;outline:none;border-radius:4px;" />
                   </td>
                   <td align="right" style="font-size:11px;color:#94a3b8;vertical-align:middle;">PROPERTY<br/>MANAGERS</td>
                 </tr>
@@ -498,6 +512,67 @@ export async function sendTenantReminderEmail(params: {
     to: [params.to],
     subject: `Payment Reminder — ${params.propertyName} · Habico Portal`,
     html: brandedWrapper("Payment Reminder", body),
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function sendVendorPaymentReceiptEmail(params: {
+  to: string;
+  payeeName: string;
+  receiptNumber: string;
+  amount: number;
+  description: string;
+  category: string;
+  paymentMethod: string;
+  paymentDate: string;
+  projectName?: string | null;
+  referenceNumber?: string | null;
+  pdfBase64: string;
+  pdfFilename: string;
+}) {
+  const resend = getResend();
+  const body = `
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="font-size:14px;color:#475569;line-height:1.7;">
+      <p style="margin:0 0 16px;">Dear <strong style="color:#1e293b;">${params.payeeName}</strong>,</p>
+      <p style="margin:0 0 16px;">
+        Thank you for your service. A payment of
+        <strong style="color:#059669;">UGX ${params.amount.toLocaleString()}</strong>
+        has been processed by Habico Property Managers.
+      </p>
+      <p style="margin:0 0 16px;">Your receipt is attached to this email for your records.</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:8px;margin:16px 0;">
+        <tr>
+          <td style="padding:16px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+              <tr><td style="padding:4px 0;color:#64748b;">Receipt #</td><td style="padding:4px 0;font-weight:600;text-align:right;">${params.receiptNumber}</td></tr>
+              <tr><td style="padding:4px 0;color:#64748b;">Date</td><td style="padding:4px 0;font-weight:600;text-align:right;">${params.paymentDate}</td></tr>
+              <tr><td style="padding:4px 0;color:#64748b;">Description</td><td style="padding:4px 0;font-weight:600;text-align:right;">${params.description}</td></tr>
+              <tr><td style="padding:4px 0;color:#64748b;">Category</td><td style="padding:4px 0;font-weight:600;text-align:right;text-transform:capitalize;">${params.category}</td></tr>
+              <tr><td style="padding:4px 0;color:#64748b;">Payment Method</td><td style="padding:4px 0;font-weight:600;text-align:right;text-transform:capitalize;">${params.paymentMethod.replace("_", " ")}</td></tr>
+              ${params.projectName ? `<tr><td style="padding:4px 0;color:#64748b;">Project</td><td style="padding:4px 0;font-weight:600;text-align:right;">${params.projectName}</td></tr>` : ""}
+              ${params.referenceNumber ? `<tr><td style="padding:4px 0;color:#64748b;">Reference</td><td style="padding:4px 0;font-weight:600;text-align:right;">${params.referenceNumber}</td></tr>` : ""}
+              <tr><td style="padding:8px 0 4px;border-top:1px solid #e2e8f0;font-weight:700;font-size:15px;">Amount Paid</td><td style="padding:8px 0 4px;border-top:1px solid #e2e8f0;font-weight:700;font-size:15px;text-align:right;color:#059669;">UGX ${params.amount.toLocaleString()}</td></tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">
+        For questions, contact us at <a href="mailto:support@habico.ug" style="color:#2563eb;">support@habico.ug</a>
+        or call ${HABICO_PHONE}.
+      </p>
+      <p style="margin:4px 0 0;font-size:12px;color:#94a3b8;">Best regards,<br/><strong style="color:#475569;">The Habico Team</strong></p>
+    </td>
+  </tr>
+</table>`;
+  const { data, error } = await resend.emails.send({
+    from: "Habico Payments <payments@habico.ug>",
+    to: [params.to],
+    subject: `Payment Receipt #${params.receiptNumber} — Habico Property Managers`,
+    html: brandedWrapper("Payment Receipt", body),
+    attachments: [{ filename: params.pdfFilename, content: params.pdfBase64 }],
   });
   if (error) throw new Error(error.message);
   return data;

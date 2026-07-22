@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClipboardList, FileText, FolderTree, ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/sop")({
   head: () => ({ meta: [{ title: "SOP — Habico Portal" }] }),
@@ -39,6 +40,7 @@ function SopPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/sop" role={role} />
       <div>
         <div className="text-xs font-bold uppercase tracking-widest text-accent">Operations</div>
         <h1 className="display text-3xl font-bold">Standard Operating Procedures</h1>

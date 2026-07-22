@@ -12,6 +12,7 @@ import { SearchableSelect, type SearchableOption } from "@/components/ui/searcha
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Search, MessageSquare, Send, CheckCheck, Mail, MailOpen } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/rental-messages")({
   head: () => ({ meta: [{ title: "Rental Messages — Habico Portal" }] }),
@@ -200,6 +201,7 @@ function RentalMessagesPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/rental-messages" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Communication</div>

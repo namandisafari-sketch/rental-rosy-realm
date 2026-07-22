@@ -23,7 +23,7 @@ const platforms = [
     action: "Download for Windows",
     note: "Setup ~100 MB",
     color: "bg-blue-100 text-blue-700",
-    href: "/Habico%20Portal-Setup-1.0.0.exe",
+    href: "/Habico%20Portal-Setup-1.1.0.exe",
   },
   {
     icon: Smartphone,

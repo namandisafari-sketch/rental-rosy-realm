@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useHighestRole } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +13,7 @@ import jsPDF from "jspdf";
 import { toPng } from "html-to-image";
 import { HabicoFinancialReport, buildPropertyReportData } from "@/components/habico-financial-report";
 import type { FinancialReportData } from "@/components/habico-financial-report";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/financial-reports")({
   head: () => ({ meta: [{ title: "Financial Reports — Habico Portal" }] }),
@@ -25,6 +27,7 @@ function formatUGX(amount: number) {
 }
 
 function FinancialReportsPage() {
+  const role = useHighestRole();
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
@@ -310,6 +313,7 @@ function FinancialReportsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/financial-reports" role={role} />
       <div>
         <div className="text-xs font-bold uppercase tracking-widest text-accent">Finance</div>
         <h1 className="display text-3xl font-bold">Financial Reports</h1>

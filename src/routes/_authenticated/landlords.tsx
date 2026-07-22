@@ -13,6 +13,7 @@ import { Building2, Mail, Phone, User, Plus, Trash2, Landmark, KeyRound, Copy } 
 import { toast } from "sonner";
 import { createLandlord } from "@/lib/createLandlord.functions";
 import { resetLandlordPassword } from "@/lib/resetLandlordPassword.functions";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/landlords")({
   head: () => ({ meta: [{ title: "Landlords — Habico Portal" }] }),
@@ -124,6 +125,7 @@ function LandlordsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
+      <PageTour route="/landlords" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Property Owners</div>

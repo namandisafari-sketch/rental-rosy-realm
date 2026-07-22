@@ -2,77 +2,34 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, useHighestRole } from "@/hooks/use-auth";
+import { workflowConfigs } from "@/lib/workflow-actions";
+import { EntityCardGrid } from "@/components/entity-card-grid";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  CalendarDays,
-  Clock,
-  ClipboardList,
-  Plus,
-  ArrowLeftRight,
-  AlertTriangle,
-  Search,
-} from "lucide-react";
+import { CalendarDays, Clock, ClipboardList, Plus, ArrowLeftRight, AlertTriangle, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/equipment-rentals")({
   component: EquipmentRentalsPage,
 });
 
-const RENTAL_STATUSES = [
-  "active",
-  "returned",
-  "overdue",
-  "damaged",
-  "lost",
-] as const;
-
-const STATUS_STYLES: Record<string, string> = {
-  active: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  returned: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
-  overdue: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  damaged:
-    "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-  lost: "bg-red-200 text-red-900 dark:bg-red-950/50 dark:text-red-300",
-};
+const RENTAL_STATUSES = ["active", "returned", "overdue", "damaged", "lost"] as const;
 
 function EquipmentRentalsPage() {
   const { user } = useAuth();
+  const role = useHighestRole();
   const queryClient = useQueryClient();
   const isStaff = user?.role === "staff" || user?.role === "admin";
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const [damageOpen, setDamageOpen] = useState(false);
@@ -107,9 +64,7 @@ function EquipmentRentalsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("equipment_rentals")
-        .select(
-          "*, assets(name, category), employees(full_name), projects(name)"
-        )
+        .select("*, assets(name, category), employees(full_name), projects(name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -165,26 +120,9 @@ function EquipmentRentalsPage() {
     },
   });
 
-  const activeRentals =
-    rentals?.filter((r) => r.status === "active").length ?? 0;
-  const overdueRentals =
-    rentals?.filter((r) => r.status === "overdue").length ?? 0;
+  const activeRentals = rentals?.filter((r) => r.status === "active").length ?? 0;
+  const overdueRentals = rentals?.filter((r) => r.status === "overdue").length ?? 0;
   const availableCount = availableAssets?.length ?? 0;
-
-  const filteredRentals = (rentals ?? []).filter((r) => {
-    const assetName = r.assets?.name?.toLowerCase() ?? "";
-    const employeeName = r.employees?.full_name?.toLowerCase() ?? "";
-    const projectName = r.projects?.name?.toLowerCase() ?? "";
-    const q = search.toLowerCase();
-    const matchesSearch =
-      assetName.includes(q) ||
-      employeeName.includes(q) ||
-      projectName.includes(q) ||
-      (r.rental_number ?? "").toLowerCase().includes(q);
-    const matchesStatus =
-      statusFilter === "all" || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
 
   const createMutation = useMutation({
     mutationFn: async (values: typeof form) => {
@@ -222,13 +160,7 @@ function EquipmentRentalsPage() {
   });
 
   const returnMutation = useMutation({
-    mutationFn: async ({
-      id,
-      values,
-    }: {
-      id: string;
-      values: typeof returnForm;
-    }) => {
+    mutationFn: async ({ id, values }: { id: string; values: typeof returnForm }) => {
       const rental = rentals?.find((r) => r.id === id);
       if (!rental) throw new Error("Rental not found");
       const start = new Date(rental.start_date);
@@ -244,9 +176,7 @@ function EquipmentRentalsPage() {
           total_days: totalDays,
           total_charge: totalCharge,
           status: "returned",
-          notes: values.notes
-            ? `${rental.notes ?? ""}\nReturn notes: ${values.notes}`
-            : rental.notes,
+          notes: values.notes ? `${rental.notes ?? ""}\nReturn notes: ${values.notes}` : rental.notes,
         })
         .eq("id", id);
       if (error) throw error;
@@ -257,11 +187,7 @@ function EquipmentRentalsPage() {
       toast.success("Rental marked as returned");
       setReturnOpen(false);
       setSelectedRental(null);
-      setReturnForm({
-        actual_return_date: today,
-        condition_after: "",
-        notes: "",
-      });
+      setReturnForm({ actual_return_date: today, condition_after: "", notes: "" });
     },
     onError: (error) => {
       toast.error(error.message);
@@ -269,13 +195,7 @@ function EquipmentRentalsPage() {
   });
 
   const damageMutation = useMutation({
-    mutationFn: async ({
-      id,
-      values,
-    }: {
-      id: string;
-      values: typeof damageForm;
-    }) => {
+    mutationFn: async ({ id, values }: { id: string; values: typeof damageForm }) => {
       const rental = rentals?.find((r) => r.id === id);
       const existingNotes = rental?.notes ?? "";
       const updatedNotes = existingNotes
@@ -283,19 +203,14 @@ function EquipmentRentalsPage() {
         : `${values.status === "damaged" ? "Damaged" : "Lost"} notes: ${values.notes}`;
       const { error } = await supabase
         .from("equipment_rentals")
-        .update({
-          status: values.status,
-          notes: updatedNotes,
-        })
+        .update({ status: values.status, notes: updatedNotes })
         .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equipment-rentals"] });
       queryClient.invalidateQueries({ queryKey: ["assets", "available"] });
-      toast.success(
-        `Rental marked as ${damageForm.status === "damaged" ? "damaged" : "lost"}`
-      );
+      toast.success(`Rental marked as ${damageForm.status === "damaged" ? "damaged" : "lost"}`);
       setDamageOpen(false);
       setSelectedRental(null);
       setDamageForm({ status: "damaged", notes: "" });
@@ -306,25 +221,12 @@ function EquipmentRentalsPage() {
   });
 
   function resetForm() {
-    setForm({
-      asset_id: "",
-      employee_id: "",
-      project_id: "",
-      start_date: "",
-      expected_return_date: "",
-      daily_rate: 0,
-      deposit_amount: 0,
-      condition_before: "",
-    });
+    setForm({ asset_id: "", employee_id: "", project_id: "", start_date: "", expected_return_date: "", daily_rate: 0, deposit_amount: 0, condition_before: "" });
   }
 
   function openReturn(rental: any) {
     setSelectedRental(rental);
-    setReturnForm({
-      actual_return_date: today,
-      condition_after: "",
-      notes: "",
-    });
+    setReturnForm({ actual_return_date: today, condition_after: "", notes: "" });
     setReturnOpen(true);
   }
 
@@ -348,219 +250,45 @@ function EquipmentRentalsPage() {
   if (!isStaff) {
     return (
       <div className="flex items-center justify-center h-96">
-        <p className="text-muted-foreground">
-          You do not have permission to view this page.
-        </p>
+        <p className="text-muted-foreground">You do not have permission to view this page.</p>
       </div>
     );
   }
 
+  const cfg = workflowConfigs["equipment-rentals"];
+
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/equipment-rentals" role={role} />
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Equipment Rentals
-          </h1>
-          <p className="text-muted-foreground">
-            Track equipment checkouts and returns
-          </p>
+          <div className="text-xs font-bold uppercase tracking-widest text-accent">Equipment</div>
+          <h1 className="display text-3xl font-bold">Equipment Rentals</h1>
         </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Rental
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create Equipment Rental</DialogTitle>
-              <DialogDescription>
-                Check out equipment to an employee
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div>
-                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Equipment</h3></div>
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="asset_id">Asset *</Label>
-                    <SearchableSelect
-                      value={form.asset_id}
-                      onValueChange={(v) => {
-                        const asset = availableAssets?.find((a) => a.id === v);
-                        setForm({
-                          ...form,
-                          asset_id: v,
-                          daily_rate: asset?.daily_rate ?? 0,
-                        });
-                      }}
-                      placeholder="Select equipment"
-                      options={
-                        availableAssets?.length === 0
-                          ? [{ value: "__none__", label: "No available equipment", disabled: true }]
-                          : availableAssets?.map((a) => ({ value: a.id, label: `${a.name} (${a.category}) - ${formatUGX(a.daily_rate ?? 0)}/day` })) ?? []
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="condition_before">Condition Before</Label>
-                    <Input
-                      id="condition_before"
-                      value={form.condition_before}
-                      onChange={(e) => setForm({ ...form, condition_before: e.target.value })}
-                      placeholder="e.g. Good, fair, excellent"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Rental Period</h3></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="start_date">Start Date *</Label>
-                    <Input
-                      id="start_date"
-                      type="date"
-                      value={form.start_date}
-                      onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="expected_return_date">Expected Return Date *</Label>
-                    <Input
-                      id="expected_return_date"
-                      type="date"
-                      value={form.expected_return_date}
-                      onChange={(e) => setForm({ ...form, expected_return_date: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="daily_rate">Daily Rate (UGX) *</Label>
-                    <Input
-                      id="daily_rate"
-                      type="number"
-                      min={0}
-                      value={form.daily_rate}
-                      onChange={(e) => setForm({ ...form, daily_rate: Number(e.target.value) })}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="deposit_amount">Deposit Amount (UGX)</Label>
-                    <Input
-                      id="deposit_amount"
-                      type="number"
-                      min={0}
-                      value={form.deposit_amount}
-                      onChange={(e) => setForm({ ...form, deposit_amount: Number(e.target.value) })}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Vendor & Contact</h3></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="employee_id">Employee *</Label>
-                    <SearchableSelect
-                      value={form.employee_id}
-                      onValueChange={(v) => setForm({ ...form, employee_id: v })}
-                      placeholder="Select employee"
-                      options={employees?.map((e) => ({ value: e.id, label: e.full_name })) ?? []}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="project_id">Project</Label>
-                    <SearchableSelect
-                      value={form.project_id}
-                      onValueChange={(v) => setForm({ ...form, project_id: v })}
-                      placeholder="Select project"
-                      options={projects?.map((p) => ({ value: p.id, label: p.name })) ?? []}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setCreateOpen(false);
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!form.asset_id) {
-                    toast.error("Asset is required");
-                    return;
-                  }
-                  if (!form.employee_id) {
-                    toast.error("Employee is required");
-                    return;
-                  }
-                  if (!form.start_date) {
-                    toast.error("Start date is required");
-                    return;
-                  }
-                  if (!form.expected_return_date) {
-                    toast.error("Expected return date is required");
-                    return;
-                  }
-                  if (!form.daily_rate || form.daily_rate <= 0) {
-                    toast.error("Daily rate must be greater than 0");
-                    return;
-                  }
-                  createMutation.mutate(form);
-                }}
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending ? "Creating..." : "Create Rental"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Rentals
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Active Rentals</CardTitle>
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {activeRentals}
-            </div>
+            <div className="text-2xl font-bold text-green-600">{activeRentals}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Overdue
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
             <Clock className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {overdueRentals}
-            </div>
+            <div className="text-2xl font-bold text-destructive">{overdueRentals}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Available Equipment
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Available Equipment</CardTitle>
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -569,245 +297,151 @@ function EquipmentRentalsPage() {
         </Card>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by rental#, equipment, employee, project..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-        <SearchableSelect
-          value={statusFilter}
-          onValueChange={setStatusFilter}
-          placeholder="All Statuses"
-          options={[
-            { value: "all", label: "All Statuses" },
-            ...RENTAL_STATUSES.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))
-          ]}
-        />
-      </div>
+      <EntityCardGrid
+        data={rentals ?? []}
+        isLoading={isLoading}
+        workflow={cfg}
+        searchFields={["rental_number", "equipment_name", "rental_company"]}
+        filterField="status"
+        filterOptions={RENTAL_STATUSES.map((s) => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))}
+        keyExtractor={(item) => item.id}
+        titleField="equipment_name"
+        subtitleField="rental_company"
+        statusField="status"
+        metricFields={cfg.metricFields}
+        onCreateNew={() => { resetForm(); setCreateOpen(true); }}
+        createLabel="New Rental"
+        cardActions={(item) => (item.status === "active" || item.status === "overdue") ? (
+          <>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openReturn(item)}>
+              <ArrowLeftRight className="mr-1 h-3 w-3" /> Return
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openDamage(item)}>
+              <AlertTriangle className="mr-1 h-3 w-3" /> Damage
+            </Button>
+          </>
+        ) : undefined}
+      />
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rental #</TableHead>
-                <TableHead>Equipment</TableHead>
-                <TableHead>Employee</TableHead>
-                <TableHead>Project</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>Expected Return</TableHead>
-                <TableHead>Days Out</TableHead>
-                <TableHead>Total Charge</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : filteredRentals.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8">
-                    No rentals found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredRentals.map((rental) => {
-                  const daysOut = calcDaysOut(
-                    rental.start_date,
-                    rental.actual_return_date ?? undefined
-                  );
-                  const charge =
-                    rental.total_charge ??
-                    daysOut * (rental.daily_rate ?? 0);
-                  return (
-                    <TableRow key={rental.id}>
-                      <TableCell>
-                        <span className="font-mono text-xs font-medium">
-                          {rental.rental_number}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <span className="font-medium">
-                            {rental.assets?.name}
-                          </span>
-                          <p className="text-xs text-muted-foreground">
-                            {rental.assets?.category}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{rental.employees?.full_name}</TableCell>
-                      <TableCell>
-                        {rental.projects?.name ?? "-"}
-                      </TableCell>
-                      <TableCell>
-                        {rental.start_date
-                          ? new Date(rental.start_date).toLocaleDateString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {rental.expected_return_date
-                          ? new Date(
-                              rental.expected_return_date
-                            ).toLocaleDateString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell>{daysOut} days</TableCell>
-                      <TableCell>{formatUGX(charge)}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={cn(
-                            "font-medium",
-                            STATUS_STYLES[rental.status ?? "active"]
-                          )}
-                          variant="secondary"
-                        >
-                          {rental.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {(rental.status === "active" ||
-                            rental.status === "overdue") && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openReturn(rental)}
-                                title="Return"
-                              >
-                                <ArrowLeftRight className="h-4 w-4 mr-1" />
-                                Return
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openDamage(rental)}
-                                title="Mark Damaged/Lost"
-                              >
-                                <AlertTriangle className="h-4 w-4 mr-1" />
-                                Damage
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Equipment Rental</DialogTitle>
+            <DialogDescription>Check out equipment to an employee</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Equipment</h3></div>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="asset_id">Asset *</Label>
+                  <SearchableSelect
+                    value={form.asset_id}
+                    onValueChange={(v) => {
+                      const asset = availableAssets?.find((a) => a.id === v);
+                      setForm({ ...form, asset_id: v, daily_rate: asset?.daily_rate ?? 0 });
+                    }}
+                    placeholder="Select equipment"
+                    options={availableAssets?.length === 0
+                      ? [{ value: "__none__", label: "No available equipment", disabled: true }]
+                      : availableAssets?.map((a) => ({ value: a.id, label: `${a.name} (${a.category}) - ${formatUGX(a.daily_rate ?? 0)}/day` })) ?? []}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="condition_before">Condition Before</Label>
+                  <Input id="condition_before" value={form.condition_before} onChange={(e) => setForm({ ...form, condition_before: e.target.value })} placeholder="e.g. Good, fair, excellent" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Rental Period</h3></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_date">Start Date *</Label>
+                  <Input id="start_date" type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expected_return_date">Expected Return Date *</Label>
+                  <Input id="expected_return_date" type="date" value={form.expected_return_date} onChange={(e) => setForm({ ...form, expected_return_date: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div className="space-y-2">
+                  <Label htmlFor="daily_rate">Daily Rate (UGX) *</Label>
+                  <Input id="daily_rate" type="number" min={0} value={form.daily_rate} onChange={(e) => setForm({ ...form, daily_rate: Number(e.target.value) })} placeholder="0" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deposit_amount">Deposit Amount (UGX)</Label>
+                  <Input id="deposit_amount" type="number" min={0} value={form.deposit_amount} onChange={(e) => setForm({ ...form, deposit_amount: Number(e.target.value) })} placeholder="0" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Vendor & Contact</h3></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="employee_id">Employee *</Label>
+                  <SearchableSelect value={form.employee_id} onValueChange={(v) => setForm({ ...form, employee_id: v })} placeholder="Select employee" options={employees?.map((e) => ({ value: e.id, label: e.full_name })) ?? []} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="project_id">Project</Label>
+                  <SearchableSelect value={form.project_id} onValueChange={(v) => setForm({ ...form, project_id: v })} placeholder="Select project" options={projects?.map((p) => ({ value: p.id, label: p.name })) ?? []} />
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCreateOpen(false); resetForm(); }}>Cancel</Button>
+            <Button onClick={() => {
+              if (!form.asset_id) { toast.error("Asset is required"); return; }
+              if (!form.employee_id) { toast.error("Employee is required"); return; }
+              if (!form.start_date) { toast.error("Start date is required"); return; }
+              if (!form.expected_return_date) { toast.error("Expected return date is required"); return; }
+              if (!form.daily_rate || form.daily_rate <= 0) { toast.error("Daily rate must be greater than 0"); return; }
+              createMutation.mutate(form);
+            }} disabled={createMutation.isPending}>
+              {createMutation.isPending ? "Creating..." : "Create Rental"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      <Dialog
-        open={returnOpen}
-        onOpenChange={(open) => {
-          setReturnOpen(open);
-          if (!open) {
-            setSelectedRental(null);
-          }
-        }}
-      >
+      <Dialog open={returnOpen} onOpenChange={(open) => { setReturnOpen(open); if (!open) setSelectedRental(null); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Return Equipment</DialogTitle>
             <DialogDescription>
-              {selectedRental && (
-                <span>
-                  Returning: <strong>{selectedRental.assets?.name}</strong>{" "}
-                  (Rental: {selectedRental.rental_number})
-                </span>
-              )}
+              {selectedRental && <span>Returning: <strong>{selectedRental.assets?.name}</strong> (Rental: {selectedRental.rental_number})</span>}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="actual_return_date">Actual Return Date</Label>
-              <Input
-                id="actual_return_date"
-                type="date"
-                value={returnForm.actual_return_date}
-                onChange={(e) =>
-                  setReturnForm({
-                    ...returnForm,
-                    actual_return_date: e.target.value,
-                  })
-                }
-              />
+              <Input id="actual_return_date" type="date" value={returnForm.actual_return_date} onChange={(e) => setReturnForm({ ...returnForm, actual_return_date: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="condition_after">Condition After</Label>
-              <Input
-                id="condition_after"
-                value={returnForm.condition_after}
-                onChange={(e) =>
-                  setReturnForm({
-                    ...returnForm,
-                    condition_after: e.target.value,
-                  })
-                }
-                placeholder="e.g. Good, fair, damaged"
-              />
+              <Input id="condition_after" value={returnForm.condition_after} onChange={(e) => setReturnForm({ ...returnForm, condition_after: e.target.value })} placeholder="e.g. Good, fair, damaged" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="return-notes">Notes</Label>
-              <Input
-                id="return-notes"
-                value={returnForm.notes}
-                onChange={(e) =>
-                  setReturnForm({ ...returnForm, notes: e.target.value })
-                }
-                placeholder="Any return notes"
-              />
+              <Input id="return-notes" value={returnForm.notes} onChange={(e) => setReturnForm({ ...returnForm, notes: e.target.value })} placeholder="Any return notes" />
             </div>
             {selectedRental && returnForm.actual_return_date && (
               <div className="rounded-md bg-muted p-3 text-sm space-y-1">
-                <p>
-                  Start Date:{" "}
-                  {new Date(
-                    selectedRental.start_date
-                  ).toLocaleDateString()}
-                </p>
-                <p>
-                  Return Date:{" "}
-                  {new Date(
-                    returnForm.actual_return_date
-                  ).toLocaleDateString()}
-                </p>
-                <p>
-                  Daily Rate: {formatUGX(selectedRental.daily_rate ?? 0)}
-                </p>
+                <p>Start Date: {new Date(selectedRental.start_date).toLocaleDateString()}</p>
+                <p>Return Date: {new Date(returnForm.actual_return_date).toLocaleDateString()}</p>
+                <p>Daily Rate: {formatUGX(selectedRental.daily_rate ?? 0)}</p>
                 {(() => {
                   const start = new Date(selectedRental.start_date);
                   const end = new Date(returnForm.actual_return_date);
-                  const diffTime = Math.abs(
-                    end.getTime() - start.getTime()
-                  );
-                  const totalDays =
-                    Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
-                  const totalCharge =
-                    totalDays * (selectedRental.daily_rate ?? 0);
+                  const diffTime = Math.abs(end.getTime() - start.getTime());
+                  const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+                  const totalCharge = totalDays * (selectedRental.daily_rate ?? 0);
                   return (
                     <>
-                      <p>
-                        Total Days: <strong>{totalDays}</strong>
-                      </p>
-                      <p>
-                        Total Charge:{" "}
-                        <strong>{formatUGX(totalCharge)}</strong>
-                      </p>
+                      <p>Total Days: <strong>{totalDays}</strong></p>
+                      <p>Total Charge: <strong>{formatUGX(totalCharge)}</strong></p>
                     </>
                   );
                 })()}
@@ -815,116 +449,42 @@ function EquipmentRentalsPage() {
             )}
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setReturnOpen(false);
-                setSelectedRental(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (!returnForm.actual_return_date) {
-                  toast.error("Return date is required");
-                  return;
-                }
-                returnMutation.mutate({
-                  id: selectedRental.id,
-                  values: returnForm,
-                });
-              }}
-              disabled={returnMutation.isPending}
-            >
-              {returnMutation.isPending
-                ? "Processing..."
-                : "Confirm Return"}
+            <Button variant="outline" onClick={() => { setReturnOpen(false); setSelectedRental(null); }}>Cancel</Button>
+            <Button onClick={() => {
+              if (!returnForm.actual_return_date) { toast.error("Return date is required"); return; }
+              returnMutation.mutate({ id: selectedRental.id, values: returnForm });
+            }} disabled={returnMutation.isPending}>
+              {returnMutation.isPending ? "Processing..." : "Confirm Return"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={damageOpen}
-        onOpenChange={(open) => {
-          setDamageOpen(open);
-          if (!open) {
-            setSelectedRental(null);
-            setDamageForm({ status: "damaged", notes: "" });
-          }
-        }}
-      >
+      <Dialog open={damageOpen} onOpenChange={(open) => { setDamageOpen(open); if (!open) { setSelectedRental(null); setDamageForm({ status: "damaged", notes: "" }); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Mark Equipment</DialogTitle>
             <DialogDescription>
-              {selectedRental && (
-                <span>
-                  {selectedRental.assets?.name} (Rental:{" "}
-                  {selectedRental.rental_number})
-                </span>
-              )}
+              {selectedRental && <span>{selectedRental.assets?.name} (Rental: {selectedRental.rental_number})</span>}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="damage-status">Status</Label>
-              <SearchableSelect
-                value={damageForm.status}
-                onValueChange={(v) =>
-                  setDamageForm({
-                    ...damageForm,
-                    status: v as "damaged" | "lost",
-                  })
-                }
-                placeholder="Select status"
-                options={[
-                  { value: "damaged", label: "Damaged" },
-                  { value: "lost", label: "Lost" },
-                ]}
-              />
+              <SearchableSelect value={damageForm.status} onValueChange={(v) => setDamageForm({ ...damageForm, status: v as "damaged" | "lost" })} placeholder="Select status" options={[{ value: "damaged", label: "Damaged" }, { value: "lost", label: "Lost" }]} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="damage-notes">Notes *</Label>
-              <Input
-                id="damage-notes"
-                value={damageForm.notes}
-                onChange={(e) =>
-                  setDamageForm({ ...damageForm, notes: e.target.value })
-                }
-                placeholder="Describe the damage or loss"
-              />
+              <Input id="damage-notes" value={damageForm.notes} onChange={(e) => setDamageForm({ ...damageForm, notes: e.target.value })} placeholder="Describe the damage or loss" />
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDamageOpen(false);
-                setSelectedRental(null);
-                setDamageForm({ status: "damaged", notes: "" });
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (!damageForm.notes) {
-                  toast.error("Notes are required");
-                  return;
-                }
-                damageMutation.mutate({
-                  id: selectedRental.id,
-                  values: damageForm,
-                });
-              }}
-              disabled={damageMutation.isPending}
-            >
-              {damageMutation.isPending
-                ? "Updating..."
-                : `Mark as ${damageForm.status === "damaged" ? "Damaged" : "Lost"}`}
+            <Button variant="outline" onClick={() => { setDamageOpen(false); setSelectedRental(null); setDamageForm({ status: "damaged", notes: "" }); }}>Cancel</Button>
+            <Button variant="destructive" onClick={() => {
+              if (!damageForm.notes) { toast.error("Notes are required"); return; }
+              damageMutation.mutate({ id: selectedRental.id, values: damageForm });
+            }} disabled={damageMutation.isPending}>
+              {damageMutation.isPending ? "Updating..." : `Mark as ${damageForm.status === "damaged" ? "Damaged" : "Lost"}`}
             </Button>
           </DialogFooter>
         </DialogContent>

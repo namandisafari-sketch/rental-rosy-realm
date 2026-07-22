@@ -126,7 +126,7 @@ function AppGate({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useEffect(() => {
-    setExeDownloadUrl("/Habico%20Portal-Setup-1.0.0.exe");
+    setExeDownloadUrl("/Habico%20Portal-Setup-1.1.0.exe");
   }, []);
   return (
     <QueryClientProvider client={queryClient}>

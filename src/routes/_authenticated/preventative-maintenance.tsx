@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, CalendarCheck, CheckCircle, ToggleLeft, ToggleRight, AlertTriangle, Pencil } from "lucide-react";
+import { EntityCardGrid } from "@/components/entity-card-grid";
+import { Plus, CalendarCheck, CheckCircle, ToggleLeft, ToggleRight, AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/preventative-maintenance")({
   head: () => ({ meta: [{ title: "Preventative Maintenance — Habico Portal" }] }),
@@ -282,6 +283,7 @@ function PreventativeMaintenancePage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
+      <PageTour route="/preventative-maintenance" role={role} />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Preventative Maintenance</h1>
         <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetCreateForm(); }}>
@@ -394,116 +396,59 @@ function PreventativeMaintenancePage() {
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Unit</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Frequency</TableHead>
-                <TableHead>Next Due Date</TableHead>
-                <TableHead>Last Completed</TableHead>
-                <TableHead>Assigned To</TableHead>
-                <TableHead>Est. Cost</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="py-8 text-center">Loading...</TableCell>
-                </TableRow>
-              ) : !schedules || schedules.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">No schedules found</TableCell>
-                </TableRow>
+      <EntityCardGrid
+        data={schedules}
+        isLoading={isLoading}
+        searchFields={["title", "unit", "property", "assigned_to"]}
+        keyExtractor={(item) => item.id}
+        titleField="title"
+        subtitleField="unit"
+        statusField="status"
+        metricFields={[
+          { key: "frequency", label: "Frequency" },
+          { key: "next_due_date", label: "Next Due", format: "date" },
+          { key: "estimated_cost", label: "Est. Cost", format: "currency" },
+        ]}
+        emptyMessage="No schedules found"
+        cardActions={(s) => (
+          <>
+            {s.is_active && s.next_due_date && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => markCompleteMutation.mutate(s)}
+                disabled={markCompleteMutation.isPending}
+                title="Mark Complete"
+              >
+                <CheckCircle className="h-3 w-3 text-green-600" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => openEdit(s)}
+              title="Edit"
+            >
+              <Pencil className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => toggleActiveMutation.mutate({ id: s.id, isActive: !s.is_active })}
+              title={s.is_active ? "Deactivate" : "Activate"}
+            >
+              {s.is_active ? (
+                <ToggleRight className="h-3 w-3 text-muted-foreground" />
               ) : (
-                schedules.map((s: any) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="text-sm">
-                      <span className="font-medium">{s.units?.name}</span>
-                      <span className="text-muted-foreground block text-xs">{s.units?.properties?.name}</span>
-                    </TableCell>
-                    <TableCell className="font-medium">{s.title}</TableCell>
-                    <TableCell>
-                      <span className={`text-xs px-2 py-0.5 rounded ${categoryColors[s.category] || "bg-gray-100 text-gray-800"}`}>
-                        {categoryLabels[s.category] || s.category}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-sm">{frequencyLabels[s.frequency] || s.frequency}</TableCell>
-                    <TableCell>
-                      {s.next_due_date ? (
-                        <div className="flex items-center gap-1">
-                          <span className={isOverdue(s.next_due_date) ? "text-red-600 font-medium" : ""}>
-                            {new Date(s.next_due_date).toLocaleDateString()}
-                          </span>
-                          {isOverdue(s.next_due_date) && (
-                            <span className="text-xs bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-semibold">OVERDUE</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {s.last_completed_date ? new Date(s.last_completed_date).toLocaleDateString() : "—"}
-                    </TableCell>
-                    <TableCell className="text-sm">{s.assigned_to || "—"}</TableCell>
-                    <TableCell className="text-sm">
-                      {s.estimated_cost ? `UGX ${Number(s.estimated_cost).toLocaleString()}` : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {s.is_active ? (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Active</span>
-                      ) : (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Inactive</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {s.is_active && s.next_due_date && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => markCompleteMutation.mutate(s)}
-                            disabled={markCompleteMutation.isPending}
-                            title="Mark Complete"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(s)}
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleActiveMutation.mutate({ id: s.id, isActive: !s.is_active })}
-                          title={s.is_active ? "Deactivate" : "Activate"}
-                        >
-                          {s.is_active ? (
-                            <ToggleRight className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ToggleLeft className="h-4 w-4 text-green-600" />
-                          )}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                <ToggleLeft className="h-3 w-3 text-green-600" />
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </Button>
+          </>
+        )}
+      />
 
       <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) setEditingSchedule(null); }}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">

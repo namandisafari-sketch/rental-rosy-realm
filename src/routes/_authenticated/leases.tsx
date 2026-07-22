@@ -12,12 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { SearchableSelect, type SearchableOption } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EntityCardGrid } from "@/components/entity-card-grid";
 import { FileUpload } from "@/components/ui/file-upload";
-import { Plus, Pencil, XCircle, Building2, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, XCircle, Building2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { TenancyAgreementDialog } from "@/components/tenancy-agreement-template";
 import type { AgreementData } from "@/components/tenancy-agreement-template";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/leases")({
   head: () => ({ meta: [{ title: "Leases — Habico Portal" }] }),
@@ -72,7 +73,10 @@ function LeasesPage() {
         ? await supabase.from("tenants").select("*").in("id", ids)
         : { data: [] };
       const map = new Map((tenantList ?? []).map((t: any) => [t.id, t]));
-      return (data ?? []).map((l: any) => ({ ...l, profile: map.get(l.tenant_id) }));
+      return (data ?? []).map((l: any) => {
+        const profile = map.get(l.tenant_id);
+        return { ...l, profile, tenant: profile?.full_name ?? "Untitled", property: l.units?.properties?.name ?? "" };
+      });
     },
   });
 
@@ -423,6 +427,7 @@ function LeasesPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/leases" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Agreements</div>
@@ -457,55 +462,37 @@ function LeasesPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="display">All leases</CardTitle></CardHeader>
-        <CardContent>
-          {leases.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-16 text-center">
-              <Building2 className="h-10 w-10 text-muted-foreground" />
-              <div className="font-medium">No leases yet</div>
-              <div className="text-sm text-muted-foreground">{isStaff ? "Create a lease to get started." : "No active leases at the moment."}</div>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                    <TableHead>Tenant</TableHead><TableHead>Property · Unit</TableHead><TableHead>Monthly Rent</TableHead><TableHead>Arrears</TableHead><TableHead>Late Fee (5%)</TableHead><TableHead>Days Remaining</TableHead><TableHead>Deposit</TableHead><TableHead>Signed Doc</TableHead><TableHead>Status</TableHead>
-                  {isStaff && <TableHead className="text-right">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leases.map((l: any) => {
-                  const lateFee = l.late_fee_amount ?? Math.round(Number(l.monthly_rent) * LATE_PENALTY_RATE);
-                  return (
-                  <TableRow key={l.id}>
-                    <TableCell className="font-medium">{l.profile?.full_name ?? l.profile?.email ?? "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{l.units?.properties?.name} · {l.units?.unit_number}</TableCell>
-                    <TableCell className="font-semibold">UGX {Number(l.monthly_rent).toLocaleString()}</TableCell>
-                    <TableCell className="text-red-500 font-medium">UGX {Number(l.outstanding_balance ?? 0).toLocaleString()}</TableCell>
-                    <TableCell className="text-sm">UGX {lateFee.toLocaleString()}</TableCell>
-                    <DaysCell endDate={l.end_date} />
-                    <TableCell>UGX {Number(l.deposit ?? 0).toLocaleString()}</TableCell>
-                    <TableCell className="text-center">{l.signed_document_url ? <span className="text-green-600 text-xs font-medium">Uploaded</span> : <span className="text-amber-600 text-xs">Pending</span>}</TableCell>
-                    <TableCell><StatusBadge status={l.status} /></TableCell>
-                    {isStaff && (
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openAgreement(l)} title="Print tenancy agreement"><FileText className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(l)} title="Edit lease"><Pencil className="h-4 w-4" /></Button>
-                          {l.status === "active" && (
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openTerminate(l)} title="Terminate lease"><XCircle className="h-4 w-4" /></Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                )})}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <EntityCardGrid
+        data={leases}
+        isLoading={false}
+        searchFields={["tenant", "property", "unit"]}
+        filterField="status"
+        filterOptions={[
+          { label: "Active", value: "active" },
+          { label: "Ended", value: "ended" },
+          { label: "Terminated", value: "terminated" },
+        ]}
+        keyExtractor={(item) => item.id}
+        titleField="tenant"
+        subtitleField="property"
+        statusField="status"
+        metricFields={[
+          { key: "monthly_rent", label: "Rent", format: "currency" },
+          { key: "outstanding_balance", label: "Arrears", format: "currency" },
+          { key: "end_date", label: "End Date", format: "date" },
+        ]}
+        onCreateNew={isStaff ? () => { resetForm(); setOpen(true); } : undefined}
+        createLabel="New Lease"
+        cardActions={(l) => isStaff ? (
+          <>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openAgreement(l)} title="Print tenancy agreement"><FileText className="h-3 w-3" /></Button>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openEdit(l)} title="Edit lease"><Pencil className="h-3 w-3" /></Button>
+            {l.status === "active" && (
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => openTerminate(l)} title="Terminate lease"><XCircle className="h-3 w-3" /></Button>
+            )}
+          </>
+        ) : undefined}
+      />
 
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) { setEditingLease(null); setForm({ ...blankForm }); } }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">

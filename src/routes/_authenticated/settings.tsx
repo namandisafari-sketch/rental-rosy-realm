@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUpload } from "@/components/ui/file-upload";
 import { toast } from "sonner";
 import { Palette, FileText, User, Shield, Crown, Check, X, Clock, AlertTriangle, ShieldCheck, Download, Lock, Link, RefreshCw, ExternalLink } from "lucide-react";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Habico Portal" }] }),
@@ -61,6 +62,7 @@ function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
+      <PageTour route="/settings" role={role} />
       <div>
         <div className="text-xs font-bold uppercase tracking-widest text-accent">Account</div>
         <h1 className="display text-3xl font-bold">Settings</h1>

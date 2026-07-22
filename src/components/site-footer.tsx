@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Mail, Phone, MapPin } from "lucide-react";
 import AppStoreBadges from "@/components/app-store-badges";
-import logoSrc from "@/assets/habico-logo.jpg";
+import logoSrc from "@/assets/habico-logo.png";
 
 export function SiteFooter() {
   return (

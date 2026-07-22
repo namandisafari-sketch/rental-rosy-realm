@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Building2, MapPin, Pencil, Archive, Trash2, Loader2, Search, SlidersHorizontal, Home, User, List } from "lucide-react";
 import { toast } from "sonner";
 import { LocationSelector } from "@/components/location-selector";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/properties")({
   head: () => ({ meta: [{ title: "Properties — Habico Portal" }] }),
@@ -260,6 +261,7 @@ function PropertiesPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/properties" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Portfolio</div>

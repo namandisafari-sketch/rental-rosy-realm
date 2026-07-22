@@ -17,6 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Image as ImageIcon, Camera, Layers, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { LocationSelector } from "@/components/location-selector";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/project-photos")({
   head: () => ({ meta: [{ title: "Project Photos — Habico Portal" }] }),
@@ -106,6 +107,7 @@ function ProjectPhotosPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/project-photos" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Site Documentation</div>

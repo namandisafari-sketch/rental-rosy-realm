@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useHighestRole } from "@/hooks/use-auth";
+import { workflowConfigs } from "@/lib/workflow-actions";
+import { EntityCardGrid } from "@/components/entity-card-grid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +13,9 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ShoppingCart, Trash2, ChevronRight } from "lucide-react";
+import { Plus, ShoppingCart, Trash2, ChevronRight, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageTour } from "@/components/page-tour";
 
 export const Route = createFileRoute("/_authenticated/purchase-orders")({
   head: () => ({ meta: [{ title: "Purchase Orders — Habico Portal" }] }),
@@ -20,14 +23,6 @@ export const Route = createFileRoute("/_authenticated/purchase-orders")({
 });
 
 const statusFlow = ["draft", "pending", "approved", "ordered", "received"];
-
-const statusColors: Record<string, string> = {
-  draft: "bg-secondary text-muted-foreground",
-  pending: "bg-warning/20 text-warning-foreground",
-  approved: "bg-primary/15 text-primary",
-  ordered: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  received: "bg-success/15 text-success",
-};
 
 function PurchaseOrdersPage() {
   const role = useHighestRole();
@@ -131,189 +126,48 @@ function PurchaseOrdersPage() {
     return idx > 0 ? statusFlow[idx - 1] : null;
   };
 
-  const itemsPartiallyReceived = (items: any[]) => {
-    return items.some((item: any) => (item.received_quantity ?? 0) > 0 && (item.received_quantity ?? 0) < (item.quantity ?? 1));
-  };
+  const cfg = workflowConfigs["purchase-orders"];
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      <PageTour route="/purchase-orders" role={role} />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-widest text-accent">Procurement</div>
           <h1 className="display text-3xl font-bold">Purchase Orders</h1>
         </div>
-        {isStaff && (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                <Plus className="mr-2 h-4 w-4" /> New purchase order
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-              <DialogHeader><DialogTitle>Create purchase order</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">PO Info</h3></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Supplier *</Label>
-                      <SearchableSelect
-                        value={form.supplier_id}
-                        onValueChange={(v) => setForm({ ...form, supplier_id: v })}
-                        placeholder="Select supplier…"
-                        options={[
-                          { value: "", label: "Select supplier…" },
-                          ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))
-                        ]}
-                      />
-                    </div>
-                    <div>
-                      <Label>Project (optional)</Label>
-                      <SearchableSelect
-                        value={form.project_id}
-                        onValueChange={(v) => setForm({ ...form, project_id: v })}
-                        placeholder="Select project…"
-                        options={[
-                          { value: "", label: "Select project…" },
-                          ...projects.map((p: any) => ({ value: p.id, label: p.name }))
-                        ]}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Items & Budget</h3></div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label>Items</Label>
-                      <Button size="sm" variant="outline" onClick={addItem}><Plus className="mr-1 h-3 w-3" /> Add item</Button>
-                    </div>
-                    <div className="space-y-2">
-                      {form.items.map((item, i) => (
-                        <div key={i} className="flex items-end gap-2 rounded-lg border border-border p-3">
-                          <div className="flex-1">
-                            <Label className="text-xs">Description *</Label>
-                            <Input value={item.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Item description" />
-                          </div>
-                          <div className="w-20">
-                            <Label className="text-xs">Qty</Label>
-                            <Input type="number" min={1} value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} />
-                          </div>
-                          <div className="w-28">
-                            <Label className="text-xs">Unit price</Label>
-                            <Input type="number" min={0} step={100} value={item.unit_price} onChange={(e) => updateItem(i, "unit_price", Number(e.target.value))} />
-                          </div>
-                          <div className="w-24 text-right">
-                            <Label className="text-xs">Total</Label>
-                            <div className="mt-1.5 text-sm font-semibold">UGX {(item.quantity * item.unit_price).toLocaleString()}</div>
-                          </div>
-                          <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0" disabled={form.items.length <= 1} onClick={() => removeItem(i)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Dates & Status</h3></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Order date</Label><Input type="date" /></div>
-                    <div><Label>Status</Label><span className="mt-1.5 block text-sm text-muted-foreground">Draft (set on create)</span></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Notes</h3></div>
-                  <div><Label>Internal notes</Label><textarea className="mt-1.5 w-full rounded-md border border-input bg-background p-2 text-sm" rows={2} placeholder="Additional instructions or notes" /></div>
-                </div>
-
-                <div className="flex justify-end border-t border-border pt-3">
-                  <div className="text-right">
-                    <div className="text-sm text-muted-foreground">Total amount</div>
-                    <div className="text-xl font-bold">UGX {totalAmount.toLocaleString()}</div>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={() => create.mutate()} disabled={!form.supplier_id || form.items.some((i) => !i.description) || create.isPending}>
-                  Create
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="display">All purchase orders</CardTitle></CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-sm text-muted-foreground">Loading…</div>
-          ) : orders.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-16 text-center">
-              <ShoppingCart className="h-10 w-10 text-muted-foreground" />
-              <div className="font-medium">No purchase orders yet</div>
-              <div className="text-sm text-muted-foreground">Create a purchase order to get started.</div>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Date</TableHead>
-                  {isStaff && <TableHead className="w-32">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((o: any) => {
-                  const items: any[] = o.items ?? [];
-                  const totalOrdered = items.reduce((s: number, i: any) => s + Number(i.quantity ?? 0), 0);
-                  const totalReceived = items.reduce((s: number, i: any) => s + Number(i.received_quantity ?? 0), 0);
-                  const next = nextStatus(o.status);
-                  const prev = prevStatus(o.status);
-                  return (
-                    <TableRow key={o.id}>
-                      <TableCell className="font-mono text-sm font-medium">{o.order_number}</TableCell>
-                      <TableCell className="text-sm">{o.suppliers?.name ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{o.projects?.name ?? "—"}</TableCell>
-                      <TableCell>
-                        <span className={`rounded-full px-2 py-0.5 text-xs ${statusColors[o.status] ?? "bg-secondary text-muted-foreground"}`}>
-                          {o.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">UGX {Number(o.total_amount).toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</TableCell>
-                      {isStaff && (
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            {prev && (
-                              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => advanceStatus.mutate({ id: o.id, status: prev })}>
-                                ← {prev}
-                              </Button>
-                            )}
-                            {next && (
-                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => advanceStatus.mutate({ id: o.id, status: next })}>
-                                {next} →
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <EntityCardGrid
+        data={orders}
+        isLoading={isLoading}
+        workflow={cfg}
+        searchFields={["order_number", "supplier_name"]}
+        filterField="status"
+        filterOptions={statusFlow.map((s) => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))}
+        keyExtractor={(item) => item.id}
+        titleField="po_number"
+        subtitleField="supplier_name"
+        statusField="status"
+        metricFields={cfg.metricFields}
+        onCreateNew={isStaff ? () => { setForm(blankForm); setOpen(true); } : undefined}
+        createLabel="New Purchase Order"
+        workflowButtons={(item) => {
+          const prev = prevStatus(item.status);
+          const next = nextStatus(item.status);
+          const buttons = [];
+          if (prev) buttons.push({ label: `← ${prev}`, variant: "ghost" as const, onClick: () => advanceStatus.mutate({ id: item.id, status: prev }) });
+          if (next) buttons.push({ label: `${next} →`, variant: "outline" as const, onClick: () => advanceStatus.mutate({ id: item.id, status: next }) });
+          return buttons;
+        }}
+        cardActions={() => isStaff ? (
+          <>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setOpen(true)}>
+              <Pencil className="mr-1 h-3 w-3" /> Edit
+            </Button>
+          </>
+        ) : undefined}
+      />
 
       {orders.length > 0 && (
         <Card>
@@ -369,6 +223,91 @@ function PurchaseOrdersPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader><DialogTitle>Create purchase order</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">PO Info</h3></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Supplier *</Label>
+                  <SearchableSelect
+                    value={form.supplier_id}
+                    onValueChange={(v) => setForm({ ...form, supplier_id: v })}
+                    placeholder="Select supplier…"
+                    options={[
+                      { value: "", label: "Select supplier…" },
+                      ...suppliers.map((s: any) => ({ value: s.id, label: s.name }))
+                    ]}
+                  />
+                </div>
+                <div>
+                  <Label>Project (optional)</Label>
+                  <SearchableSelect
+                    value={form.project_id}
+                    onValueChange={(v) => setForm({ ...form, project_id: v })}
+                    placeholder="Select project…"
+                    options={[
+                      { value: "", label: "Select project…" },
+                      ...projects.map((p: any) => ({ value: p.id, label: p.name }))
+                    ]}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="border-b pb-2 mb-4"><h3 className="text-sm font-semibold">Items & Budget</h3></div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Items</Label>
+                  <Button size="sm" variant="outline" onClick={addItem}><Plus className="mr-1 h-3 w-3" /> Add item</Button>
+                </div>
+                <div className="space-y-2">
+                  {form.items.map((item, i) => (
+                    <div key={i} className="flex items-end gap-2 rounded-lg border border-border p-3">
+                      <div className="flex-1">
+                        <Label className="text-xs">Description *</Label>
+                        <Input value={item.description} onChange={(e) => updateItem(i, "description", e.target.value)} placeholder="Item description" />
+                      </div>
+                      <div className="w-20">
+                        <Label className="text-xs">Qty</Label>
+                        <Input type="number" min={1} value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} />
+                      </div>
+                      <div className="w-28">
+                        <Label className="text-xs">Unit price</Label>
+                        <Input type="number" min={0} step={100} value={item.unit_price} onChange={(e) => updateItem(i, "unit_price", Number(e.target.value))} />
+                      </div>
+                      <div className="w-24 text-right">
+                        <Label className="text-xs">Total</Label>
+                        <div className="mt-1.5 text-sm font-semibold">UGX {(item.quantity * item.unit_price).toLocaleString()}</div>
+                      </div>
+                      <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0" disabled={form.items.length <= 1} onClick={() => removeItem(i)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end border-t border-border pt-3">
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">Total amount</div>
+                <div className="text-xl font-bold">UGX {totalAmount.toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => create.mutate()} disabled={!form.supplier_id || form.items.some((i) => !i.description) || create.isPending}>
+              {create.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
