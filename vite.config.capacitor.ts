@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
-import path from 'path'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [
     react(),
     tsconfigPaths(),
+    tailwindcss(),
     {
       name: 'stub-virtual-modules',
       resolveId(id) {
@@ -47,9 +48,9 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '#tanstack-start-entry': path.resolve(__dirname, 'src/stubs/tanstack-start-entry.js'),
-      '#tanstack-router-entry': path.resolve(__dirname, 'src/stubs/tanstack-router-entry.js'),
-      '#tanstack-start-plugin-adapters': path.resolve(__dirname, 'node_modules/@tanstack/start-client-core/dist/esm/empty-plugin-adapters.js'),
+      '#tanstack-start-entry': '/home/openclaw/rental-rosy-realm/src/stubs/tanstack-start-entry.js',
+      '#tanstack-router-entry': '/home/openclaw/rental-rosy-realm/src/stubs/tanstack-router-entry.js',
+      '#tanstack-start-plugin-adapters': '/home/openclaw/rental-rosy-realm/node_modules/@tanstack/start-client-core/dist/esm/empty-plugin-adapters.js',
     },
   },
   build: {
@@ -57,12 +58,6 @@ export default defineConfig({
     emptyOutDir: false,
     rollupOptions: {
       input: 'index.html',
-      external: [
-        'node:async_hooks',
-        'node:stream/web',
-        'node:stream',
-        'nitro/runtime/internal/error',
-      ],
     },
     cssMinify: false,
   },
