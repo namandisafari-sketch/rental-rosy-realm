@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
   useLocation,
+  useNavigate,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -15,6 +16,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/use-auth";
 import { AppModeProvider, useAppMode } from "@/hooks/app-mode";
 import { AppModeSelector } from "@/components/app-mode-selector";
+import Onboarding from "@/components/onboarding";
 import { Toaster } from "@/components/ui/sonner";
 import { RegisterPage } from "@/routes/register";
 import { setExeDownloadUrl } from "@/components/app-store-badges";
@@ -97,28 +99,35 @@ function RootShell({ children }: { children: ReactNode }) {
 function AppGate({ children }: { children: ReactNode }) {
   const { mode } = useAppMode();
   const loc = useLocation();
-  const [onRegisterSubdomain, setOnRegisterSubdomain] = useState(false);
-  const [isNative, setIsNative] = useState(false);
+  const nav = useNavigate();
+  const [onboarded, setOnboarded] = useState(true);
+
+  const isNative = typeof window !== "undefined" && "Capacitor" in window;
+  const onRegisterSubdomain = typeof window !== "undefined" && window.location.hostname === "register.habico.ug";
 
   useEffect(() => {
-    setOnRegisterSubdomain(
-      typeof window !== "undefined" && window.location.hostname === "register.habico.ug"
-    );
-    setIsNative(
-      typeof window !== "undefined" && "Capacitor" in window
-    );
+    if (isNative) {
+      const seen = localStorage.getItem("habico_onboarding_seen");
+      setOnboarded(!!seen);
+    }
   }, []);
 
-  if (onRegisterSubdomain) {
-    return <RegisterPage />;
-  }
+  useEffect(() => {
+    if (isNative && loc.pathname === "/") {
+      nav({ to: "/auth" });
+    }
+  }, [isNative, loc.pathname]);
+
+  if (onRegisterSubdomain) return <RegisterPage />;
+
+  if (isNative && !onboarded) return <Onboarding onDone={() => { localStorage.setItem("habico_onboarding_seen", "1"); setOnboarded(true); }} />;
+
+  if (isNative && loc.pathname === "/") return null;
 
   const isPublic = loc.pathname === "/auth" || loc.pathname === "/register";
   const isApi = loc.pathname.startsWith("/_server");
 
-  if (isNative && !mode && !isPublic && !isApi) {
-    return <AppModeSelector />;
-  }
+  if (isNative && !mode && !isPublic && !isApi) return <AppModeSelector />;
 
   return <>{children}</>;
 }
