@@ -100,7 +100,7 @@ function AppGate({ children }: { children: ReactNode }) {
   const { mode } = useAppMode();
   const loc = useLocation();
   const nav = useNavigate();
-  const [onboarded, setOnboarded] = useState(true);
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
 
   const isNative = typeof window !== "undefined" && "Capacitor" in window;
   const onRegisterSubdomain = typeof window !== "undefined" && window.location.hostname === "register.habico.ug";
@@ -109,20 +109,22 @@ function AppGate({ children }: { children: ReactNode }) {
     if (isNative) {
       const seen = localStorage.getItem("habico_onboarding_seen");
       setOnboarded(!!seen);
+    } else {
+      setOnboarded(true);
     }
   }, []);
 
   useEffect(() => {
-    if (isNative && loc.pathname === "/") {
+    if (isNative && loc.pathname === "/" && mode) {
       nav({ to: "/auth" });
     }
-  }, [isNative, loc.pathname]);
+  }, [isNative, loc.pathname, mode]);
 
   if (onRegisterSubdomain) return <RegisterPage />;
 
-  if (isNative && !onboarded) return <Onboarding onDone={() => { localStorage.setItem("habico_onboarding_seen", "1"); setOnboarded(true); }} />;
+  if (onboarded === null) return null;
 
-  if (isNative && loc.pathname === "/") return null;
+  if (onboarded === false) return <Onboarding onDone={() => { localStorage.setItem("habico_onboarding_seen", "1"); setOnboarded(true); }} />;
 
   const isPublic = loc.pathname === "/auth" || loc.pathname === "/register";
   const isApi = loc.pathname.startsWith("/_server");
